@@ -47,6 +47,33 @@ app.use(cors({
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
+// Local-Only Admin Security Shield (Strict Zero-Attack-Surface)
+// Completely blocks /admin, /public/admin.html, and /api/admin/login on public internet
+const isLocalRequest = (req) => {
+  const host = (req.headers.host || '').toLowerCase();
+  const ip = req.ip || req.connection?.remoteAddress || '';
+  return host.startsWith('localhost') || host.startsWith('127.0.0.1') || ip === '127.0.0.1' || ip === '::1' || ip.includes('127.0.0.1');
+};
+
+app.use((req, res, next) => {
+  const p = req.path.toLowerCase();
+  if (p === '/admin' || p === '/public/admin.html' || p === '/api/admin/login') {
+    if (!isLocalRequest(req) && process.env.ALLOW_PUBLIC_ADMIN !== 'true') {
+      return res.status(404).send(`<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>404 Not Found</title></head>
+<body style="background:#06060a;color:#fff;font-family:sans-serif;text-align:center;padding:120px 20px;">
+  <h1 style="font-size:72px;font-weight:900;margin:0;color:#f43f5e;">404</h1>
+  <h2 style="margin-top:10px;font-size:20px;">Page Not Found</h2>
+  <p style="color:#888;font-size:14px;max-width:400px;margin:15px auto;">The requested URL was not found on this server.</p>
+  <a href="/" style="display:inline-block;margin-top:20px;padding:10px 24px;border-radius:12px;background:#f43f5e;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">Return to Home</a>
+</body>
+</html>`);
+    }
+  }
+  next();
+});
+
 // 4. Rate Limiter on API Routes
 app.use('/api', apiLimiter);
 

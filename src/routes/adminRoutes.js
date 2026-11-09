@@ -26,4 +26,14 @@ router.get('/settings', requireAdmin, adminController.getSettings);
 router.put('/settings', requireAdmin, adminController.updateSettings);
 router.post('/reset-device', requireAdmin, adminController.resetDeviceLock);
 
+// Secure Master-Key Cloud Sync (For Local Admin pushing videos directly to Live Server)
+const config = require('../config');
+router.post('/sync-video', (req, res, next) => {
+  const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+  if (!apiKey || apiKey !== config.cdnApiKey) {
+    return res.status(403).json({ success: false, error: 'Access Denied: Invalid Master Sync Key' });
+  }
+  return adminController.createVideo(req, res, next);
+});
+
 module.exports = router;
