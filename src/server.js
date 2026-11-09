@@ -50,9 +50,9 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 // Local-Only Admin Security Shield (Strict Zero-Attack-Surface)
 // Completely blocks /admin, /public/admin.html, and /api/admin/login on public internet
 const isLocalRequest = (req) => {
+  if (process.env.RENDER || process.env.RAILWAY_ENVIRONMENT) return false;
   const host = (req.headers.host || '').toLowerCase();
-  const ip = req.ip || req.connection?.remoteAddress || '';
-  return host.startsWith('localhost') || host.startsWith('127.0.0.1') || ip === '127.0.0.1' || ip === '::1' || ip.includes('127.0.0.1');
+  return host.startsWith('localhost') || host.startsWith('127.0.0.1');
 };
 
 app.use((req, res, next) => {
