@@ -49,10 +49,26 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Local-Only Admin Security Shield (Strict Zero-Attack-Surface)
 // Completely blocks /admin, /public/admin.html, and /api/admin/login on public internet
+// Local & Private LAN Security Shield (Zero Public Attack Surface)
+// Allows access strictly from localhost, Termux, and private home Wi-Fi/Hotspot LAN
 const isLocalRequest = (req) => {
   if (process.env.RENDER || process.env.RAILWAY_ENVIRONMENT) return false;
-  const host = (req.headers.host || '').toLowerCase();
-  return host.startsWith('localhost') || host.startsWith('127.0.0.1');
+  const host = (req.headers.host || '').toLowerCase().split(':')[0];
+
+  // Block any public domain host header immediately
+  if (host.includes('anizon.watch') || host.includes('onrender.com') || host.includes('.com') || host.includes('.watch')) {
+    return false;
+  }
+
+  const ip = (req.ip || req.connection?.remoteAddress || '').replace(/^.*:/, '');
+
+  // Localhost & Loopback (PC / Termux standalone)
+  if (host === 'localhost' || host === '127.0.0.1' || ip === '127.0.0.1' || ip === '1') return true;
+
+  // Private LAN / Wi-Fi / Mobile Hotspot (10.x.x.x, 192.168.x.x, 172.16-31.x.x)
+  if (host.startsWith('192.168.') || host.startsWith('10.') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)) return true;
+
+  return false;
 };
 
 app.use((req, res, next) => {
