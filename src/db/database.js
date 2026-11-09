@@ -151,13 +151,78 @@ function initializeSchema() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_user_contacts_device ON user_contacts(device_id);
+
+    CREATE TABLE IF NOT EXISTS follows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      creator_name TEXT NOT NULL COLLATE NOCASE,
+      follower_device_id TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(creator_name, follower_device_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_follows_creator ON follows(creator_name);
+
+    CREATE TABLE IF NOT EXISTS monetization_applications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      creator_name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT,
+      channel_name TEXT,
+      total_views INTEGER DEFAULT 0,
+      followers_count INTEGER DEFAULT 0,
+      max_single_views INTEGER DEFAULT 0,
+      is_human_verified INTEGER DEFAULT 1,
+      status TEXT DEFAULT 'PENDING',
+      admin_notes TEXT,
+      applied_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      reviewed_at DATETIME
+    );
+    CREATE INDEX IF NOT EXISTS idx_monetization_status ON monetization_applications(status);
   `);
 
   // Safe runtime migrations for existing databases
+  const runMigration = (sql) => {
+    try {
+      db.exec(sql);
+    } catch (e) {
+      // Column or table already exists or migrated
+    }
+  };
+
+  runMigration('ALTER TABLE users ADD COLUMN coins INTEGER NOT NULL DEFAULT 50;');
+  runMigration('ALTER TABLE users ADD COLUMN followers_count INTEGER NOT NULL DEFAULT 0;');
+  runMigration('ALTER TABLE users ADD COLUMN is_monetized INTEGER NOT NULL DEFAULT 0;');
+  runMigration("ALTER TABLE users ADD COLUMN monetization_status TEXT NOT NULL DEFAULT 'NONE';");
+  runMigration('ALTER TABLE users ADD COLUMN real_name TEXT;');
+  runMigration('ALTER TABLE users ADD COLUMN human_verified INTEGER NOT NULL DEFAULT 1;');
+
+  runMigration("ALTER TABLE videos ADD COLUMN status TEXT NOT NULL DEFAULT 'APPROVED';");
+  runMigration('ALTER TABLE videos ADD COLUMN owner_name TEXT;');
+  runMigration('ALTER TABLE videos ADD COLUMN owner_email TEXT;');
+  runMigration('ALTER TABLE videos ADD COLUMN views_count INTEGER NOT NULL DEFAULT 0;');
+  runMigration('ALTER TABLE videos ADD COLUMN likes_count INTEGER NOT NULL DEFAULT 0;');
+  runMigration('ALTER TABLE videos ADD COLUMN is_short INTEGER NOT NULL DEFAULT 0;');
+  runMigration('ALTER TABLE videos ADD COLUMN rejection_reason TEXT;');
+
+  // Sync existing videos' views_count from views string if 0
   try {
-    db.exec('ALTER TABLE users ADD COLUMN coins INTEGER NOT NULL DEFAULT 50;');
-  } catch (e) {
-    // column already exists
+    const existingVideos = db.prepare('SELECT id, views, views_count FROM videos').all();
+    for (const v of existingVideos) {
+      if (!v.views_count || v.views_count === 0) {
+        const match = (v.views || '').match(/([\d.]+)\s*([KkMm]?)/);
+        let count = 1200;
+        if (match) {
+          const num = parseFloat(match[1]);
+          const unit = (match[2] || '').toUpperCase();
+          if (unit === 'K') count = Math.round(num * 1000);
+          else if (unit === 'M') count = Math.round(num * 1000000);
+          else count = Math.round(num);
+        }
+        db.prepare('UPDATE videos SET views_count = ? WHERE id = ?').run(count, v.id);
+      }
+    }
+  } catch (err) {
+    // ignore
   }
 }
 

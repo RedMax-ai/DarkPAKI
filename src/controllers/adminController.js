@@ -68,13 +68,17 @@ function getStats(req, res, next) {
     const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
     const totalDemands = db.prepare('SELECT COUNT(*) as count FROM demands').get().count;
     const totalContacts = db.prepare('SELECT COUNT(*) as count FROM user_contacts').get().count;
+    const pendingVideosCount = db.prepare("SELECT COUNT(*) as count FROM videos WHERE status = 'PENDING'").get()?.count || 0;
+    const pendingMonetizationCount = db.prepare("SELECT COUNT(*) as count FROM monetization_applications WHERE status = 'PENDING'").get()?.count || 0;
+    const monetizedCreatorsCount = db.prepare("SELECT COUNT(*) as count FROM users WHERE is_monetized = 1").get()?.count || 0;
+
     const blockedAttempts = db.prepare(`
       SELECT COUNT(*) as count FROM security_logs 
       WHERE event_type IN ('DEVICE_LOCK_VIOLATION', 'FAILED_ADMIN_LOGIN', 'FAILED_CAPTCHA', 'DEVICE_MISMATCH')
     `).get().count;
 
-    const recentVideos = db.prepare('SELECT id, title, creator, tag, duration, src, thumb_img, is_featured, created_at FROM videos ORDER BY id DESC LIMIT 10').all();
-    const users = db.prepare('SELECT id, name, gmail, phone, device_id, balance, referrals, ads_watched, created_at FROM users ORDER BY id DESC LIMIT 50').all();
+    const recentVideos = db.prepare('SELECT id, title, creator, tag, duration, src, thumb_img, is_featured, status, owner_name, owner_email, views_count, created_at FROM videos ORDER BY id DESC LIMIT 10').all();
+    const users = db.prepare('SELECT id, name, gmail, phone, device_id, balance, referrals, ads_watched, followers_count, is_monetized, created_at FROM users ORDER BY id DESC LIMIT 50').all();
     const logs = db.prepare('SELECT * FROM security_logs ORDER BY id DESC LIMIT 25').all();
     
     const telegramUrl = db.prepare("SELECT value FROM settings WHERE key = 'telegram_url'").get()?.value || 'https://t.me/darkpaki_official';
@@ -94,6 +98,9 @@ function getStats(req, res, next) {
           totalUsers,
           totalDemands,
           totalContacts,
+          pendingVideosCount,
+          pendingMonetizationCount,
+          monetizedCreatorsCount,
           blockedAttempts,
           deviceLockStatus: 'STRICT ACTIVE'
         },
@@ -623,6 +630,180 @@ function cdnDirectUpload(req, res, next) {
   }
 }
 
+// =========================================================================
+// USER SUBMISSION MODERATION & REVIEW QUEUE
+// =========================================================================
+
+function getPendingVideos(req, res, next) {
+  try {
+    const pending = db.prepare("SELECT * FROM videos WHERE status = 'PENDING' ORDER BY id DESC").all();
+    res.json({
+      success: true,
+      data: pending
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function approveVideo(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const video = db.prepare('SELECT * FROM videos WHERE id = ?').get(id);
+    if (!video) {
+      return res.status(404).json({ success: false, message: 'Video not found.' });
+    }
+
+    db.prepare("UPDATE videos SET status = 'APPROVED' WHERE id = ?").run(id);
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+      'VIDEO_APPROVED_BY_ADMIN',
+      `Admin approved video #${id}: "${video.title}" by ${video.owner_name || video.creator}`,
+      req.ip
+    );
+
+    res.json({
+      success: true,
+      message: `Video "${video.title}" approved and published live to DarkPAKI website!`
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function rejectVideo(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { reason } = req.body;
+    const video = db.prepare('SELECT * FROM videos WHERE id = ?').get(id);
+    if (!video) {
+      return res.status(404).json({ success: false, message: 'Video not found.' });
+    }
+
+    const cleanReason = sanitizeString(reason) || 'Violated community guidelines or low quality';
+    db.prepare("UPDATE videos SET status = 'REJECTED', rejection_reason = ? WHERE id = ?").run(cleanReason, id);
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+      'VIDEO_REJECTED_BY_ADMIN',
+      `Admin rejected video #${id}: "${video.title}". Reason: ${cleanReason}`,
+      req.ip
+    );
+
+    res.json({
+      success: true,
+      message: `Video "${video.title}" has been rejected.`
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// =========================================================================
+// CREATOR MONETIZATION & AUDIT SYSTEM
+// =========================================================================
+
+function getMonetizationApplications(req, res, next) {
+  try {
+    const apps = db.prepare('SELECT * FROM monetization_applications ORDER BY id DESC').all();
+
+    const enriched = apps.map(app => {
+      const user = app.user_id ? db.prepare('SELECT id, name, gmail, phone, device_id, followers_count, is_monetized, created_at FROM users WHERE id = ?').get(app.user_id) : null;
+      const creatorName = app.creator_name || app.channel_name;
+
+      // Real followers check: count distinct follower device IDs to catch spam / fake accounts
+      const followerDevices = db.prepare('SELECT follower_device_id, COUNT(*) as cnt FROM follows WHERE creator_name = ? COLLATE NOCASE GROUP BY follower_device_id').all(creatorName);
+      const distinctFollowers = followerDevices.length;
+      const isSuspicious = (app.followers_count > 0 && distinctFollowers < app.followers_count * 0.5);
+
+      // Best video check
+      const bestVideo = db.prepare('SELECT title, views_count, src, created_at FROM videos WHERE (creator = ? COLLATE NOCASE OR owner_name = ? COLLATE NOCASE) ORDER BY views_count DESC LIMIT 1').get(creatorName, creatorName);
+
+      return {
+        ...app,
+        user: user || null,
+        real_gmail: user?.gmail || app.email,
+        real_name: user?.real_name || user?.name || app.creator_name,
+        distinct_follower_devices: distinctFollowers,
+        is_fake_followers_flagged: isSuspicious,
+        best_video: bestVideo || null,
+        is_currently_monetized: Boolean(user?.is_monetized)
+      };
+    });
+
+    res.json({
+      success: true,
+      data: enriched
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function reviewMonetizationApplication(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { action, notes } = req.body; // 'APPROVE' or 'REJECT'
+    const app = db.prepare('SELECT * FROM monetization_applications WHERE id = ?').get(id);
+    if (!app) {
+      return res.status(404).json({ success: false, message: 'Application not found.' });
+    }
+
+    const cleanNotes = sanitizeString(notes) || (action === 'APPROVE' ? 'Approved by Admin' : 'Rejected by Admin');
+    const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+    const isMonetizedVal = action === 'APPROVE' ? 1 : 0;
+
+    db.prepare(`
+      UPDATE monetization_applications 
+      SET status = ?, admin_notes = ?, reviewed_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(newStatus, cleanNotes, id);
+
+    if (app.user_id) {
+      db.prepare('UPDATE users SET is_monetized = ?, monetization_status = ? WHERE id = ?')
+        .run(isMonetizedVal, newStatus, app.user_id);
+    }
+    if (app.creator_name) {
+      db.prepare('UPDATE users SET is_monetized = ?, monetization_status = ? WHERE name = ? COLLATE NOCASE')
+        .run(isMonetizedVal, newStatus, app.creator_name);
+    }
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+      action === 'APPROVE' ? 'CREATOR_MONETIZATION_APPROVED' : 'CREATOR_MONETIZATION_REJECTED',
+      `Admin ${action.toLowerCase()}d Creator Monetization for "${app.creator_name}" (${app.email})`,
+      req.ip
+    );
+
+    res.json({
+      success: true,
+      message: `Creator Monetization for "${app.creator_name}" has been ${action === 'APPROVE' ? 'APPROVED (Monetization ON)' : 'REJECTED'}.`
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function toggleCreatorMonetization(req, res, next) {
+  try {
+    const { creatorName, userId, enabled } = req.body;
+    const isMonetized = enabled ? 1 : 0;
+
+    if (userId) {
+      db.prepare('UPDATE users SET is_monetized = ? WHERE id = ?').run(isMonetized, userId);
+    }
+    if (creatorName) {
+      db.prepare('UPDATE users SET is_monetized = ? WHERE name = ? COLLATE NOCASE').run(isMonetized, creatorName);
+    }
+
+    res.json({
+      success: true,
+      isMonetized: Boolean(isMonetized),
+      message: `Creator Monetization is now ${isMonetized ? 'ENABLED (ON)' : 'DISABLED (OFF)'} for ${creatorName || 'User #' + userId}!`
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   loginAdmin,
   verifyAuth,
@@ -636,5 +817,11 @@ module.exports = {
   cdnDirectUpload,
   getSettings,
   updateSettings,
-  resetDeviceLock
+  resetDeviceLock,
+  getPendingVideos,
+  approveVideo,
+  rejectVideo,
+  getMonetizationApplications,
+  reviewMonetizationApplication,
+  toggleCreatorMonetization
 };

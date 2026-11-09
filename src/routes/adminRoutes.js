@@ -11,12 +11,22 @@ router.get('/verify', requireAdmin, adminController.verifyAuth);
 // Analytics & Overview
 router.get('/stats', requireAdmin, adminController.getStats);
 
-// Content Management
+// Content Management & Review Queue
 router.get('/videos', requireAdmin, adminController.getAdminVideos);
 router.post('/videos', requireAdmin, adminController.createVideo);
 router.put('/videos/:id', requireAdmin, adminController.updateVideo);
 router.delete('/videos/:id', requireAdmin, adminController.deleteVideo);
 router.post('/videos/:id/feature', requireAdmin, adminController.toggleFeatured);
+
+// Community Submissions Moderation Queue
+router.get('/pending-videos', requireAdmin, adminController.getPendingVideos);
+router.post('/videos/:id/approve', requireAdmin, adminController.approveVideo);
+router.post('/videos/:id/reject', requireAdmin, adminController.rejectVideo);
+
+// Creator Monetization Review & Audit
+router.get('/monetization-applications', requireAdmin, adminController.getMonetizationApplications);
+router.post('/monetization-applications/:id/review', requireAdmin, adminController.reviewMonetizationApplication);
+router.post('/creator-monetization/toggle', requireAdmin, adminController.toggleCreatorMonetization);
 
 // CDN Stream Integration
 router.post('/cdn-convert', requireAdmin, adminController.cdnConvertTelegramLink);

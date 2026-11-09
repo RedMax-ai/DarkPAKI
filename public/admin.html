@@ -12,7 +12,286 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">
+    // =========================================================================
+    // USER SUBMISSIONS REVIEW QUEUE JAVASCRIPT
+    // =========================================================================
+    async function loadPendingVideos() {
+      const container = document.getElementById('pendingVideosContainer');
+      const badge = document.getElementById('reviewQueueCountBadge');
+      container.innerHTML = `<div class="p-8 text-center text-neutral-400 text-sm"><i class="fa-solid fa-spinner fa-spin text-lg mb-2"></i><p>Loading pending user submissions...</p></div>`;
+
+      try {
+        const res = await adminFetch('/admin/pending-videos');
+        if (res.success) {
+          const list = res.data || [];
+          if (badge) badge.textContent = `${list.length} Pending`;
+          const sBadge = document.getElementById('sidebarPendingBadge');
+          if (sBadge) {
+            sBadge.textContent = list.length;
+            sBadge.classList.toggle('hidden', list.length === 0);
+          }
+
+          if (list.length === 0) {
+            container.innerHTML = `
+              <div class="p-12 text-center bg-black/30 border border-white/5 rounded-2xl">
+                <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+                  <i class="fa-solid fa-check text-xl"></i>
+                </div>
+                <h4 class="text-sm font-bold text-white">Review Queue is Clear!</h4>
+                <p class="text-xs text-neutral-400 mt-1">All user submitted videos have been reviewed and approved.</p>
+              </div>
+            `;
+            return;
+          }
+
+          container.innerHTML = list.map(v => `
+            <div class="p-4 sm:p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-white/20 transition flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="flex items-start gap-4 min-w-0">
+                <div class="relative w-28 h-20 bg-neutral-900 rounded-xl overflow-hidden shrink-0 border border-white/10 group cursor-pointer" onclick="previewVideo('${v.src}', '${encodeURIComponent(v.title)}')">
+                  <img src="${v.thumb_img}" alt="${v.title}" onerror="this.src='https://placehold.co/600x400/121218/f43f5e?text=User+Video'" class="w-full h-full object-cover">
+                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    <i class="fa-solid fa-play text-white text-xs"></i>
+                  </div>
+                  <span class="absolute bottom-1 right-1 bg-black/80 text-[9px] font-mono font-bold text-white px-1.5 py-0.2 rounded">${v.duration || '0:45'}</span>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${v.is_short ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'}">
+                      ${v.is_short ? '#Shorts' : (v.tag || 'Community')}
+                    </span>
+                    <span class="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                      <i class="fa-solid fa-clock"></i> Pending Review
+                    </span>
+                  </div>
+                  <h4 class="text-sm font-bold text-white truncate max-w-md">${v.title}</h4>
+                  <div class="flex items-center gap-3 text-xs text-neutral-400 mt-1 flex-wrap">
+                    <span class="text-neutral-300"><i class="fa-solid fa-user text-rose-400 text-[10px]"></i> ${v.owner_name || v.creator || 'Community User'}</span>
+                    <span><i class="fa-solid fa-envelope text-purple-400 text-[10px]"></i> ${v.owner_email || 'No email provided'}</span>
+                    <span class="text-[11px] text-neutral-500">${v.created_at || 'Just now'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-white/5">
+                <button onclick="approvePendingVideo(${v.id})" class="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center gap-1.5">
+                  <i class="fa-solid fa-check"></i>
+                  <span>Approve & Publish</span>
+                </button>
+                <button onclick="rejectPendingVideo(${v.id})" class="bg-white/10 hover:bg-rose-600/30 text-neutral-300 hover:text-rose-300 font-bold text-xs px-3.5 py-2 rounded-xl border border-white/10 hover:border-rose-500/40 transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-xmark"></i>
+                  <span>Reject</span>
+                </button>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        container.innerHTML = `<div class="p-8 text-center text-rose-400 text-sm">Failed to load review queue: ${err.message}</div>`;
+      }
+    }
+
+    async function approvePendingVideo(id) {
+      try {
+        const res = await adminFetch(`/admin/videos/${id}/approve`, { method: 'POST' });
+        if (res.success) {
+          showToast(res.message, 'success');
+          loadPendingVideos();
+          loadAdminStats();
+        } else {
+          showToast(res.message || 'Approval failed', 'error');
+        }
+      } catch (err) {
+        showToast('Approval error: ' + err.message, 'error');
+      }
+    }
+
+    async function rejectPendingVideo(id) {
+      const reason = prompt('Please enter a rejection reason (e.g. Copyright, Spam, Low Quality):', 'Low quality or spam');
+      if (reason === null) return;
+
+      try {
+        const res = await adminFetch(`/admin/videos/${id}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        if (res.success) {
+          showToast(res.message, 'info');
+          loadPendingVideos();
+          loadAdminStats();
+        } else {
+          showToast(res.message || 'Reject failed', 'error');
+        }
+      } catch (err) {
+        showToast('Reject error: ' + err.message, 'error');
+      }
+    }
+
+    // =========================================================================
+    // CREATOR MONETIZATION JAVASCRIPT
+    // =========================================================================
+    async function loadMonetizationApplications() {
+      const container = document.getElementById('monetizationAppsContainer');
+      const badge = document.getElementById('monetizationCountBadge');
+      container.innerHTML = `<div class="p-8 text-center text-neutral-400 text-sm"><i class="fa-solid fa-spinner fa-spin text-lg mb-2"></i><p>Loading creator monetization applications...</p></div>`;
+
+      try {
+        const res = await adminFetch('/admin/monetization-applications');
+        if (res.success) {
+          const list = res.data || [];
+          if (badge) badge.textContent = `${list.length} Applications`;
+          const sBadge = document.getElementById('sidebarMonetizationBadge');
+          if (sBadge) {
+            const pendingCount = list.filter(a => a.status === 'PENDING').length;
+            sBadge.textContent = pendingCount;
+            sBadge.classList.toggle('hidden', pendingCount === 0);
+          }
+
+          if (list.length === 0) {
+            container.innerHTML = `
+              <div class="p-12 text-center bg-black/30 border border-white/5 rounded-2xl">
+                <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+                  <i class="fa-solid fa-sack-dollar text-xl"></i>
+                </div>
+                <h4 class="text-sm font-bold text-white">No Pending Monetization Applications</h4>
+                <p class="text-xs text-neutral-400 mt-1">Creators who reach 1,000+ views and 10+ followers will appear here for audit and monetization approval.</p>
+              </div>
+            `;
+            return;
+          }
+
+          container.innerHTML = list.map(app => {
+            const meetsViews = (app.max_single_views >= 1000);
+            const meetsFollowers = (app.followers_count >= 10);
+            const isSuspicious = app.is_fake_followers_flagged;
+
+            return `
+              <div class="p-5 rounded-2xl bg-black/40 border ${app.status === 'APPROVED' ? 'border-emerald-500/40' : app.status === 'REJECTED' ? 'border-rose-500/40' : 'border-amber-500/40'} space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                  <div>
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                      <span class="text-base font-black text-white">${app.channel_name || app.creator_name}</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold ${app.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : app.status === 'REJECTED' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'}">
+                        ${app.status === 'APPROVED' ? '● Monetization Active (ON)' : app.status === 'REJECTED' ? '✕ Monetization Rejected' : '⏳ Application Pending'}
+                      </span>
+                      ${app.is_human_verified ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40"><i class="fa-solid fa-shield-check"></i> Human Verified</span>' : ''}
+                    </div>
+                    <div class="flex items-center gap-3 text-xs text-neutral-400 flex-wrap">
+                      <span><i class="fa-solid fa-user text-rose-400 text-[10px]"></i> Real Name: <strong class="text-white">${app.real_name || 'N/A'}</strong></span>
+                      <span><i class="fa-solid fa-envelope text-purple-400 text-[10px]"></i> Real Gmail: <strong class="text-white">${app.real_gmail || app.email}</strong></span>
+                      ${app.phone ? `<span><i class="fa-solid fa-phone text-emerald-400 text-[10px]"></i> ${app.phone}</span>` : ''}
+                    </div>
+                  </div>
+
+                  <!-- Direct Monetization Switch -->
+                  <div class="flex items-center gap-3 shrink-0">
+                    <span class="text-xs font-bold text-neutral-300">Monetization:</span>
+                    <button onclick="toggleCreatorMonetizationBtn('${app.creator_name}', ${app.user_id || 0}, ${!app.is_currently_monetized})" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${app.is_currently_monetized ? 'bg-emerald-600 text-white' : 'bg-white/10 text-neutral-400 hover:text-white'}">
+                      <i class="fa-solid fa-power-off"></i>
+                      <span>${app.is_currently_monetized ? 'ON' : 'OFF'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Verification Metrics Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div class="p-3 bg-black/50 rounded-xl border border-white/5 flex items-center justify-between">
+                    <div>
+                      <p class="text-[10px] text-neutral-400">HIGHEST VIDEO VIEWS</p>
+                      <p class="font-bold text-sm text-white mt-0.5">${app.max_single_views || 0} views</p>
+                    </div>
+                    <div class="w-7 h-7 rounded-full ${meetsViews ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'} flex items-center justify-center font-bold text-xs">
+                      ${meetsViews ? '✓' : '✕'}
+                    </div>
+                  </div>
+
+                  <div class="p-3 bg-black/50 rounded-xl border border-white/5 flex items-center justify-between">
+                    <div>
+                      <p class="text-[10px] text-neutral-400">REAL FOLLOWERS</p>
+                      <p class="font-bold text-sm text-white mt-0.5">${app.followers_count || 0} followers</p>
+                    </div>
+                    <div class="w-7 h-7 rounded-full ${meetsFollowers ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'} flex items-center justify-center font-bold text-xs">
+                      ${meetsFollowers ? '✓' : '✕'}
+                    </div>
+                  </div>
+
+                  <div class="p-3 bg-black/50 rounded-xl border border-white/5 flex items-center justify-between">
+                    <div>
+                      <p class="text-[10px] text-neutral-400">ANTI-SPAM AUDIT</p>
+                      <p class="font-bold text-xs ${isSuspicious ? 'text-rose-400' : 'text-emerald-400'} mt-0.5">
+                        ${isSuspicious ? '⚠ Suspicious Device Spike' : '✓ 100% Unique Devices'}
+                      </p>
+                    </div>
+                    <span class="text-[10px] text-neutral-400 font-mono">${app.distinct_follower_devices || 0} devices</span>
+                  </div>
+                </div>
+
+                <!-- Action Bar -->
+                ${app.status === 'PENDING' ? `
+                  <div class="flex items-center justify-between gap-3 pt-2">
+                    <p class="text-xs text-neutral-400 italic">Notes: "${app.admin_notes || 'Applied via website'}"</p>
+                    <div class="flex items-center gap-2">
+                      <button onclick="reviewMonetizationApp(${app.id}, 'APPROVE')" class="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Approve Monetization (ON)</span>
+                      </button>
+                      <button onclick="reviewMonetizationApp(${app.id}, 'REJECT')" class="bg-white/10 hover:bg-rose-600/30 text-neutral-300 hover:text-rose-300 font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-xmark"></i>
+                        <span>Reject</span>
+                      </button>
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        container.innerHTML = `<div class="p-8 text-center text-rose-400 text-sm">Failed to load applications: ${err.message}</div>`;
+      }
+    }
+
+    async function reviewMonetizationApp(id, action) {
+      try {
+        const res = await adminFetch(`/admin/monetization-applications/${id}/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action })
+        });
+        if (res.success) {
+          showToast(res.message, 'success');
+          loadMonetizationApplications();
+          loadAdminStats();
+        } else {
+          showToast(res.message || 'Action failed', 'error');
+        }
+      } catch (err) {
+        showToast('Review error: ' + err.message, 'error');
+      }
+    }
+
+    async function toggleCreatorMonetizationBtn(creatorName, userId, enabled) {
+      try {
+        const res = await adminFetch('/admin/creator-monetization/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ creatorName, userId, enabled })
+        });
+        if (res.success) {
+          showToast(res.message, 'success');
+          loadMonetizationApplications();
+          loadAdminStats();
+        } else {
+          showToast(res.message || 'Toggle failed', 'error');
+        }
+      } catch (err) {
+        showToast('Toggle error: ' + err.message, 'error');
+      }
+    }
+
+  </script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -148,6 +427,20 @@
           <i class="fa-solid fa-film w-4 text-emerald-400"></i>
           <span>Video Content Library</span>
         </button>
+        <button onclick="switchTab('review-queue')" id="tabBtn-review-queue" class="tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-list-check w-4 text-amber-400"></i>
+            <span>Review Queue</span>
+          </div>
+          <span id="sidebarPendingBadge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 hidden">0</span>
+        </button>
+        <button onclick="switchTab('monetization-review')" id="tabBtn-monetization-review" class="tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-sack-dollar w-4 text-emerald-400"></i>
+            <span>Creator Monetization</span>
+          </div>
+          <span id="sidebarMonetizationBadge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40 hidden">0</span>
+        </button>
         <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
           <i class="fa-solid fa-sliders w-4 text-neutral-400"></i>
           <span>Platform Settings</span>
@@ -248,7 +541,7 @@
 
           <form id="cdnUploadForm" onsubmit="handleCdnUpload(event)" class="space-y-5">
             <!-- Drag & Drop Zone -->
-            <div id="dropZone" onclick="document.getElementById('cdnFileInput').click()" class="border-2 border-dashed border-white/15 hover:border-rose-500/60 rounded-2xl p-8 text-center cursor-pointer transition bg-black/20 hover:bg-rose-500/5 group">
+            <div id="dropZone" onclick="document.getElementById('cdnFileInput').click()" class="border-2 border-dashed border-white/15 hover:border-rose-500/60 rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition bg-black/20 hover:bg-rose-500/5 group">
               <input type="file" id="cdnFileInput" accept="video/mp4,video/x-matroska,video/webm,video/quicktime,video/avi" class="hidden" onchange="handleFileSelected(this)">
               <div class="w-14 h-14 rounded-full bg-rose-500/10 text-rose-400 group-hover:scale-110 flex items-center justify-center mx-auto mb-3 transition shadow-lg shadow-rose-500/20">
                 <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
@@ -259,6 +552,18 @@
                 <i class="fa-solid fa-file-video"></i>
                 <span id="selectedFileName">filename.mp4</span>
                 <span class="text-neutral-400" id="selectedFileSize">(0 MB)</span>
+              </div>
+
+              <!-- Auto-Detected Thumbnail & Duration Live Preview -->
+              <div id="detectedThumbContainer" class="hidden mt-4 max-w-md mx-auto p-3.5 bg-black/60 border border-white/15 rounded-2xl flex items-center gap-3.5 text-left">
+                <img id="detectedThumbPreview" src="" alt="Auto Thumbnail" class="w-24 h-16 object-cover rounded-xl border border-rose-500/50 shadow-md shrink-0">
+                <div class="min-w-0">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 mb-1">
+                    <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> Auto-Detected
+                  </span>
+                  <p class="text-xs font-bold text-white truncate" id="detectedTitlePreview">Detected Title</p>
+                  <p class="text-[11px] text-neutral-400 mt-0.5">Duration: <span id="detectedDurationText" class="text-rose-400 font-mono font-bold">--:--</span></p>
+                </div>
               </div>
             </div>
 
@@ -354,7 +659,95 @@
       </section>
 
       <!-- =================================================================== -->
-      <!-- TAB 3: TELEGRAM CDN POST CONVERTER -->
+      
+      <!-- =================================================================== -->
+      <!-- TAB: USER SUBMISSIONS REVIEW QUEUE -->
+      <!-- =================================================================== -->
+      <section id="tab-review-queue" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/10">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-amber-400"></i>
+                <span>User Video Submissions Review Queue</span>
+                <span id="reviewQueueCountBadge" class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">0 Pending</span>
+              </h3>
+              <p class="text-xs text-neutral-400 mt-1">
+                Community users submitted these videos. Review video content and metadata, then Approve to publish live onto DarkPAKI public feed or Reject.
+              </p>
+            </div>
+            <button onclick="loadPendingVideos()" class="bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Refresh Queue</span>
+            </button>
+          </div>
+
+          <div id="pendingVideosContainer" class="space-y-4">
+            <div class="p-8 text-center text-neutral-400 text-sm">
+              <i class="fa-solid fa-spinner fa-spin text-lg mb-2"></i>
+              <p>Loading pending user submissions...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB: CREATOR MONETIZATION & AUDIT -->
+      <!-- =================================================================== -->
+      <section id="tab-monetization-review" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/10">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-sack-dollar text-emerald-400"></i>
+                <span>Creator Monetization Applications & Anti-Spam Audit</span>
+                <span id="monetizationCountBadge" class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">0 Applications</span>
+              </h3>
+              <p class="text-xs text-neutral-400 mt-1">
+                YouTube-style Partner Program: Creators require at least 1 video with 1,000+ views AND 10+ followers to apply. Audit real followers vs bot spam.
+              </p>
+            </div>
+            <button onclick="loadMonetizationApplications()" class="bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Refresh Applications</span>
+            </button>
+          </div>
+
+          <!-- Rules Summary -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            <div class="p-3.5 rounded-xl bg-black/40 border border-white/10 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-black text-sm">1K</div>
+              <div class="text-xs">
+                <p class="font-bold text-white">1,000+ Video Views</p>
+                <p class="text-[10px] text-neutral-400">At least 1 video must cross 1k views</p>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-black/40 border border-white/10 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-black text-sm">10+</div>
+              <div class="text-xs">
+                <p class="font-bold text-white">10+ Real Followers</p>
+                <p class="text-[10px] text-neutral-400">Unique device IDs anti-spam audit</p>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-black/40 border border-white/10 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm"><i class="fa-solid fa-coins"></i></div>
+              <div class="text-xs">
+                <p class="font-bold text-white">100 Coins = ₹1.00</p>
+                <p class="text-[10px] text-neutral-400">Creator Ad & View Revenue share</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="monetizationAppsContainer" class="space-y-4">
+            <div class="p-8 text-center text-neutral-400 text-sm">
+              <i class="fa-solid fa-spinner fa-spin text-lg mb-2"></i>
+              <p>Loading creator monetization applications...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+        <!-- TAB 3: TELEGRAM CDN POST CONVERTER -->
       <!-- =================================================================== -->
       <section id="tab-tg-convert" class="tab-content hidden space-y-6">
         <div class="glass-panel rounded-2xl p-6">
@@ -810,6 +1203,10 @@
 
       if (tabId === 'video-manager') {
         loadAdminVideos();
+      } else if (tabId === 'review-queue') {
+        loadPendingVideos();
+      } else if (tabId === 'monetization-review') {
+        loadMonetizationApplications();
       } else if (tabId === 'overview') {
         loadAdminStats();
       } else if (tabId === 'settings') {
@@ -902,6 +1299,23 @@
           document.getElementById('statTotalDemands').textContent = stats.totalDemands || 0;
           document.getElementById('statBlockedThreats').textContent = stats.blockedAttempts || 0;
 
+          // Update Review & Monetization Badges
+          const pVidEl = document.getElementById('statPendingVideos');
+          if (pVidEl) pVidEl.textContent = stats.pendingVideosCount || 0;
+          const pMonEl = document.getElementById('statPendingMonetization');
+          if (pMonEl) pMonEl.textContent = stats.pendingMonetizationCount || 0;
+
+          const sPendingBadge = document.getElementById('sidebarPendingBadge');
+          if (sPendingBadge) {
+            sPendingBadge.textContent = stats.pendingVideosCount || 0;
+            sPendingBadge.classList.toggle('hidden', !stats.pendingVideosCount);
+          }
+          const sMonBadge = document.getElementById('sidebarMonetizationBadge');
+          if (sMonBadge) {
+            sMonBadge.textContent = stats.pendingMonetizationCount || 0;
+            sMonBadge.classList.toggle('hidden', !stats.pendingMonetizationCount);
+          }
+
           if (settings.cdnStreamUrl) {
             document.getElementById('sidebarCdnUrl').textContent = settings.cdnStreamUrl;
           }
@@ -965,6 +1379,16 @@
     // =========================================================================
     // DIRECT CDN UPLOADER & AUTO-POST
     // =========================================================================
+    let generatedThumbDataUrl = null;
+
+    function detectVideoTitle(filename) {
+      let name = filename.replace(/\.[^/.]+$/, '');
+      name = name.replace(/[._\-+]/g, ' ');
+      name = name.replace(/\b(1080p|720p|480p|2160p|4k|60fps|x264|h264|x265|hevc|bluray|webrip|hd|rip|uncut|official|video|whatsapp)\b/gi, '');
+      name = name.replace(/[\[\]\(\)\{\}]/g, ' ').replace(/\s+/g, ' ').trim();
+      return name.replace(/\b\w/g, l => l.toUpperCase()) || 'DarkPAKI VIP Video';
+    }
+
     function handleFileSelected(input) {
       if (input.files && input.files[0]) {
         const file = input.files[0];
@@ -972,11 +1396,65 @@
         document.getElementById('selectedFileName').textContent = file.name;
         document.getElementById('selectedFileSize').textContent = `(${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
         
-        // Auto-fill title if empty
-        const titleInput = document.getElementById('cdnTitleInput');
-        if (!titleInput.value) {
-          titleInput.value = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-        }
+        // 1. Auto-detect and populate clean Title
+        const detectedTitle = detectVideoTitle(file.name);
+        document.getElementById('cdnTitleInput').value = detectedTitle;
+        const pTitle = document.getElementById('detectedTitlePreview');
+        if (pTitle) pTitle.textContent = detectedTitle;
+
+        // 2. Auto-detect Duration & Thumbnail using HTML5 Video + Offscreen Canvas
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        const blobUrl = URL.createObjectURL(file);
+        video.src = blobUrl;
+
+        video.onloadedmetadata = () => {
+          const durSec = Math.floor(video.duration);
+          const m = Math.floor(durSec / 60);
+          const s = durSec % 60;
+          const formattedDuration = `${m}:${s < 10 ? '0' : ''}${s}`;
+          document.getElementById('cdnDurationInput').value = formattedDuration;
+          const durText = document.getElementById('detectedDurationText');
+          if (durText) durText.textContent = formattedDuration;
+
+          // Auto-detect Shorts category if vertical or <= 60s
+          if (video.videoHeight > video.videoWidth || durSec <= 60) {
+            const catSelect = document.getElementById('cdnCategoryInput');
+            if (catSelect) {
+              for (let opt of catSelect.options) {
+                if (opt.value.includes('SHORT') || opt.value.includes('TRENDING')) {
+                  catSelect.value = opt.value;
+                  break;
+                }
+              }
+            }
+          }
+
+          // Seek to 1.5s for thumbnail snapshot
+          video.currentTime = Math.min(1.5, video.duration * 0.15 || 0.5);
+        };
+
+        video.onseeked = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.min(video.videoWidth || 640, 640);
+            canvas.height = Math.min(video.videoHeight || 360, 360);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            generatedThumbDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+            const thumbContainer = document.getElementById('detectedThumbContainer');
+            const thumbImg = document.getElementById('detectedThumbPreview');
+            if (thumbContainer && thumbImg) {
+              thumbImg.src = generatedThumbDataUrl;
+              thumbContainer.classList.remove('hidden');
+            }
+          } catch (err) {
+            console.warn('Canvas thumbnail capture note:', err);
+          } finally {
+            URL.revokeObjectURL(blobUrl);
+          }
+        };
       }
     }
 

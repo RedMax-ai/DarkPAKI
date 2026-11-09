@@ -474,17 +474,32 @@ function renderHomeVideoGrid(searchQuery = '') {
 
       <div class="px-1 pb-1 flex flex-col flex-1 justify-between">
         <div>
-          <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-rose-400 block">
-            ${video.tag}
-          </span>
-          <h4 class="text-xs sm:text-sm font-bold text-white group-hover:text-rose-400 transition leading-snug mt-1 line-clamp-2">
+          <div class="flex items-center justify-between gap-1 mb-0.5">
+            <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-rose-400 block truncate">
+              ${video.is_short ? '#Shorts • ' : ''}${video.tag}
+            </span>
+          </div>
+          <h4 class="text-xs sm:text-sm font-bold text-white group-hover:text-rose-400 transition leading-snug mt-0.5 line-clamp-2">
             ${video.title}
           </h4>
         </div>
-        <p class="text-[10px] text-neutral-400 mt-2 truncate flex items-center gap-1.5">
-          <i class="fa-solid fa-circle-check text-emerald-400 text-[9px]"></i>
-          <span>${video.requestedBy}</span>
-        </p>
+        <div class="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-600 to-purple-600 text-white font-bold text-[9px] flex items-center justify-center shrink-0">
+              ${(video.creator || 'D')[0].toUpperCase()}
+            </div>
+            <div class="truncate">
+              <p class="text-[11px] font-bold text-neutral-200 truncate flex items-center gap-1">
+                <span>${video.creator || 'DarkPAKI VIP'}</span>
+                ${video.is_monetized ? '<i class="fa-solid fa-circle-check text-amber-400 text-[10px]" title="Monetized Verified Creator"></i>' : ''}
+              </p>
+              <p class="text-[9px] text-neutral-400">${video.followers_count || 0} followers</p>
+            </div>
+          </div>
+          <button onclick="toggleFollowCreator('${video.creator || 'DarkPAKI VIP'}', event)" data-creator-follow="${video.creator || 'DarkPAKI VIP'}" class="shrink-0 bg-white/10 hover:bg-rose-600 hover:text-white text-neutral-300 px-2 py-0.5 rounded-lg text-[10px] font-bold transition">
+            + Follow
+          </button>
+        </div>
       </div>
     `;
     grid.appendChild(card);
@@ -648,7 +663,11 @@ async function transitionToMainVideo(message) {
   mainVideoControls.classList.remove('hidden');
 
   // Trigger real persistent watch earning bonus on backend
-  await creditWatchEarningBonus();
+  await creditWatchEarningBonus(false);
+  const curVid = MEDIA_SOURCES.mainVideos[currentVideoIndex];
+  if (curVid && curVid.id) {
+    fetch('/api/videos/' + curVid.id + '/view', { method: 'POST' }).catch(() => {});
+  }
 
   showToast(message);
 
@@ -774,6 +793,9 @@ function launchFeaturedFromHome(index) {
   renderUpNextQueue();
   switchView('watch');
   resetToAdFlow();
+  if (selected && selected.id) {
+    fetch('/api/videos/' + selected.id + '/view', { method: 'POST' }).catch(() => {});
+  }
 }
 
 function handleVideoSourceError(vid) {
@@ -855,6 +877,35 @@ function refreshEarningDashboardUI() {
   if (adEl) adEl.textContent = `${CURRENT_USER.adsWatched || CURRENT_USER.ads_watched || 0} Videos`;
   const refLinkEl = document.getElementById('userReferralLinkInput');
   if (refLinkEl) refLinkEl.value = `${window.location.origin}/?ref=${CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786'}`;
+
+  // Fetch and update creator monetization requirements live
+  if (AUTH_TOKEN) {
+    apiFetch('/earning/monetization-status').then(res => {
+      if (res.success && res.data) {
+        const d = res.data;
+        const badge = document.getElementById('creatorMonetizedBadge');
+        if (badge) badge.classList.toggle('hidden', !d.isMonetized);
+
+        const vText = document.getElementById('reqViewsText');
+        if (vText) vText.textContent = `${d.maxViews} / 1,000 views ${d.meetsViewsRequirement ? '✓' : ''}`;
+        const vBar = document.getElementById('reqViewsBar');
+        if (vBar) vBar.style.width = Math.min(100, Math.round((d.maxViews / 1000) * 100)) + '%';
+
+        const fText = document.getElementById('reqFollowersText');
+        if (fText) fText.textContent = `${d.followersCount} / 10 followers ${d.meetsFollowersRequirement ? '✓' : ''}`;
+        const fBar = document.getElementById('reqFollowersBar');
+        if (fBar) fBar.style.width = Math.min(100, Math.round((d.followersCount / 10) * 100)) + '%';
+
+        const btnText = document.getElementById('applyMonetizeBtnText');
+        if (btnText) {
+          if (d.isMonetized) btnText.textContent = 'Monetized (ON)';
+          else if (d.applicationStatus === 'PENDING') btnText.textContent = 'In Review';
+          else if (d.isEligible) btnText.textContent = 'Apply Now';
+          else btnText.textContent = 'In Progress';
+        }
+      }
+    }).catch(() => {});
+  }
 }
 
 function openEarningOrLogin() {
@@ -954,7 +1005,7 @@ function handleConvertCustomCoins() {
   const input = document.getElementById('customConvertCoinsInput');
   const val = parseInt(input?.value, 10);
   if (isNaN(val) || val < 10) {
-    showToast("Please enter at least 10 coins (10 Coins = ₹1.00).");
+    showToast("Please enter at least 10 coins (100 Coins = ₹1.00");
     return;
   }
   handleConvertCoins(val);
@@ -1667,3 +1718,277 @@ window.onload = async function() {
   updateStepperUI('IDLE');
   switchView('home');
 };
+
+
+// ============================================================================
+// COMMUNITY USER VIDEO UPLOADER & AUTO-DETECTION (YOUTUBE SHORTS STYLE)
+// ============================================================================
+let userGeneratedThumbDataUrl = null;
+
+function openUserUploadModal() {
+  document.getElementById('userUploadModal').classList.remove('hidden');
+  if (CURRENT_USER) {
+    const creatorInput = document.getElementById('userUploadCreator');
+    if (creatorInput && !creatorInput.value) creatorInput.value = CURRENT_USER.name || '';
+    const emailInput = document.getElementById('userUploadEmail');
+    if (emailInput && !emailInput.value) emailInput.value = CURRENT_USER.gmail || '';
+  }
+}
+
+function closeUserUploadModal() {
+  document.getElementById('userUploadModal').classList.add('hidden');
+}
+
+function cleanDetectedTitle(filename) {
+  let name = filename.replace(/\.[^/.]+$/, '');
+  name = name.replace(/[._\-+]/g, ' ');
+  name = name.replace(/\b(1080p|720p|480p|2160p|4k|60fps|x264|h264|x265|hevc|bluray|webrip|hd|rip|uncut|official|video|whatsapp)\b/gi, '');
+  name = name.replace(/[\[\]\(\)\{\}]/g, ' ').replace(/\s+/g, ' ').trim();
+  return name.replace(/\b\w/g, l => l.toUpperCase()) || 'Community Short';
+}
+
+function handleUserFileSelected(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    document.getElementById('userSelectedFileInfo').classList.remove('hidden');
+    document.getElementById('userSelectedFileName').textContent = file.name;
+    document.getElementById('userSelectedFileSize').textContent = `(${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+
+    // 1. Auto Title Detection
+    const title = cleanDetectedTitle(file.name);
+    document.getElementById('userUploadTitle').value = title;
+    const dt = document.getElementById('userDetectedTitle');
+    if (dt) dt.textContent = title;
+
+    // 2. Auto Duration & Canvas Thumbnail Capture
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    const blobUrl = URL.createObjectURL(file);
+    video.src = blobUrl;
+
+    video.onloadedmetadata = () => {
+      const durSec = Math.floor(video.duration);
+      const m = Math.floor(durSec / 60);
+      const s = durSec % 60;
+      const formattedDuration = `${m}:${s < 10 ? '0' : ''}${s}`;
+      document.getElementById('userUploadDuration').value = formattedDuration;
+      const dd = document.getElementById('userDetectedDuration');
+      if (dd) dd.textContent = formattedDuration;
+
+      // Auto-select category: if vertical or <= 60s, select Shorts
+      if (video.videoHeight > video.videoWidth || durSec <= 60) {
+        document.getElementById('userUploadCategory').value = 'SHORTS';
+      }
+
+      video.currentTime = Math.min(1.5, video.duration * 0.15 || 0.5);
+    };
+
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.min(video.videoWidth || 640, 640);
+        canvas.height = Math.min(video.videoHeight || 360, 360);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        userGeneratedThumbDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        const box = document.getElementById('userDetectedThumbBox');
+        const img = document.getElementById('userDetectedThumbImg');
+        if (box && img) {
+          img.src = userGeneratedThumbDataUrl;
+          box.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.warn('Canvas thumb notice:', err);
+      } finally {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }
+}
+
+async function handleUserUploadSubmit(event) {
+  event.preventDefault();
+  const fileInput = document.getElementById('userVideoFileInput');
+  if (!fileInput.files || !fileInput.files[0]) {
+    showToast('Please select a video file first!');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const title = document.getElementById('userUploadTitle').value.trim();
+  const category = document.getElementById('userUploadCategory').value;
+  const duration = document.getElementById('userUploadDuration').value.trim() || '0:45';
+  const creator = document.getElementById('userUploadCreator').value.trim() || 'Community Creator';
+  const ownerEmail = document.getElementById('userUploadEmail').value.trim() || (CURRENT_USER ? CURRENT_USER.gmail : '');
+  const isShort = category === 'SHORTS' ? '1' : '0';
+
+  const progressContainer = document.getElementById('userUploadProgressContainer');
+  const progressBar = document.getElementById('userUploadProgressBar');
+  const progressPct = document.getElementById('userUploadProgressPct');
+  const progressStatus = document.getElementById('userUploadProgressStatus');
+  const submitBtn = document.getElementById('userUploadSubmitBtn');
+
+  progressContainer.classList.remove('hidden');
+  progressBar.style.width = '0%';
+  progressPct.textContent = '0%';
+  progressStatus.textContent = 'Streaming to Telegram Cloud...';
+  submitBtn.disabled = true;
+
+  const queryParams = new URLSearchParams({
+    title,
+    category,
+    duration,
+    ownerName: creator,
+    ownerEmail,
+    isShort,
+    thumb: userGeneratedThumbDataUrl || ''
+  });
+
+  const uploadUrl = `/api/videos/user-upload?${queryParams.toString()}`;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('title', title);
+  formData.append('category', category);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', uploadUrl, true);
+
+  xhr.upload.onprogress = (ev) => {
+    if (ev.lengthComputable) {
+      const pct = Math.round((ev.loaded / ev.total) * 95);
+      progressBar.style.width = `${pct}%`;
+      progressPct.textContent = `${pct}%`;
+      progressStatus.textContent = `Streaming bytes: ${(ev.loaded / (1024 * 1024)).toFixed(1)} MB / ${(ev.total / (1024 * 1024)).toFixed(1)} MB`;
+    }
+  };
+
+  xhr.onload = () => {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      progressBar.style.width = '100%';
+      progressPct.textContent = '100%';
+      progressStatus.textContent = 'Submitted to Admin Review!';
+      
+      closeUserUploadModal();
+      alert('🎉 Video Submitted Successfully!\n\nYour video has been uploaded and queued in the DarkPAKI Admin Review Queue.\nOnce verified by Admin, it will be published live to all users!');
+      
+      fileInput.value = '';
+      document.getElementById('userSelectedFileInfo').classList.add('hidden');
+      document.getElementById('userDetectedThumbBox').classList.add('hidden');
+      document.getElementById('userUploadTitle').value = '';
+    } else {
+      showToast('Upload error: ' + xhr.responseText);
+    }
+    submitBtn.disabled = false;
+  };
+
+  xhr.onerror = () => {
+    showToast('Network error during upload');
+    submitBtn.disabled = false;
+  };
+
+  xhr.send(formData);
+}
+
+// ============================================================================
+// CREATOR FOLLOW SYSTEM
+// ============================================================================
+async function toggleFollowCreator(creatorName, event) {
+  if (event) event.stopPropagation();
+  try {
+    const res = await apiFetch('/earning/follow', {
+      method: 'POST',
+      body: JSON.stringify({ creatorName })
+    });
+    if (res.success) {
+      showToast(res.message);
+      // Update follow button text if on screen
+      const followBtns = document.querySelectorAll(`[data-creator-follow="${creatorName}"]`);
+      followBtns.forEach(btn => {
+        btn.textContent = res.isFollowing ? '✓ Following' : '+ Follow';
+        btn.classList.toggle('bg-white/20', res.isFollowing);
+        btn.classList.toggle('bg-rose-600', !res.isFollowing);
+      });
+      // Refresh videos
+      initMainMediaSources();
+    }
+  } catch (err) {
+    showToast('Follow note: ' + err.message);
+  }
+}
+
+// ============================================================================
+// CREATOR MONETIZATION (PARTNER PROGRAM) JAVASCRIPT
+// ============================================================================
+async function checkAndOpenMonetizationModal() {
+  if (!AUTH_TOKEN) {
+    showToast('Please log in first to view Creator Monetization status.');
+    openEarningOrLogin();
+    return;
+  }
+
+  try {
+    const res = await apiFetch('/earning/monetization-status');
+    if (res.success && res.data) {
+      const d = res.data;
+      if (d.isMonetized) {
+        showToast('★ Congratulations! Your channel is actively MONETIZED.');
+        return;
+      }
+      if (d.applicationStatus === 'PENDING') {
+        showToast('⏳ Your Monetization Application is currently in review with DarkPAKI Admin.');
+        return;
+      }
+      if (!d.isEligible) {
+        alert(`Creator Monetization Eligibility Status:\n\n1. Highest Video Views: ${d.maxViews} / 1,000 views ${d.meetsViewsRequirement ? '✓' : '✕'}\n2. Followers: ${d.followersCount} / 10 followers ${d.meetsFollowersRequirement ? '✓' : '✕'}\n\nYou need at least 1 video with 1,000+ views and 10+ followers to apply!`);
+        return;
+      }
+
+      // Eligible! Open modal
+      document.getElementById('monetizeBestViewsText').textContent = `${d.maxViews} views`;
+      document.getElementById('monetizeFollowersText').textContent = `${d.followersCount} followers`;
+      if (CURRENT_USER) {
+        document.getElementById('monetizeRealName').value = CURRENT_USER.name || '';
+        document.getElementById('monetizeRealGmail').value = CURRENT_USER.gmail || '';
+        document.getElementById('monetizeChannelName').value = CURRENT_USER.name || '';
+        document.getElementById('monetizePhone').value = CURRENT_USER.phone || '';
+      }
+      document.getElementById('applyMonetizationModal').classList.remove('hidden');
+    }
+  } catch (err) {
+    showToast('Monetization status note: ' + err.message);
+  }
+}
+
+function closeMonetizationModal() {
+  document.getElementById('applyMonetizationModal').classList.add('hidden');
+}
+
+async function handleMonetizationSubmit(event) {
+  event.preventDefault();
+  const realName = document.getElementById('monetizeRealName').value.trim();
+  const email = document.getElementById('monetizeRealGmail').value.trim();
+  const channelName = document.getElementById('monetizeChannelName').value.trim();
+  const phone = document.getElementById('monetizePhone').value.trim();
+
+  const btn = document.getElementById('monetizeSubmitBtn');
+  btn.disabled = true;
+
+  try {
+    const res = await apiFetch('/earning/apply-monetization', {
+      method: 'POST',
+      body: JSON.stringify({ realName, email, channelName, phone })
+    });
+    if (res.success) {
+      closeMonetizationModal();
+      alert('🎉 Monetization Application Submitted!\n\nDarkPAKI Admin will verify your channel, original content, and real followers. Once approved, your videos will display the verified Gold Monetization badge and earn revenue!');
+      refreshEarningDashboardUI();
+    } else {
+      showToast(res.message || 'Submission failed');
+    }
+  } catch (err) {
+    showToast('Application error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
