@@ -20,6 +20,8 @@ router.post('/videos/:id/feature', requireAdmin, adminController.toggleFeatured)
 
 // CDN Stream Integration
 router.post('/cdn-convert', requireAdmin, adminController.cdnConvertTelegramLink);
+router.post('/upload-direct', requireAdmin, adminController.cdnDirectUpload);
+router.post('/upload', requireAdmin, adminController.cdnDirectUpload);
 
 // Platform Settings & Control
 router.get('/settings', requireAdmin, adminController.getSettings);

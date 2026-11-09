@@ -526,6 +526,103 @@ function resetDeviceLock(req, res, next) {
   }
 }
 
+// Direct Telegram Cloud CDN Streaming Upload Bridge
+// Pipes file stream straight to Telegram-Stream CDN (Render or Local) with Zero CORS issues
+function cdnDirectUpload(req, res, next) {
+  try {
+    const cdnSetting = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get();
+    const cdnUrl = (cdnSetting?.value || config.cdnStreamUrl || 'https://darkpaki-stream.onrender.com').trim().replace(/\/+$/, '');
+
+    const parsedUrl = new URL(`${cdnUrl}/api/upload`);
+    const isHttps = parsedUrl.protocol === 'https:';
+    const client = isHttps ? require('https') : require('http');
+
+    const headers = { ...req.headers };
+    headers['host'] = parsedUrl.host;
+    headers['x-api-key'] = config.cdnApiKey;
+    headers['authorization'] = `Bearer ${config.cdnApiKey}`;
+    delete headers['cookie'];
+    delete headers['origin'];
+    delete headers['referer'];
+
+    const proxyReq = client.request({
+      method: 'POST',
+      protocol: parsedUrl.protocol,
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port || (isHttps ? 443 : 80),
+      path: parsedUrl.pathname + parsedUrl.search,
+      headers: headers
+    }, (proxyRes) => {
+      let rawData = '';
+      proxyRes.setEncoding('utf8');
+      proxyRes.on('data', chunk => { rawData += chunk; });
+      proxyRes.on('end', () => {
+        try {
+          if (proxyRes.statusCode < 200 || proxyRes.statusCode >= 300) {
+            return res.status(proxyRes.statusCode).json({
+              success: false,
+              message: `CDN Upload failed with status ${proxyRes.statusCode}`,
+              raw: rawData
+            });
+          }
+          const cdnData = JSON.parse(rawData);
+          if (!cdnData.stream_url) {
+            return res.status(500).json({ success: false, message: 'CDN did not return a valid stream URL', data: cdnData });
+          }
+
+          // Video metadata from query params or defaults
+          const title = sanitizeString(req.query.title) || cdnData.file_name || 'Telegram Stream Video';
+          const tag = (sanitizeString(req.query.category) || '18+ ADULT').toUpperCase();
+          const creator = sanitizeString(req.query.creator) || 'DarkPAKI VIP Exclusive';
+          const duration = sanitizeString(req.query.duration) || cdnData.file_size || '14:20';
+          let thumb = req.query.thumb ? sanitizeString(req.query.thumb) : cdnData.thumb_url;
+          if (!thumb && cdnData.chat_id && cdnData.msg_id) {
+            thumb = `${cdnUrl}/api/thumb/${cdnData.chat_id}?id=${cdnData.msg_id}`;
+          }
+          if (!thumb) {
+            thumb = 'https://placehold.co/600x400/121218/f43f5e?text=18%2B+DarkPAKI';
+          }
+          const isFeatured = req.query.featured === '1' ? 1 : 0;
+          const requestedBy = sanitizeString(req.query.requestedBy) || 'Demanded by VIP Users';
+
+          const insertVideo = db.prepare(`
+            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured)
+            VALUES (?, ?, 'NEW • 1.5K views', ?, ?, ?, ?, ?, ?)
+          `);
+          const result = insertVideo.run(title, creator, duration, cdnData.stream_url, thumb, tag, requestedBy, isFeatured);
+          const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);
+
+          db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+            'VIDEO_UPLOADED_DIRECT_CDN',
+            `Admin uploaded to Telegram Cloud & published: "${title}"`,
+            req.ip
+          );
+
+          res.json({
+            success: true,
+            message: `Video uploaded to Telegram Cloud & published successfully!`,
+            cdn: cdnData,
+            data: newVideo
+          });
+        } catch (parseErr) {
+          return res.status(500).json({ success: false, message: 'Failed to process CDN response', error: parseErr.message, raw: rawData });
+        }
+      });
+    });
+
+    proxyReq.on('error', (err) => {
+      console.error('[DarkPAKI Proxy Upload Error]', err);
+      res.status(502).json({ success: false, message: 'Failed to connect to Telegram Stream CDN', error: err.message });
+    });
+
+    // Pipe the request body directly to CDN
+    req.pipe(proxyReq);
+
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   loginAdmin,
   verifyAuth,
@@ -536,6 +633,7 @@ module.exports = {
   deleteVideo,
   toggleFeatured,
   cdnConvertTelegramLink,
+  cdnDirectUpload,
   getSettings,
   updateSettings,
   resetDeviceLock

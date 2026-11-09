@@ -1008,8 +1008,17 @@
       progressStatus.textContent = 'Connecting to Telegram Cloud CDN...';
       submitBtn.disabled = true;
 
-      // Get CDN URL from settings or default
-      const cdnUrl = (document.getElementById('sidebarCdnUrl').textContent || 'https://darkpaki-stream.onrender.com').trim().replace(/\/+$/, '');
+      // Direct Admin Backend Cloud Bridge (Zero CORS, 100% Reliable, Works on PC & Phone)
+      const queryParams = new URLSearchParams({
+        title: title,
+        category: category,
+        creator: creator || 'DarkPAKI VIP Exclusive',
+        duration: duration || '14:20',
+        thumb: thumb || '',
+        featured: isFeatured ? '1' : '0'
+      });
+
+      const uploadUrl = `${API_BASE}/admin/upload-direct?${queryParams.toString()}`;
 
       // Use XMLHttpRequest for real progress tracking
       const formData = new FormData();
@@ -1018,56 +1027,33 @@
       formData.append('title', title);
 
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${cdnUrl}/api/upload`, true);
-      xhr.setRequestHeader('X-API-Key', 'DarkPakiAdminSecret2026');
+      xhr.open('POST', uploadUrl, true);
+      const token = ADMIN_TOKEN || localStorage.getItem('darkpaki_admin_token');
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
 
       xhr.upload.onprogress = (ev) => {
         if (ev.lengthComputable) {
           const pct = Math.round((ev.loaded / ev.total) * 90); // 0 to 90% for upload
           progressBar.style.width = `${pct}%`;
           progressPct.textContent = `${pct}%`;
-          progressStatus.textContent = `Uploading bytes to CDN: ${(ev.loaded / (1024 * 1024)).toFixed(1)} MB / ${(ev.total / (1024 * 1024)).toFixed(1)} MB`;
+          progressStatus.textContent = `Streaming to Telegram Cloud: ${(ev.loaded / (1024 * 1024)).toFixed(1)} MB / ${(ev.total / (1024 * 1024)).toFixed(1)} MB (${pct}%)`;
         }
       };
 
       xhr.onload = async () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
-            progressBar.style.width = '95%';
-            progressStatus.textContent = 'CDN Storage confirmed! Publishing to DarkPAKI database...';
-            const cdnResponse = JSON.parse(xhr.responseText);
-
-            const streamUrl = cdnResponse.stream_url;
-            let thumbUrl = thumb || cdnResponse.thumb_url;
-            if (!thumbUrl && cdnResponse.chat_id && cdnResponse.msg_id) {
-              thumbUrl = `${cdnUrl}/api/thumb/${cdnResponse.chat_id}?id=${cdnResponse.msg_id}`;
-            }
-            if (!thumbUrl) {
-              thumbUrl = 'https://placehold.co/600x400/121218/f43f5e?text=18%2B+DarkPAKI';
-            }
-
-            // Persist video to DarkPAKI backend
-            const postRes = await adminFetch('/admin/videos', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                title,
-                tag: category,
-                thumbImg: thumbUrl,
-                src: streamUrl,
-                duration: duration || cdnResponse.file_size || '14:20',
-                creator,
-                isFeatured,
-                requestedBy: 'Direct CDN Upload'
-              })
-            });
-
             progressBar.style.width = '100%';
             progressPct.textContent = '100%';
-            progressStatus.textContent = 'Published successfully to website!';
+            progressStatus.textContent = 'Uploaded to Telegram Cloud & Published!';
 
-            if (postRes.success) {
-              showToast(`Published "${title}" to website successfully!`, 'success');
+            const res = JSON.parse(xhr.responseText);
+            if (res.success) {
+              showToast(`Uploaded & Published "${title}" successfully!`, 'success');
+
+              const streamUrl = res.cdn?.stream_url || res.data?.src;
 
               // Show Result Card
               document.getElementById('cdnUploadResultCard').classList.remove('hidden');
@@ -1081,21 +1067,35 @@
               // Reset form
               fileInput.value = '';
               document.getElementById('selectedFileInfo').classList.add('hidden');
+              document.getElementById('cdnVideoTitle').value = '';
               loadAdminStats();
+              loadAdminVideos();
             } else {
-              showToast(postRes.message || 'Failed to persist to database', 'error');
+              showToast(res.message || 'Upload failed', 'error');
+              progressStatus.textContent = 'Error: ' + (res.message || 'Upload failed');
+              progressBar.style.background = '#f43f5e';
             }
           } catch (err) {
-            showToast('Error parsing CDN response: ' + err.message, 'error');
+            showToast('Error parsing server response: ' + err.message, 'error');
           }
         } else {
-          showToast(`CDN Upload failed (HTTP ${xhr.status}): ${xhr.responseText}`, 'error');
+          try {
+            const errRes = JSON.parse(xhr.responseText);
+            showToast(errRes.message || `Upload failed (HTTP ${xhr.status})`, 'error');
+            progressStatus.textContent = 'Error: ' + (errRes.message || `Upload failed (${xhr.status})`);
+          } catch (_) {
+            showToast(`Upload failed (HTTP ${xhr.status})`, 'error');
+            progressStatus.textContent = `Upload failed (HTTP ${xhr.status})`;
+          }
+          progressBar.style.background = '#f43f5e';
         }
         submitBtn.disabled = false;
       };
 
       xhr.onerror = () => {
-        showToast('Network error while connecting to CDN server.', 'error');
+        showToast('Connection error during upload. Please check your network.', 'error');
+        progressStatus.textContent = 'Connection error';
+        progressBar.style.background = '#f43f5e';
         submitBtn.disabled = false;
       };
 
