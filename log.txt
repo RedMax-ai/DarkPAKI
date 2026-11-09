@@ -1,0 +1,134 @@
+[03-Nov-26 03:51:22 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[03-Nov-26 03:51:28 PM] [INFO] - Media cache initialized: media_cache (max: 150GB)
+[03-Nov-26 03:51:28 PM] [INFO] - Subtitle cache initialized at cache\subtitles
+[03-Nov-26 03:51:28 PM] [ERROR] - Unhandled exception processing request /login: [Errno 2] No such file or directory: 'bot\\server\\template\\login.html'
+Traceback (most recent call last):
+  File "D:\TG-STREAM\bot\helper\security.py", line 108, in security_middleware
+    response = await handler(request)
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\naved\AppData\Roaming\Python\Python315\site-packages\aiohttp_session\__init__.py", line 191, in factory
+    response = await handler(request)
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\TG-STREAM\bot\server\stream_routes.py", line 39, in login_form
+    return web.Response(text=await render_page(None, None, route='login', redirect_url=redirect_url), content_type='text/html')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\TG-STREAM\bot\server\render_template.py", line 91, in render_page
+    async with aiopen(ospath.join(tpath, 'login.html'), 'r') as f:
+               ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\naved\AppData\Roaming\Python\Python315\site-packages\aiofiles\base.py", line 73, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\naved\AppData\Roaming\Python\Python315\site-packages\aiofiles\base.py", line 69, in __await__
+    self._obj = yield from self._coro.__await__()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\naved\AppData\Roaming\Python\Python315\site-packages\aiofiles\threadpool\__init__.py", line 93, in _open
+    f = await loop.run_in_executor(executor, cb)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python315\Lib\concurrent\futures\thread.py", line 86, in run
+    result = ctx.run(self.task)
+  File "C:\Python315\Lib\concurrent\futures\thread.py", line 73, in run
+    return fn(*args, **kwargs)
+FileNotFoundError: [Errno 2] No such file or directory: 'bot\\server\\template\\login.html'
+[03-Nov-26 03:54:10 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[03-Nov-26 03:54:17 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[03-Nov-26 03:54:17 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[03-Nov-26 03:54:18 PM] [INFO] - Cached: DemonSlayer_S01E01.mp4 (0.1MB)
+[03-Nov-26 03:54:18 PM] [INFO] - Cache check: D:\TG-STREAM\media_cache\5e49e89b389dabfaf20bdb68fd53faf8.mp4, exists=True
+[03-Nov-26 03:54:18 PM] [INFO] - Instant Cache HIT: DemonSlayer_S01E01.mp4
+[03-Nov-26 03:54:18 PM] [INFO] - Streaming from cache: DemonSlayer_S01E01.mp4
+[03-Nov-26 03:54:18 PM] [INFO] - Smart Pre-Caching: Analyzing DemonSlayer_S01E01.mp4
+[03-Nov-26 04:11:35 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[03-Nov-26 04:11:58 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[03-Nov-26 04:11:58 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[03-Nov-26 04:12:33 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[03-Nov-26 04:12:55 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[03-Nov-26 04:12:55 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[03-Nov-26 04:12:55 PM] [CRITICAL] - No module named 'orjson'
+[03-Nov-26 04:13:42 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[03-Nov-26 04:14:04 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[03-Nov-26 04:14:04 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[03-Nov-26 04:14:04 PM] [INFO] - Cached: DemonSlayer_S01E01.mp4 (0.1MB)
+[03-Nov-26 04:14:04 PM] [INFO] - Cache check: D:\TG-STREAM\media_cache\5e49e89b389dabfaf20bdb68fd53faf8.mp4, exists=True
+[03-Nov-26 04:14:04 PM] [INFO] - Instant Cache HIT: DemonSlayer_S01E01.mp4
+[03-Nov-26 04:14:04 PM] [INFO] - Streaming from cache: DemonSlayer_S01E01.mp4
+[03-Nov-26 04:14:04 PM] [INFO] - Smart Pre-Caching: Analyzing DemonSlayer_S01E01.mp4
+[04-Nov-26 11:57:24 AM] [INFO] - Database initialized using: SQLite (surftg.db)
+[04-Nov-26 11:57:54 AM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[04-Nov-26 11:57:54 AM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[04-Nov-26 11:57:55 AM] [INFO] - Cached: DemonSlayer_S01E01.mp4 (0.1MB)
+[04-Nov-26 11:58:32 AM] [INFO] - Database initialized using: SQLite (surftg.db)
+[04-Nov-26 11:58:56 AM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[04-Nov-26 11:58:56 AM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[04-Nov-26 11:58:57 AM] [INFO] - Cached: DemonSlayer_S01E01.mp4 (0.1MB)
+[04-Nov-26 11:58:57 AM] [INFO] - Cache check: D:\TG-STREAM\media_cache\c2e0d86e73886e371535a25dce214b5e.mp4, exists=True
+[04-Nov-26 11:58:57 AM] [INFO] - Instant Cache HIT: DirectUploadedMovie.mp4
+[04-Nov-26 11:58:57 AM] [INFO] - Streaming from cache: DirectUploadedMovie.mp4
+[04-Nov-26 11:58:57 AM] [INFO] - Smart Pre-Caching: Analyzing DirectUploadedMovie.mp4
+[04-Nov-26 11:58:57 AM] [INFO] - Cache check: D:\TG-STREAM\media_cache\5e49e89b389dabfaf20bdb68fd53faf8.mp4, exists=True
+[04-Nov-26 11:58:57 AM] [INFO] - Instant Cache HIT: DemonSlayer_S01E01.mp4
+[04-Nov-26 11:58:57 AM] [INFO] - Streaming from cache: DemonSlayer_S01E01.mp4
+[04-Nov-26 11:58:57 AM] [INFO] - Smart Pre-Caching: Analyzing DemonSlayer_S01E01.mp4
+[04-Nov-26 12:20:32 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[04-Nov-26 12:21:01 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[04-Nov-26 12:21:01 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[04-Nov-26 12:21:01 PM] [INFO] - Cached: DemonSlayer_S01E01.mp4 (0.1MB)
+[04-Nov-26 12:21:01 PM] [ERROR] - Unhandled exception processing request /api/config/telegram: Database.update_config() missing 1 required positional argument: 'theme'
+Traceback (most recent call last):
+  File "D:\TG-STREAM\bot\helper\security.py", line 116, in security_middleware
+    response = await handler(request)
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\naved\AppData\Roaming\Python\Python315\site-packages\aiohttp_session\__init__.py", line 191, in factory
+    response = await handler(request)
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\TG-STREAM\bot\server\stream_routes.py", line 496, in update_telegram_channel_route
+    await db.update_config(auth_channel=channel)
+          ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Database.update_config() missing 1 required positional argument: 'theme'
+[04-Nov-26 12:22:06 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[04-Nov-26 12:22:29 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[04-Nov-26 12:22:29 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[04-Nov-26 12:22:29 PM] [INFO] - Cached: DemonSlayer_S01E01.mp4 (0.1MB)
+[04-Nov-26 12:22:29 PM] [INFO] - Cache check: D:\TG-STREAM\media_cache\c68087e73982803520e1cf33b853fa08.mp4, exists=True
+[04-Nov-26 12:22:29 PM] [INFO] - Instant Cache HIT: DirectUploadedMovie.mp4
+[04-Nov-26 12:22:29 PM] [INFO] - Streaming from cache: DirectUploadedMovie.mp4
+[04-Nov-26 12:22:30 PM] [INFO] - Smart Pre-Caching: Analyzing DirectUploadedMovie.mp4
+[04-Nov-26 12:22:30 PM] [INFO] - Cache check: D:\TG-STREAM\media_cache\5e49e89b389dabfaf20bdb68fd53faf8.mp4, exists=True
+[04-Nov-26 12:22:30 PM] [INFO] - Instant Cache HIT: DemonSlayer_S01E01.mp4
+[04-Nov-26 12:22:30 PM] [INFO] - Streaming from cache: DemonSlayer_S01E01.mp4
+[04-Nov-26 12:22:30 PM] [INFO] - Smart Pre-Caching: Analyzing DemonSlayer_S01E01.mp4
+[05-Nov-26 12:19:37 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[05-Nov-26 12:19:39 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[05-Nov-26 12:19:39 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[08-Nov-26 09:51:36 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[08-Nov-26 09:51:36 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[08-Nov-26 09:51:36 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[08-Nov-26 09:51:36 PM] [INFO] - Media cache module loaded, enabled=True
+[08-Nov-26 09:51:36 PM] [INFO] - Initializing Surf-TG v-1.2.6
+[08-Nov-26 09:54:02 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[08-Nov-26 09:54:02 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[08-Nov-26 09:54:02 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[08-Nov-26 09:54:02 PM] [INFO] - Media cache module loaded, enabled=True
+[08-Nov-26 11:33:32 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[08-Nov-26 11:33:33 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[08-Nov-26 11:33:33 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[08-Nov-26 11:34:07 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[08-Nov-26 11:34:08 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[08-Nov-26 11:34:08 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[08-Nov-26 11:34:45 PM] [INFO] - Database initialized using: MongoDB
+[08-Nov-26 11:56:59 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[08-Nov-26 11:57:23 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[08-Nov-26 11:57:24 PM] [WARNING] - get_variable(theme) Mongo notice: Empty host (or extra comma in host list)
+[08-Nov-26 11:57:24 PM] [WARNING] - get_Dbfolder Mongo notice: Empty host (or extra comma in host list)
+[08-Nov-26 11:57:37 PM] [INFO] - Database initialized using: MongoDB
+[08-Nov-26 11:58:02 PM] [INFO] - Database initialized using: SQLite (surftg.db)
+[08-Nov-26 11:58:02 PM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[08-Nov-26 11:58:02 PM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[09-Nov-26 12:17:39 AM] [INFO] - Database initialized using: SQLite (surftg.db)
+[09-Nov-26 12:17:39 AM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[09-Nov-26 12:17:39 AM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[09-Nov-26 10:20:09 AM] [INFO] - Database initialized using: SQLite (surftg.db)
+[09-Nov-26 10:20:09 AM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[09-Nov-26 10:20:09 AM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles
+[09-Nov-26 10:20:32 AM] [INFO] - Database initialized using: SQLite (surftg.db)
+[09-Nov-26 10:20:32 AM] [INFO] - Media cache initialized: D:\TG-STREAM\media_cache (max: 10GB)
+[09-Nov-26 10:20:32 AM] [INFO] - Subtitle cache initialized at D:\TG-STREAM\cache\subtitles

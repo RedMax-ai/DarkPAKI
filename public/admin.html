@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DarkPAKI VIP - Real Backend Admin Console & CDN Stream Publisher</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              rose: '#f43f5e',
+              purple: '#a855f7',
+              dark: '#08090e',
+              card: '#0f111a',
+              border: 'rgba(255, 255, 255, 0.08)'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #07080d;
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+    }
+    .glass-panel {
+      background: rgba(15, 17, 26, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .neon-border:focus-within {
+      border-color: rgba(244, 63, 94, 0.6);
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.25);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%);
+      border-color: rgba(244, 63, 94, 0.5);
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(244, 63, 94, 0.2);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #08090e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #272738;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f43f5e;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-rose-500 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- TOP NAVIGATION BAR -->
+  <!-- ========================================================================= -->
+  <header class="sticky top-0 z-40 w-full glass-panel border-b border-white/10 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a href="/" class="flex items-center gap-2 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 to-purple-600 flex items-center justify-center shadow-lg shadow-rose-600/30 group-hover:scale-105 transition">
+          <i class="fa-solid fa-bolt text-white text-base"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-base font-black tracking-wider text-white uppercase">DarkPAKI</span>
+            <span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-black px-1.5 py-0.5 rounded">ADMIN</span>
+          </div>
+          <p class="text-[10px] text-neutral-400 font-medium">Real Backend CDN Stream Publisher</p>
+        </div>
+      </a>
+
+      <!-- Server & CDN Status Badges -->
+      <div class="hidden md:flex items-center gap-2 ml-4">
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>SQLite WAL: Online</span>
+        </div>
+        <div id="cdnStatusBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
+          <i class="fa-solid fa-cloud text-[11px]"></i>
+          <span id="cdnStatusText">CDN: darkpaki-stream</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a href="/" target="_blank" class="flex items-center gap-2 text-xs font-bold text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 px-3.5 py-2 rounded-xl transition">
+        <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+        <span class="hidden sm:inline">View Website</span>
+      </a>
+      <button onclick="logoutAdmin()" class="flex items-center gap-2 text-xs font-bold text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 px-3.5 py-2 rounded-xl transition">
+        <i class="fa-solid fa-right-from-bracket text-[11px]"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN WORKSPACE -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto p-4 lg:p-6 gap-6">
+
+    <!-- LEFT SIDEBAR NAV -->
+    <aside class="w-full lg:w-64 shrink-0 flex flex-col gap-2">
+      <div class="glass-panel rounded-2xl p-3 flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible">
+        <button onclick="switchTab('overview')" id="tabBtn-overview" class="tab-btn active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <i class="fa-solid fa-chart-pie w-4 text-rose-400"></i>
+          <span>Dashboard Overview</span>
+        </button>
+        <button onclick="switchTab('cdn-upload')" id="tabBtn-cdn-upload" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <i class="fa-solid fa-cloud-arrow-up w-4 text-purple-400"></i>
+          <span>Direct CDN Uploader</span>
+        </button>
+        <button onclick="switchTab('tg-convert')" id="tabBtn-tg-convert" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <i class="fa-brands fa-telegram w-4 text-sky-400"></i>
+          <span>Telegram CDN Post</span>
+        </button>
+        <button onclick="switchTab('direct-post')" id="tabBtn-direct-post" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <i class="fa-solid fa-link w-4 text-amber-400"></i>
+          <span>Fast Stream Publisher</span>
+        </button>
+        <button onclick="switchTab('video-manager')" id="tabBtn-video-manager" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <i class="fa-solid fa-film w-4 text-emerald-400"></i>
+          <span>Video Content Library</span>
+        </button>
+        <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <i class="fa-solid fa-sliders w-4 text-neutral-400"></i>
+          <span>Platform Settings</span>
+        </button>
+        <button onclick="switchTab('logs')" id="tabBtn-logs" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <i class="fa-solid fa-shield-halved w-4 text-red-400"></i>
+          <span>Security & Threat Logs</span>
+        </button>
+      </div>
+
+      <!-- Quick CDN Info Card -->
+      <div class="glass-panel rounded-2xl p-4 hidden lg:block">
+        <h4 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Connected CDN Target</h4>
+        <div class="bg-black/40 rounded-xl p-2.5 border border-white/5 font-mono text-[11px] text-neutral-300 break-all" id="sidebarCdnUrl">
+          https://darkpaki-stream.onrender.com
+        </div>
+        <p class="text-[10px] text-neutral-500 mt-2">
+          Files uploaded here are stored directly on Telegram Cloud Storage (-1003904027623) and streamed with high-speed range headers.
+        </p>
+      </div>
+    </aside>
+
+    <!-- RIGHT CONTENT AREA -->
+    <main class="flex-1 min-w-0">
+
+      <!-- =================================================================== -->
+      <!-- TAB 1: OVERVIEW -->
+      <!-- =================================================================== -->
+      <section id="tab-overview" class="tab-content space-y-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="glass-panel rounded-2xl p-4 relative overflow-hidden">
+            <div class="absolute -right-2 -bottom-2 text-rose-500/10 text-6xl">
+              <i class="fa-solid fa-film"></i>
+            </div>
+            <p class="text-xs font-semibold text-neutral-400">Total Videos Live</p>
+            <h3 class="text-2xl lg:text-3xl font-black text-white mt-1" id="statTotalVideos">0</h3>
+            <span class="text-[10px] text-emerald-400 font-medium">● Real SQLite Persistence</span>
+          </div>
+          <div class="glass-panel rounded-2xl p-4 relative overflow-hidden">
+            <div class="absolute -right-2 -bottom-2 text-purple-500/10 text-6xl">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <p class="text-xs font-semibold text-neutral-400">Registered Users</p>
+            <h3 class="text-2xl lg:text-3xl font-black text-white mt-1" id="statTotalUsers">0</h3>
+            <span class="text-[10px] text-purple-400 font-medium">Device Fingerprinted</span>
+          </div>
+          <div class="glass-panel rounded-2xl p-4 relative overflow-hidden">
+            <div class="absolute -right-2 -bottom-2 text-sky-500/10 text-6xl">
+              <i class="fa-solid fa-comment-dots"></i>
+            </div>
+            <p class="text-xs font-semibold text-neutral-400">Video Demands</p>
+            <h3 class="text-2xl lg:text-3xl font-black text-white mt-1" id="statTotalDemands">0</h3>
+            <span class="text-[10px] text-sky-400 font-medium">Community Polls</span>
+          </div>
+          <div class="glass-panel rounded-2xl p-4 relative overflow-hidden">
+            <div class="absolute -right-2 -bottom-2 text-red-500/10 text-6xl">
+              <i class="fa-solid fa-shield-virus"></i>
+            </div>
+            <p class="text-xs font-semibold text-neutral-400">Blocked Threat Attacks</p>
+            <h3 class="text-2xl lg:text-3xl font-black text-red-400 mt-1" id="statBlockedThreats">0</h3>
+            <span class="text-[10px] text-neutral-400 font-medium">Strict Anti-Cheat</span>
+          </div>
+        </div>
+
+        <!-- Recent Uploads Stream & Quick Actions -->
+        <div class="glass-panel rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-base font-bold text-white">Latest Published Videos</h3>
+              <p class="text-xs text-neutral-400">Most recent streams published to DarkPAKI</p>
+            </div>
+            <button onclick="switchTab('cdn-upload')" class="bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-lg shadow-rose-600/20 flex items-center gap-2">
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>Upload New</span>
+            </button>
+          </div>
+          <div id="recentVideosList" class="space-y-2.5">
+            <div class="p-8 text-center text-neutral-400 text-sm">Loading recent videos...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 2: DIRECT CDN UPLOADER & AUTO-POST -->
+      <!-- =================================================================== -->
+      <section id="tab-cdn-upload" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="mb-6">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-cloud-arrow-up text-rose-500"></i>
+              <span>Direct Video Upload to CDN & Auto-Publish to DarkPAKI</span>
+            </h3>
+            <p class="text-xs text-neutral-400 mt-1">
+              Select any MP4/MKV/WebM video. It will be uploaded straight to the Telegram Cloud Storage CDN and published instantly onto DarkPAKI website with streaming link.
+            </p>
+          </div>
+
+          <form id="cdnUploadForm" onsubmit="handleCdnUpload(event)" class="space-y-5">
+            <!-- Drag & Drop Zone -->
+            <div id="dropZone" onclick="document.getElementById('cdnFileInput').click()" class="border-2 border-dashed border-white/15 hover:border-rose-500/60 rounded-2xl p-8 text-center cursor-pointer transition bg-black/20 hover:bg-rose-500/5 group">
+              <input type="file" id="cdnFileInput" accept="video/mp4,video/x-matroska,video/webm,video/quicktime,video/avi" class="hidden" onchange="handleFileSelected(this)">
+              <div class="w-14 h-14 rounded-full bg-rose-500/10 text-rose-400 group-hover:scale-110 flex items-center justify-center mx-auto mb-3 transition shadow-lg shadow-rose-500/20">
+                <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+              </div>
+              <h4 class="text-sm font-bold text-white group-hover:text-rose-400 transition" id="filePickerLabel">Choose a video file or drag & drop here</h4>
+              <p class="text-xs text-neutral-400 mt-1" id="filePickerSub">MP4, MKV, WebM, AVI, MOV supported (Original Quality)</p>
+              <div id="selectedFileInfo" class="hidden mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-semibold">
+                <i class="fa-solid fa-file-video"></i>
+                <span id="selectedFileName">filename.mp4</span>
+                <span class="text-neutral-400" id="selectedFileSize">(0 MB)</span>
+              </div>
+            </div>
+
+            <!-- Metadata Form Fields -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Custom Title / Movie Name *</label>
+                <input type="text" id="cdnTitleInput" required placeholder="e.g. Inception 1080p [Hindi] or Adult VIP Episode 01" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Select Video Category *</label>
+                <select id="cdnCategoryInput" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+                  <option value="18+ ADULT" selected>🔞 18+ Adult / VIP</option>
+                  <option value="MOVIES">🎬 Movies (Bollywood / Hollywood)</option>
+                  <option value="WEB SERIES">📺 Web Series / OTT</option>
+                  <option value="ANIME">⚡ Anime & Animation</option>
+                  <option value="TRENDING VIDEOS">🔥 Trending Videos</option>
+                  <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Creator / Model / Studio Name (Optional)</label>
+                <input type="text" id="cdnCreatorInput" placeholder="e.g. DarkPAKI VIP or Model Name" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Duration Display (Optional)</label>
+                <input type="text" id="cdnDurationInput" placeholder="e.g. 14:30 or 1h 45m" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+              </div>
+            </div>
+
+            <!-- Custom Thumbnail URL (Optional) -->
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Custom Thumbnail URL (Leave blank to use CDN Auto-Thumb)</label>
+              <input type="url" id="cdnThumbInput" placeholder="https://... (or leave blank for CDN generated thumbnail)" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+            </div>
+
+            <!-- Featured Checkbox -->
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="cdnFeaturedInput" class="w-4 h-4 accent-rose-600 rounded">
+              <span class="text-xs font-semibold text-neutral-300">Set as Featured Spotlight Banner Video (Pinned at Top of DarkPAKI)</span>
+            </label>
+
+            <!-- Progress Bar -->
+            <div id="uploadProgressContainer" class="hidden space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono">
+                <span id="uploadProgressStatus" class="text-rose-400 font-bold">Uploading to Telegram CDN Storage...</span>
+                <span id="uploadProgressPct" class="text-white font-bold">0%</span>
+              </div>
+              <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                <div id="uploadProgressBar" class="h-full bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 w-0 transition-all duration-200"></div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="cdnSubmitBtn" class="w-full bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white font-black py-3.5 px-6 rounded-xl transition shadow-xl shadow-rose-600/25 flex items-center justify-center gap-3">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Upload to CDN & Auto-Publish to DarkPAKI Website</span>
+            </button>
+          </form>
+
+          <!-- Upload Result Preview Card -->
+          <div id="cdnUploadResultCard" class="hidden mt-6 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-4">
+            <div class="flex items-center gap-3 text-emerald-400 font-bold text-sm">
+              <i class="fa-solid fa-circle-check text-xl"></i>
+              <span>Video Successfully Uploaded to CDN and Published to DarkPAKI Website!</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="aspect-video bg-black rounded-xl overflow-hidden border border-white/10 relative">
+                <video id="cdnResultVideoPreview" controls class="w-full h-full object-contain"></video>
+              </div>
+              <div class="space-y-2 text-xs">
+                <p class="font-bold text-white text-sm" id="cdnResultTitle">Video Title</p>
+                <p class="text-neutral-300">Tag: <span class="text-rose-400 font-bold" id="cdnResultTag">18+ ADULT</span></p>
+                <div class="space-y-1">
+                  <label class="text-[10px] text-neutral-400 font-mono">DIRECT CDN STREAM URL:</label>
+                  <input type="text" readonly id="cdnResultStreamUrl" class="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 font-mono text-[11px] text-emerald-300 select-all">
+                </div>
+                <div class="pt-2 flex gap-2">
+                  <a href="/" target="_blank" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition">
+                    Open on Website
+                  </a>
+                  <button onclick="document.getElementById('cdnUploadResultCard').classList.add('hidden')" class="bg-white/10 hover:bg-white/20 text-neutral-300 px-3 py-1.5 rounded-lg text-xs transition">
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 3: TELEGRAM CDN POST CONVERTER -->
+      <!-- =================================================================== -->
+      <section id="tab-tg-convert" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="mb-6">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-brands fa-telegram text-sky-400 text-xl"></i>
+              <span>Telegram Video to DarkPAKI CDN Post</span>
+            </h3>
+            <p class="text-xs text-neutral-400 mt-1">
+              Convert any video already in your Telegram storage channel (e.g. Channel -1003904027623) into a permanent CDN stream post on DarkPAKI website.
+            </p>
+          </div>
+
+          <form onsubmit="handleTelegramConvert(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Telegram Post Link *</label>
+              <input type="text" id="tgLinkInput" required placeholder="https://t.me/c/3904027623/15 or https://t.me/channel_name/15" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition font-mono">
+              <span class="text-[10px] text-neutral-500 mt-1 block">Channel: -1003904027623 format: https://t.me/c/3904027623/MESSAGE_ID</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Video Title *</label>
+                <input type="text" id="tgTitleInput" required placeholder="e.g. Hot VIP Babe Video 1080p" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Category *</label>
+                <select id="tgCategoryInput" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition">
+                  <option value="18+ ADULT" selected>🔞 18+ Adult / VIP</option>
+                  <option value="MOVIES">🎬 Movies (Bollywood / Hollywood)</option>
+                  <option value="WEB SERIES">📺 Web Series / OTT</option>
+                  <option value="ANIME">⚡ Anime & Animation</option>
+                  <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Model / Creator Name</label>
+                <input type="text" id="tgCreatorInput" placeholder="e.g. DarkPAKI VIP" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Duration</label>
+                <input type="text" id="tgDurationInput" placeholder="e.g. 15:40" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition">
+              </div>
+            </div>
+
+            <button type="submit" id="tgSubmitBtn" class="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-xl shadow-sky-500/20 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-bolt"></i>
+              <span>Generate CDN Stream & Publish to Website</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 4: FAST STREAM PUBLISHER (MANUAL) -->
+      <!-- =================================================================== -->
+      <section id="tab-direct-post" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="mb-6">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-link text-amber-400"></i>
+              <span>Direct Video Stream Publisher</span>
+            </h3>
+            <p class="text-xs text-neutral-400 mt-1">
+              Publish any existing video URL directly (Render CDN link, Google Storage, Cloudflare, S3, or external video host).
+            </p>
+          </div>
+
+          <form onsubmit="handleManualPublish(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Video Title *</label>
+              <input type="text" id="manualTitle" required placeholder="e.g. Pakistani VIP Exclusive Episode 02" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Video Stream URL (MP4 / CDN / HLS) *</label>
+              <input type="url" id="manualSrc" required placeholder="https://darkpaki-stream.onrender.com/... or https://commondatastorage..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Thumbnail Image URL *</label>
+              <input type="url" id="manualThumb" required placeholder="https://...jpg/png" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Category Tag *</label>
+                <select id="manualTag" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition">
+                  <option value="18+ ADULT" selected>🔞 18+ Adult / VIP</option>
+                  <option value="MOVIES">🎬 Movies</option>
+                  <option value="WEB SERIES">📺 Web Series</option>
+                  <option value="ANIME">⚡ Anime</option>
+                  <option value="TRENDING VIDEOS">🔥 Trending Videos</option>
+                  <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Duration</label>
+                <input type="text" id="manualDuration" value="12:30" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Creator Name</label>
+                <input type="text" id="manualCreator" value="DarkPAKI VIP Exclusive" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition">
+              </div>
+            </div>
+
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="manualFeatured" class="w-4 h-4 accent-amber-500 rounded">
+              <span class="text-xs font-semibold text-neutral-300">Feature this video on Hero Spotlight banner</span>
+            </label>
+
+            <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-bold py-3 px-6 rounded-xl transition shadow-xl shadow-amber-500/20">
+              Publish Video to Website Now
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 5: VIDEO CONTENT LIBRARY & MANAGER (CRUD) -->
+      <!-- =================================================================== -->
+      <section id="tab-video-manager" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 class="text-lg font-bold text-white">Video Content Library</h3>
+              <p class="text-xs text-neutral-400">Manage, edit, feature, and delete published streams on DarkPAKI</p>
+            </div>
+            
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <div class="relative flex-1 sm:w-64">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-neutral-500 text-xs"></i>
+                <input type="text" id="videoSearchInput" oninput="debounceVideoSearch()" placeholder="Search videos..." class="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500 transition">
+              </div>
+              <select id="videoCategoryFilter" onchange="loadAdminVideos()" class="bg-[#0c0d14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500 transition">
+                <option value="ALL">All Categories</option>
+                <option value="18+ ADULT">18+ Adult</option>
+                <option value="MOVIES">Movies</option>
+                <option value="WEB SERIES">Web Series</option>
+                <option value="ANIME">Anime</option>
+                <option value="TRENDING VIDEOS">Trending</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Video Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-white/5 uppercase text-neutral-400 text-[10px] font-bold tracking-wider">
+                <tr>
+                  <th class="p-3">Video</th>
+                  <th class="p-3">Category</th>
+                  <th class="p-3">Duration</th>
+                  <th class="p-3">Featured</th>
+                  <th class="p-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminVideoTableBody" class="divide-y divide-white/5">
+                <tr>
+                  <td colspan="5" class="p-8 text-center text-neutral-400">Loading video library...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="flex items-center justify-between pt-4 border-t border-white/5 text-xs text-neutral-400" id="videoPagination">
+            <span id="videoCountDisplay">Showing 0 of 0 videos</span>
+            <div class="flex gap-2">
+              <button onclick="prevVideoPage()" id="btnPrevPage" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition">Prev</button>
+              <button onclick="nextVideoPage()" id="btnNextPage" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition">Next</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 6: SETTINGS -->
+      <!-- =================================================================== -->
+      <section id="tab-settings" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <h3 class="text-lg font-bold text-white mb-1">Platform Settings & Control</h3>
+          <p class="text-xs text-neutral-400 mb-6">Manage CDN endpoint connection, monetization ad stream, and security PIN</p>
+
+          <form onsubmit="handleSaveSettings(event)" class="space-y-5 max-w-xl">
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5">CDN Stream Server Endpoint</label>
+              <input type="url" id="settingCdnUrl" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-rose-500 transition">
+              <span class="text-[10px] text-neutral-500 mt-1 block">Default: https://darkpaki-stream.onrender.com</span>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                <span>Ad Video Stream URL (Pre-Roll Video Ad)</span>
+                <span class="text-[10px] text-amber-400 font-normal">Plays 5-15s before video starts</span>
+              </label>
+              <input type="url" id="settingAdUrl" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-rose-500 transition">
+              <span class="text-[10px] text-neutral-500 mt-1 block">Enter direct MP4 link (e.g. from Google Cloud, Render CDN, or promotional video).</span>
+            </div>
+
+            <div class="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-transparent border border-amber-500/20">
+              <label class="block text-xs font-bold text-amber-400 mb-1.5 flex items-center justify-between">
+                <span>Popunder / Direct Smartlink URL (Highest Earning $$)</span>
+                <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-mono">Monetag / Adsterra / PopAds</span>
+              </label>
+              <input type="url" id="settingPopunderUrl" placeholder="Paste Monetag Direct Link (https://otieuptw.net/...) or Adsterra Smartlink" class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-amber-400 transition">
+              <span class="text-[10px] text-neutral-400 mt-1 block">When a visitor clicks "Play" or download buttons, this Monetag / Adsterra high-CPM link triggers in a background tab once per visitor session. Highest revenue maker.</span>
+            </div>
+
+            <div class="p-4 rounded-xl bg-gradient-to-r from-rose-500/10 via-purple-500/10 to-transparent border border-rose-500/20">
+              <label class="block text-xs font-bold text-rose-300 mb-1.5 flex items-center justify-between">
+                <span>Ad Network Script / Embed Code (Monetag Onclick, Push, ExoClick, Banners)</span>
+                <span class="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full font-mono">Monetag / ExoClick / Adsterra</span>
+              </label>
+              <textarea id="settingBannerHtml" rows="3" placeholder="Paste your Monetag Onclick script, In-Page Push script, or 300x250 / 728x90 banner ad HTML tag here..." class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-rose-500 transition"></textarea>
+              <span class="text-[10px] text-neutral-400 mt-1 block">Injects Monetag popunder / in-page push scripts or responsive display banners directly into DarkPAKI.</span>
+            </div>
+
+            <div class="p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-transparent border border-emerald-500/25">
+              <label class="block text-xs font-bold text-emerald-400 mb-1.5 flex items-center justify-between">
+                <span>Monetag Verification Meta Tag / Code (Instant Domain Approval)</span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono">Monetag Auto-Verify</span>
+              </label>
+              <input type="text" id="settingMonetagMeta" placeholder='Paste Monetag meta tag: <meta name="monetag" content="xxxxxx"> or just the code' class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-emerald-400 transition">
+              <span class="text-[10px] text-neutral-400 mt-1 block">When you add your domain in Monetag, paste the verification meta tag here. It automatically injects into the website head so Monetag verifies in 10 seconds!</span>
+            </div>
+
+            <div class="p-4 rounded-xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent border border-indigo-500/25">
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="settingSafeMode" class="w-5 h-5 accent-indigo-500 rounded">
+                <div>
+                  <span class="text-xs font-bold text-indigo-300 block">Monetag / Ad Network Safe Review Mode (Auto-Approve)</span>
+                  <span class="text-[10px] text-neutral-400 block">Shows high-end clean Cinema & Anime streaming front with DMCA, Privacy Policy, and Terms. Ad reviewers will approve the site without rejecting for 18+ content! Real users can click "Unlock 18+ VIP Vault" anytime.</span>
+                </div>
+              </label>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Official Telegram Channel / VIP Community</label>
+              <input type="url" id="settingTelegramUrl" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+            </div>
+
+            <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="settingAllowSkip" class="w-4 h-4 accent-rose-600 rounded">
+                <div>
+                  <span class="text-xs font-bold text-white block">Allow Instant Ad Skip</span>
+                  <span class="text-[10px] text-neutral-400 block">Allow viewers to skip ads immediately without full countdown</span>
+                </div>
+              </label>
+            </div>
+
+            <div class="pt-4 border-t border-white/10">
+              <label class="block text-xs font-bold text-rose-400 mb-1.5">Change Owner Master PIN</label>
+              <input type="password" id="settingNewPin" placeholder="Enter new 4+ digit Master PIN (leave blank to keep current)" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+            </div>
+
+            <button type="submit" class="bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg shadow-rose-600/30">
+              Save Platform Settings
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB 7: THREAT LOGS -->
+      <!-- =================================================================== -->
+      <section id="tab-logs" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-lg font-bold text-white">Security & Threat Logs</h3>
+              <p class="text-xs text-neutral-400">Real-time audit log of security events and unauthorized attempts</p>
+            </div>
+            <button onclick="loadAdminStats()" class="bg-white/5 hover:bg-white/10 text-neutral-300 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+              <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-white/5 uppercase text-neutral-400 text-[10px]">
+                <tr>
+                  <th class="p-3">Event</th>
+                  <th class="p-3">Details</th>
+                  <th class="p-3">IP Address</th>
+                  <th class="p-3">Device ID</th>
+                  <th class="p-3">Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="securityLogsTableBody" class="divide-y divide-white/5">
+                <tr><td colspan="5" class="p-6 text-center text-neutral-500">Loading security logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- VIDEO PREVIEW MODAL -->
+  <!-- ========================================================================= -->
+  <div id="videoPreviewModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-3xl w-full p-5 relative space-y-4">
+      <div class="flex items-center justify-between">
+        <h4 class="text-sm font-bold text-white" id="modalVideoTitle">Video Preview</h4>
+        <button onclick="closePreviewModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="w-full aspect-video bg-black rounded-xl overflow-hidden">
+        <video id="modalVideoPlayer" controls playsinline class="w-full h-full object-contain"></video>
+      </div>
+      <div class="text-xs text-neutral-400 break-all font-mono" id="modalVideoSrc"></div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- EDIT VIDEO MODAL -->
+  <!-- ========================================================================= -->
+  <div id="editVideoModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-lg w-full p-6 relative space-y-4">
+      <div class="flex items-center justify-between">
+        <h4 class="text-base font-bold text-white">Edit Video Details</h4>
+        <button onclick="closeEditModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form onsubmit="handleUpdateVideoSubmit(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="editVideoId">
+        <div>
+          <label class="block font-bold text-neutral-300 mb-1">Title</label>
+          <input type="text" id="editTitle" required class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block font-bold text-neutral-300 mb-1">Category Tag</label>
+          <select id="editTag" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-3 py-2 text-white">
+            <option value="18+ ADULT">18+ Adult</option>
+            <option value="MOVIES">Movies</option>
+            <option value="WEB SERIES">Web Series</option>
+            <option value="ANIME">Anime</option>
+            <option value="TRENDING VIDEOS">Trending Videos</option>
+            <option value="VIP PAKISTANI">VIP Pakistani Exclusive</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-neutral-300 mb-1">Thumbnail URL</label>
+          <input type="url" id="editThumb" required class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+        </div>
+        <div>
+          <label class="block font-bold text-neutral-300 mb-1">Video Stream URL</label>
+          <input type="url" id="editSrc" required class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-neutral-300 mb-1">Duration</label>
+            <input type="text" id="editDuration" class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block font-bold text-neutral-300 mb-1">Creator</label>
+            <input type="text" id="editCreator" class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl transition">
+          Update Video
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- ADMIN PIN AUTHENTICATION MODAL -->
+  <!-- ========================================================================= -->
+  <div id="adminAuthModal" class="fixed inset-0 z-50 bg-[#06070a]/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl max-w-sm w-full p-8 text-center space-y-6 shadow-2xl border border-rose-500/30">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-rose-600 to-purple-600 flex items-center justify-center mx-auto shadow-xl shadow-rose-600/30">
+        <i class="fa-solid fa-lock text-white text-2xl"></i>
+      </div>
+      <div>
+        <h3 class="text-xl font-black text-white uppercase tracking-wider">Owner Console</h3>
+        <p class="text-xs text-neutral-400 mt-1">Enter Master PIN to unlock admin capabilities</p>
+      </div>
+
+      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+        <div class="relative">
+          <input type="password" id="adminPinInput" autofocus required placeholder="Enter Master PIN (Default: 7860)" class="w-full bg-black/60 border border-white/15 focus:border-rose-500 rounded-xl px-4 py-3 text-center text-lg tracking-widest text-white font-mono focus:outline-none transition">
+          <button type="button" onclick="togglePinVisibility()" class="absolute right-3.5 top-3.5 text-neutral-400 hover:text-white">
+            <i class="fa-solid fa-eye" id="pinEyeIcon"></i>
+          </button>
+        </div>
+        <button type="submit" id="loginBtn" class="w-full bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2">
+          <span>Unlock Admin Panel</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+      </form>
+      <p class="text-[10px] text-neutral-500">Secured with bcrypt and persistent JWT authentication</p>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT LOGIC -->
+  <!-- ========================================================================= -->
+  <script>
+    const API_BASE = '/api';
+    let ADMIN_TOKEN = localStorage.getItem('darkpaki_admin_token') || null;
+    let currentAdminVideos = [];
+    let currentVideoPage = 1;
+    let currentSearchQuery = '';
+    let searchDebounceTimer = null;
+
+    // Toast Notification
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-emerald-600/90 border-emerald-400/50 text-white',
+        error: 'bg-rose-600/90 border-rose-400/50 text-white',
+        info: 'bg-indigo-600/90 border-indigo-400/50 text-white'
+      };
+      toast.className = `${colors[type] || colors.info} border px-4 py-2.5 rounded-xl text-xs font-semibold shadow-2xl flex items-center gap-2 animate-bounce transition pointer-events-auto`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Toggle Pin Visibility
+    function togglePinVisibility() {
+      const input = document.getElementById('adminPinInput');
+      const icon = document.getElementById('pinEyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
+    // Tab Switcher
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+      const activeContent = document.getElementById(`tab-${tabId}`);
+      const activeBtn = document.getElementById(`tabBtn-${tabId}`);
+      if (activeContent) activeContent.classList.remove('hidden');
+      if (activeBtn) activeBtn.classList.add('active');
+
+      if (tabId === 'video-manager') {
+        loadAdminVideos();
+      } else if (tabId === 'overview') {
+        loadAdminStats();
+      } else if (tabId === 'settings') {
+        loadSettings();
+      }
+    }
+
+    // API Fetch Wrapper
+    async function adminFetch(endpoint, options = {}) {
+      options.headers = options.headers || {};
+      if (ADMIN_TOKEN) {
+        options.headers['Authorization'] = `Bearer ${ADMIN_TOKEN}`;
+      }
+      const res = await fetch(`${API_BASE}${endpoint}`, options);
+      if (res.status === 401) {
+        localStorage.removeItem('darkpaki_admin_token');
+        ADMIN_TOKEN = null;
+        document.getElementById('adminAuthModal').classList.remove('hidden');
+        throw new Error('Unauthorized');
+      }
+      return await res.json();
+    }
+
+    // Handle Admin Login
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const pin = document.getElementById('adminPinInput').value;
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Verifying...`;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin, deviceId: 'ADMIN-CONSOLE' })
+        });
+        const data = await res.json();
+        if (data.success && data.token) {
+          ADMIN_TOKEN = data.token;
+          localStorage.setItem('darkpaki_admin_token', ADMIN_TOKEN);
+          document.getElementById('adminAuthModal').classList.add('hidden');
+          showToast('Master PIN Verified! Welcome to DarkPAKI Admin.', 'success');
+          loadAdminStats();
+        } else {
+          showToast(data.message || 'Invalid PIN', 'error');
+        }
+      } catch (err) {
+        showToast('Login failed: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Unlock Admin Panel</span> <i class="fa-solid fa-arrow-right text-xs"></i>`;
+      }
+    }
+
+    function logoutAdmin() {
+      localStorage.removeItem('darkpaki_admin_token');
+      ADMIN_TOKEN = null;
+      document.getElementById('adminAuthModal').classList.remove('hidden');
+      showToast('Logged out successfully.');
+    }
+
+    // Check Auth on page load
+    async function checkAuth() {
+      if (!ADMIN_TOKEN) {
+        document.getElementById('adminAuthModal').classList.remove('hidden');
+        return;
+      }
+      try {
+        const res = await adminFetch('/admin/verify');
+        if (res.success) {
+          document.getElementById('adminAuthModal').classList.add('hidden');
+          loadAdminStats();
+        } else {
+          document.getElementById('adminAuthModal').classList.remove('hidden');
+        }
+      } catch (err) {
+        document.getElementById('adminAuthModal').classList.remove('hidden');
+      }
+    }
+
+    // Load Stats
+    async function loadAdminStats() {
+      try {
+        const res = await adminFetch('/admin/stats');
+        if (res.success && res.data) {
+          const { stats, recentVideos, logs, settings } = res.data;
+          document.getElementById('statTotalVideos').textContent = stats.totalVideos || 0;
+          document.getElementById('statTotalUsers').textContent = stats.totalUsers || 0;
+          document.getElementById('statTotalDemands').textContent = stats.totalDemands || 0;
+          document.getElementById('statBlockedThreats').textContent = stats.blockedAttempts || 0;
+
+          if (settings.cdnStreamUrl) {
+            document.getElementById('sidebarCdnUrl').textContent = settings.cdnStreamUrl;
+          }
+
+          renderRecentVideos(recentVideos || []);
+          renderSecurityLogs(logs || []);
+        }
+      } catch (err) {
+        console.error('Error loading stats:', err);
+      }
+    }
+
+    function renderRecentVideos(videos) {
+      const container = document.getElementById('recentVideosList');
+      if (!videos || videos.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-neutral-500 text-xs">No videos published yet.</div>`;
+        return;
+      }
+      container.innerHTML = videos.map(v => `
+        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition border border-white/5">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-14 h-9 rounded-lg overflow-hidden bg-neutral-900 shrink-0">
+              <img src="${v.thumb_img}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/120x80/121218/f43f5e?text=18%2B'">
+            </div>
+            <div class="min-w-0">
+              <h5 class="text-xs font-bold text-white truncate">${v.title}</h5>
+              <div class="flex items-center gap-2 text-[10px] text-neutral-400">
+                <span class="text-rose-400 font-bold">${v.tag}</span>
+                <span>•</span>
+                <span>${v.duration}</span>
+                ${v.is_featured ? '<span class="bg-amber-500/20 text-amber-300 px-1 rounded font-bold">Featured</span>' : ''}
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="previewVideo('${v.src}', '${encodeURIComponent(v.title)}')" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white transition">
+              <i class="fa-solid fa-play text-xs"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderSecurityLogs(logs) {
+      const tbody = document.getElementById('securityLogsTableBody');
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-neutral-500">No logs found.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = logs.map(l => `
+        <tr class="hover:bg-white/5">
+          <td class="p-3 text-rose-400 font-bold">${l.event_type}</td>
+          <td class="p-3 text-neutral-300">${l.details}</td>
+          <td class="p-3 text-neutral-400">${l.ip || 'Local'}</td>
+          <td class="p-3 text-neutral-500">${l.device_id || 'N/A'}</td>
+          <td class="p-3 text-neutral-500">${new Date(l.created_at).toLocaleString()}</td>
+        </tr>
+      `).join('');
+    }
+
+    // =========================================================================
+    // DIRECT CDN UPLOADER & AUTO-POST
+    // =========================================================================
+    function handleFileSelected(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        document.getElementById('selectedFileInfo').classList.remove('hidden');
+        document.getElementById('selectedFileName').textContent = file.name;
+        document.getElementById('selectedFileSize').textContent = `(${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+        
+        // Auto-fill title if empty
+        const titleInput = document.getElementById('cdnTitleInput');
+        if (!titleInput.value) {
+          titleInput.value = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+        }
+      }
+    }
+
+    async function handleCdnUpload(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('cdnFileInput');
+      if (!fileInput.files || !fileInput.files[0]) {
+        showToast('Please select a video file first!', 'error');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const title = document.getElementById('cdnTitleInput').value.trim();
+      const category = document.getElementById('cdnCategoryInput').value;
+      const creator = document.getElementById('cdnCreatorInput').value.trim() || 'DarkPAKI VIP Exclusive';
+      const duration = document.getElementById('cdnDurationInput').value.trim() || '15:00';
+      const thumb = document.getElementById('cdnThumbInput').value.trim();
+      const isFeatured = document.getElementById('cdnFeaturedInput').checked;
+
+      const progressContainer = document.getElementById('uploadProgressContainer');
+      const progressBar = document.getElementById('uploadProgressBar');
+      const progressPct = document.getElementById('uploadProgressPct');
+      const progressStatus = document.getElementById('uploadProgressStatus');
+      const submitBtn = document.getElementById('cdnSubmitBtn');
+
+      progressContainer.classList.remove('hidden');
+      progressBar.style.width = '0%';
+      progressPct.textContent = '0%';
+      progressStatus.textContent = 'Connecting to Telegram Cloud CDN...';
+      submitBtn.disabled = true;
+
+      // Get CDN URL from settings or default
+      const cdnUrl = (document.getElementById('sidebarCdnUrl').textContent || 'https://darkpaki-stream.onrender.com').trim().replace(/\/+$/, '');
+
+      // Use XMLHttpRequest for real progress tracking
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', category.toLowerCase());
+      formData.append('title', title);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${cdnUrl}/api/upload`, true);
+      xhr.setRequestHeader('X-API-Key', 'DarkPakiAdminSecret2026');
+
+      xhr.upload.onprogress = (ev) => {
+        if (ev.lengthComputable) {
+          const pct = Math.round((ev.loaded / ev.total) * 90); // 0 to 90% for upload
+          progressBar.style.width = `${pct}%`;
+          progressPct.textContent = `${pct}%`;
+          progressStatus.textContent = `Uploading bytes to CDN: ${(ev.loaded / (1024 * 1024)).toFixed(1)} MB / ${(ev.total / (1024 * 1024)).toFixed(1)} MB`;
+        }
+      };
+
+      xhr.onload = async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            progressBar.style.width = '95%';
+            progressStatus.textContent = 'CDN Storage confirmed! Publishing to DarkPAKI database...';
+            const cdnResponse = JSON.parse(xhr.responseText);
+
+            const streamUrl = cdnResponse.stream_url;
+            let thumbUrl = thumb || cdnResponse.thumb_url;
+            if (!thumbUrl && cdnResponse.chat_id && cdnResponse.msg_id) {
+              thumbUrl = `${cdnUrl}/api/thumb/${cdnResponse.chat_id}?id=${cdnResponse.msg_id}`;
+            }
+            if (!thumbUrl) {
+              thumbUrl = 'https://placehold.co/600x400/121218/f43f5e?text=18%2B+DarkPAKI';
+            }
+
+            // Persist video to DarkPAKI backend
+            const postRes = await adminFetch('/admin/videos', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title,
+                tag: category,
+                thumbImg: thumbUrl,
+                src: streamUrl,
+                duration: duration || cdnResponse.file_size || '14:20',
+                creator,
+                isFeatured,
+                requestedBy: 'Direct CDN Upload'
+              })
+            });
+
+            progressBar.style.width = '100%';
+            progressPct.textContent = '100%';
+            progressStatus.textContent = 'Published successfully to website!';
+
+            if (postRes.success) {
+              showToast(`Published "${title}" to website successfully!`, 'success');
+
+              // Show Result Card
+              document.getElementById('cdnUploadResultCard').classList.remove('hidden');
+              document.getElementById('cdnResultTitle').textContent = title;
+              document.getElementById('cdnResultTag').textContent = category;
+              document.getElementById('cdnResultStreamUrl').value = streamUrl;
+              const previewVid = document.getElementById('cdnResultVideoPreview');
+              previewVid.src = streamUrl;
+              previewVid.load();
+
+              // Reset form
+              fileInput.value = '';
+              document.getElementById('selectedFileInfo').classList.add('hidden');
+              loadAdminStats();
+            } else {
+              showToast(postRes.message || 'Failed to persist to database', 'error');
+            }
+          } catch (err) {
+            showToast('Error parsing CDN response: ' + err.message, 'error');
+          }
+        } else {
+          showToast(`CDN Upload failed (HTTP ${xhr.status}): ${xhr.responseText}`, 'error');
+        }
+        submitBtn.disabled = false;
+      };
+
+      xhr.onerror = () => {
+        showToast('Network error while connecting to CDN server.', 'error');
+        submitBtn.disabled = false;
+      };
+
+      xhr.send(formData);
+    }
+
+    // =========================================================================
+    // TELEGRAM CDN POST CONVERTER
+    // =========================================================================
+    async function handleTelegramConvert(e) {
+      e.preventDefault();
+      const tgLink = document.getElementById('tgLinkInput').value.trim();
+      const title = document.getElementById('tgTitleInput').value.trim();
+      const category = document.getElementById('tgCategoryInput').value;
+      const creator = document.getElementById('tgCreatorInput').value.trim() || 'DarkPAKI VIP Exclusive';
+      const duration = document.getElementById('tgDurationInput').value.trim() || '15:30';
+
+      const btn = document.getElementById('tgSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Converting & Publishing...`;
+
+      try {
+        const res = await adminFetch('/admin/cdn-convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tgLink, title, category, creator, duration })
+        });
+        if (res.success) {
+          showToast(`Published "${title}" to DarkPAKI website!`, 'success');
+          document.getElementById('tgLinkInput').value = '';
+          document.getElementById('tgTitleInput').value = '';
+          loadAdminStats();
+        } else {
+          showToast(res.message || 'Failed to convert link', 'error');
+        }
+      } catch (err) {
+        showToast('Convert error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-bolt"></i> <span>Generate CDN Stream & Publish to Website</span>`;
+      }
+    }
+
+    // =========================================================================
+    // MANUAL FAST PUBLISHER
+    // =========================================================================
+    async function handleManualPublish(e) {
+      e.preventDefault();
+      const title = document.getElementById('manualTitle').value.trim();
+      const src = document.getElementById('manualSrc').value.trim();
+      const thumbImg = document.getElementById('manualThumb').value.trim();
+      const tag = document.getElementById('manualTag').value;
+      const duration = document.getElementById('manualDuration').value.trim() || '12:00';
+      const creator = document.getElementById('manualCreator').value.trim() || 'DarkPAKI VIP Exclusive';
+      const isFeatured = document.getElementById('manualFeatured').checked;
+
+      try {
+        const res = await adminFetch('/admin/videos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, src, thumbImg, tag, duration, creator, isFeatured })
+        });
+        if (res.success) {
+          showToast(`Published "${title}" successfully!`, 'success');
+          e.target.reset();
+          loadAdminStats();
+        } else {
+          showToast(res.message || 'Failed to publish', 'error');
+        }
+      } catch (err) {
+        showToast('Error publishing: ' + err.message, 'error');
+      }
+    }
+
+    // =========================================================================
+    // VIDEO CONTENT LIBRARY (CRUD)
+    // =========================================================================
+    async function loadAdminVideos() {
+      const tbody = document.getElementById('adminVideoTableBody');
+      tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-neutral-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading videos...</td></tr>`;
+
+      const tag = document.getElementById('videoCategoryFilter').value;
+      const q = currentSearchQuery;
+
+      try {
+        const res = await adminFetch(`/admin/videos?page=${currentVideoPage}&limit=25&tag=${encodeURIComponent(tag)}&q=${encodeURIComponent(q)}`);
+        if (res.success && Array.isArray(res.data)) {
+          currentAdminVideos = res.data;
+          renderAdminVideoTable(res.data, res.total, res.page, res.totalPages);
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-rose-400">Failed to load video library: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderAdminVideoTable(videos, total, page, totalPages) {
+      const tbody = document.getElementById('adminVideoTableBody');
+      document.getElementById('videoCountDisplay').textContent = `Showing ${videos.length} of ${total} videos (Page ${page}/${totalPages || 1})`;
+      document.getElementById('btnPrevPage').disabled = page <= 1;
+      document.getElementById('btnNextPage').disabled = page >= totalPages;
+
+      if (!videos || videos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-neutral-500">No videos found matching criteria.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = videos.map(v => `
+        <tr class="hover:bg-white/5 transition border-b border-white/5">
+          <td class="p-3">
+            <div class="flex items-center gap-3">
+              <div class="w-16 h-10 rounded-lg overflow-hidden bg-neutral-900 shrink-0 border border-white/10">
+                <img src="${v.thumb_img}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/120x80/121218/f43f5e?text=18%2B'">
+              </div>
+              <div class="min-w-0">
+                <h5 class="font-bold text-white truncate max-w-xs sm:max-w-md">${v.title}</h5>
+                <span class="text-[10px] text-neutral-400 font-mono">ID #${v.id} • ${v.creator}</span>
+              </div>
+            </div>
+          </td>
+          <td class="p-3">
+            <span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+              ${v.tag}
+            </span>
+          </td>
+          <td class="p-3 font-mono text-neutral-300">${v.duration}</td>
+          <td class="p-3">
+            <button onclick="toggleVideoFeatured(${v.id})" class="px-2 py-1 rounded text-[11px] font-bold transition ${v.is_featured ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-white/5 text-neutral-400 border border-white/10 hover:text-white'}">
+              <i class="fa-solid fa-star mr-1"></i> ${v.is_featured ? 'Featured' : 'Regular'}
+            </button>
+          </td>
+          <td class="p-3 text-right">
+            <div class="flex items-center justify-end gap-1.5">
+              <button onclick="previewVideo('${v.src}', '${encodeURIComponent(v.title)}')" title="Preview Video" class="w-7 h-7 rounded-lg bg-indigo-500/10 hover:bg-indigo-600 text-indigo-400 hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-play text-xs"></i>
+              </button>
+              <button onclick="openEditModal(${v.id})" title="Edit Details" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-pen text-xs"></i>
+              </button>
+              <button onclick="deleteVideo(${v.id}, '${encodeURIComponent(v.title)}')" title="Delete Video" class="w-7 h-7 rounded-lg bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function debounceVideoSearch() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        currentSearchQuery = document.getElementById('videoSearchInput').value.trim();
+        currentVideoPage = 1;
+        loadAdminVideos();
+      }, 350);
+    }
+
+    function prevVideoPage() {
+      if (currentVideoPage > 1) {
+        currentVideoPage--;
+        loadAdminVideos();
+      }
+    }
+
+    function nextVideoPage() {
+      currentVideoPage++;
+      loadAdminVideos();
+    }
+
+    async function toggleVideoFeatured(id) {
+      try {
+        const res = await adminFetch(`/admin/videos/${id}/feature`, { method: 'POST' });
+        if (res.success) {
+          showToast(res.message, 'success');
+          loadAdminVideos();
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function deleteVideo(id, encodedTitle) {
+      const title = decodeURIComponent(encodedTitle);
+      if (!confirm(`Are you sure you want to permanently delete "${title}" from DarkPAKI?`)) return;
+
+      try {
+        const res = await adminFetch(`/admin/videos/${id}`, { method: 'DELETE' });
+        if (res.success) {
+          showToast(res.message, 'success');
+          loadAdminVideos();
+          loadAdminStats();
+        }
+      } catch (err) {
+        showToast('Delete error: ' + err.message, 'error');
+      }
+    }
+
+    function previewVideo(src, encodedTitle) {
+      const title = decodeURIComponent(encodedTitle);
+      document.getElementById('modalVideoTitle').textContent = title;
+      document.getElementById('modalVideoSrc').textContent = src;
+      const player = document.getElementById('modalVideoPlayer');
+      player.src = src;
+      player.load();
+      player.play().catch(() => {});
+      document.getElementById('videoPreviewModal').classList.remove('hidden');
+    }
+
+    function closePreviewModal() {
+      const player = document.getElementById('modalVideoPlayer');
+      player.pause();
+      player.src = '';
+      document.getElementById('videoPreviewModal').classList.add('hidden');
+    }
+
+    function openEditModal(id) {
+      const v = currentAdminVideos.find(x => x.id === id);
+      if (!v) return;
+      document.getElementById('editVideoId').value = v.id;
+      document.getElementById('editTitle').value = v.title;
+      document.getElementById('editTag').value = v.tag;
+      document.getElementById('editThumb').value = v.thumb_img;
+      document.getElementById('editSrc').value = v.src;
+      document.getElementById('editDuration').value = v.duration;
+      document.getElementById('editCreator').value = v.creator;
+      document.getElementById('editVideoModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editVideoModal').classList.add('hidden');
+    }
+
+    async function handleUpdateVideoSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('editVideoId').value;
+      const title = document.getElementById('editTitle').value.trim();
+      const tag = document.getElementById('editTag').value;
+      const thumbImg = document.getElementById('editThumb').value.trim();
+      const src = document.getElementById('editSrc').value.trim();
+      const duration = document.getElementById('editDuration').value.trim();
+      const creator = document.getElementById('editCreator').value.trim();
+
+      try {
+        const res = await adminFetch(`/admin/videos/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, tag, thumbImg, src, duration, creator })
+        });
+        if (res.success) {
+          showToast('Video updated successfully!', 'success');
+          closeEditModal();
+          loadAdminVideos();
+        } else {
+          showToast(res.message || 'Update failed', 'error');
+        }
+      } catch (err) {
+        showToast('Update error: ' + err.message, 'error');
+      }
+    }
+
+    // =========================================================================
+    // SETTINGS
+    // =========================================================================
+    async function loadSettings() {
+      try {
+        const res = await adminFetch('/admin/settings');
+        if (res.success && res.data) {
+          document.getElementById('settingCdnUrl').value = res.data.cdnStreamUrl || 'https://darkpaki-stream.onrender.com';
+          document.getElementById('settingAdUrl').value = res.data.adVideoUrl || '';
+          document.getElementById('settingPopunderUrl').value = res.data.popunderUrl || '';
+          document.getElementById('settingBannerHtml').value = res.data.bannerAdHtml || '';
+          document.getElementById('settingMonetagMeta').value = res.data.monetagMetaTag || '';
+          document.getElementById('settingSafeMode').checked = Boolean(res.data.safeModeEnabled);
+          document.getElementById('settingTelegramUrl').value = res.data.telegramUrl || '';
+          document.getElementById('settingAllowSkip').checked = Boolean(res.data.allowInstantSkip);
+        }
+      } catch (err) {
+        console.error('Error loading settings:', err);
+      }
+    }
+
+    async function handleSaveSettings(e) {
+      e.preventDefault();
+      const cdnStreamUrl = document.getElementById('settingCdnUrl').value.trim();
+      const adVideoUrl = document.getElementById('settingAdUrl').value.trim();
+      const popunderUrl = document.getElementById('settingPopunderUrl').value.trim();
+      const bannerAdHtml = document.getElementById('settingBannerHtml').value.trim();
+      const monetagMetaTag = document.getElementById('settingMonetagMeta').value.trim();
+      const safeModeEnabled = document.getElementById('settingSafeMode').checked;
+      const telegramUrl = document.getElementById('settingTelegramUrl').value.trim();
+      const allowInstantSkip = document.getElementById('settingAllowSkip').checked;
+      const newPin = document.getElementById('settingNewPin').value.trim();
+
+      try {
+        const res = await adminFetch('/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, newPin })
+        });
+        if (res.success) {
+          showToast('Settings saved successfully!', 'success');
+          document.getElementById('settingNewPin').value = '';
+          document.getElementById('sidebarCdnUrl').textContent = cdnStreamUrl;
+        } else {
+          showToast(res.message || 'Failed to save settings', 'error');
+        }
+      } catch (err) {
+        showToast('Settings error: ' + err.message, 'error');
+      }
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', checkAuth);
+  </script>
+</body>
+</html>

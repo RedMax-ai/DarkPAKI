@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 90" width="540" height="90" fill="none">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="emblemGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff1744" />
+      <stop offset="60%" stop-color="#e11d48" />
+      <stop offset="100%" stop-color="#880e4f" />
+    </linearGradient>
+
+    <linearGradient id="pakiTextGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff2a6d" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+
+    <linearGradient id="vipPillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff0055" />
+      <stop offset="100%" stop-color="#990033" />
+    </linearGradient>
+
+    <!-- Drop Shadow Filters -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ff1744" flood-opacity="0.75" />
+    </filter>
+    <filter id="badgeShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.8" />
+    </filter>
+  </defs>
+
+  <g transform="translate(6, 5)">
+    <!-- 1. LEFT CIRCULAR EMBLEM WITH PIN-UP GIRL SILHOUETTE (Exact Reference Style) -->
+    <g filter="url(#glow)">
+      <!-- Outer White Border Ring -->
+      <circle cx="40" cy="40" r="38" fill="#ffffff" filter="url(#badgeShadow)" />
+      <!-- Red Emblem Inner Circle -->
+      <circle cx="40" cy="40" r="33.5" fill="url(#emblemGrad)" />
+      <!-- Subtle Rim Highlight -->
+      <circle cx="40" cy="40" r="33.5" stroke="#ff80ab" stroke-width="1.5" fill="none" opacity="0.7" />
+      
+      <!-- Glamorous Seated Pin-Up Girl Silhouette in Pure White -->
+      <!-- Profile: elegant arched back, crossed legs, hair, tasteful artistic silhouette -->
+      <path d="
+        M 39 17
+        C 36 17 33.5 19.5 33.5 23
+        C 33.5 25.5 35 27.5 37 28.5
+        C 35 29.5 33.5 31.5 32.5 34
+        C 31 37.5 30.5 41 31.5 44
+        C 32 45.5 33.5 46.5 35 47
+        C 33.5 49 32 51.5 30 54
+        C 28 56.5 25.5 59.5 24 62.5
+        C 23.5 63.8 24.5 65 26.5 65
+        C 28 65 29.5 64 31 62
+        C 33 59 35.5 55.5 38 52.5
+        C 40 50 42.5 49 45 48.5
+        L 49 48.5
+        C 51 48.5 52.5 50 53.5 52
+        C 54.8 54.8 55.5 58 56 61
+        C 56.3 63 57.8 64 59.2 64
+        C 60.5 64 61 62.8 60.5 61
+        C 59.5 56.8 57.8 52.5 55 49
+        C 53.2 46.8 51 45 48 44.2
+        C 47 43.8 46.5 42 47 40.5
+        C 47.8 38 48.5 35 47.5 32
+        C 46.5 29.5 44 28 41.5 27.5
+        C 43 26 43.8 24 43 21.5
+        C 42 19 40 17 39 17 Z
+      " fill="#ffffff" />
+    </g>
+
+    <!-- 2. BRAND TYPOGRAPHY: DARKPAKI (Italic, Heavy Dual-Stroke Arcade/Racing Font Style) -->
+    <g transform="translate(92, 58) skewX(-13)">
+      <!-- Layer 1: Heavy Deep Black Outline Shadow -->
+      <text x="0" y="0" font-family="'Impact', 'Arial Black', sans-serif" font-size="52" font-weight="900" letter-spacing="-0.5" stroke="#000000" stroke-width="15" stroke-linejoin="round" fill="#000000">
+        DARK<tspan fill="#000000">PAKI</tspan>
+      </text>
+
+      <!-- Layer 2: Heavy Crisp White Outer Stroke (Like Reference Logo) -->
+      <text x="0" y="0" font-family="'Impact', 'Arial Black', sans-serif" font-size="52" font-weight="900" letter-spacing="-0.5" stroke="#ffffff" stroke-width="9" stroke-linejoin="round" fill="#ffffff">
+        DARK<tspan fill="#ffffff">PAKI</tspan>
+      </text>
+
+      <!-- Layer 3: Inner Fill: DARK in Pure Deep Obsidian / PAKI in Vivid Crimson Red with Inner Glow -->
+      <text x="0" y="0" font-family="'Impact', 'Arial Black', sans-serif" font-size="52" font-weight="900" letter-spacing="-0.5" fill="#0a0a0f">
+        DARK<tspan fill="url(#pakiTextGrad)" stroke="#b0003a" stroke-width="1.2">PAKI</tspan>
+      </text>
+    </g>
+
+    <!-- 3. COMPACT 18+ VIP BADGE ON RIGHT -->
+    <g transform="translate(415, 20) skewX(-13)" filter="url(#glow)">
+      <!-- Outer White Border -->
+      <rect x="0" y="0" width="102" height="40" rx="10" fill="#ffffff" />
+      <!-- Inner Crimson Fill -->
+      <rect x="3" y="3" width="96" height="34" rx="8" fill="url(#vipPillGrad)" />
+      <!-- Text -->
+      <text x="51" y="26" font-family="'Impact', 'Arial Black', sans-serif" font-size="21" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">
+        18+ VIP
+      </text>
+    </g>
+  </g>
+</svg>
