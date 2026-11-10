@@ -178,6 +178,20 @@ function initializeSchema() {
       reviewed_at DATETIME
     );
     CREATE INDEX IF NOT EXISTS idx_monetization_status ON monetization_applications(status);
+
+    CREATE TABLE IF NOT EXISTS email_otps (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      gmail TEXT NOT NULL,
+      otp_code TEXT NOT NULL,
+      device_id TEXT,
+      pending_name TEXT,
+      pending_pass TEXT,
+      pending_ref TEXT,
+      expires_at DATETIME NOT NULL,
+      used INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_email_otps_gmail ON email_otps(gmail);
   `);
 
   // Safe runtime migrations for existing databases
@@ -198,6 +212,9 @@ function initializeSchema() {
   runMigration("ALTER TABLE users ADD COLUMN avatar_url TEXT DEFAULT '';");
   runMigration("ALTER TABLE users ADD COLUMN google_id TEXT DEFAULT '';");
   runMigration("ALTER TABLE users ADD COLUMN password TEXT DEFAULT '';");
+  runMigration('ALTER TABLE email_otps ADD COLUMN pending_name TEXT;');
+  runMigration('ALTER TABLE email_otps ADD COLUMN pending_pass TEXT;');
+  runMigration('ALTER TABLE email_otps ADD COLUMN pending_ref TEXT;');
 
   runMigration("ALTER TABLE videos ADD COLUMN status TEXT NOT NULL DEFAULT 'APPROVED';");
   runMigration('ALTER TABLE videos ADD COLUMN owner_name TEXT;');

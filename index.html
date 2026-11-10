@@ -789,6 +789,17 @@
                 </div>
 
                 <div>
+                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Account Password (पासवर्ड)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
+                        <input id="loginPasswordInput" type="password" required minlength="4" placeholder="Enter account password (or 7860 for Admin)" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-10 py-2.5 text-xs sm:text-sm text-white outline-none transition">
+                        <button type="button" onclick="toggleWebsitePasswordVisibility()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition">
+                            <i id="websitePassEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
                     <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Referral Code (Optional)</label>
                     <div class="relative">
                         <i class="fa-solid fa-ticket absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
@@ -817,8 +828,8 @@
 
                 <!-- Low-Connection Resilient Submit Button -->
                 <button type="submit" id="submitLoginBtn" class="mt-1 bg-gradient-to-r from-rose-600 via-rose-500 to-red-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-sm py-3.5 rounded-2xl shadow-xl shadow-rose-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i id="submitBtnIcon" class="fa-solid fa-user-check"></i>
-                    <span id="submitBtnText">Verify & Open Dashboard</span>
+                    <i id="submitBtnIcon" class="fa-solid fa-key"></i>
+                    <span id="submitBtnText">Verify & Get 6-Digit OTP (ओटीपी)</span>
                 </button>
 
                 <!-- Direct Owner Admin Panel Link -->
@@ -1463,6 +1474,105 @@
                     <span>I Have Read & Agree to All Terms</span>
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MODAL: 6-DIGIT EMAIL OTP VERIFICATION & DEVICE AUTHORIZATION
+         ============================================================================ -->
+    <div id="otpVerificationModal" class="hidden fixed inset-0 z-[130] bg-black/92 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-[#141018] via-[#0e0c14] to-[#07060a] border-2 border-rose-500/50 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-[0_0_60px_rgba(244,63,94,0.35)] flex flex-col gap-4 relative animate-enter">
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-rose-600/30">
+                        <i class="fa-solid fa-key text-base"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-base text-white">6-Digit OTP Verification</h3>
+                        <p class="text-[10px] text-rose-400 font-mono">ईमेल OTP व डिवाइस सत्यापन</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeOtpVerificationModal()" class="text-neutral-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Email & Device Target Info -->
+            <div class="p-3 bg-black/50 border border-white/10 rounded-2xl text-xs space-y-1">
+                <div class="flex items-center justify-between text-neutral-400">
+                    <span>Account:</span>
+                    <span id="otpTargetGmailText" class="font-mono font-bold text-white">user@gmail.com</span>
+                </div>
+                <div class="flex items-center justify-between text-neutral-400">
+                    <span>Current Device:</span>
+                    <span id="otpTargetDeviceText" class="font-mono text-emerald-400">DPK-XXXX</span>
+                </div>
+            </div>
+
+            <!-- Dev / Instant OTP Helper Banner -->
+            <div id="otpDevHelperBanner" class="p-3 bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border border-amber-500/40 rounded-2xl flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <i class="fa-solid fa-bolt text-amber-400 shrink-0"></i>
+                    <div class="text-[11px] leading-tight">
+                        <span class="text-neutral-300">Generated OTP: </span>
+                        <strong id="otpDisplayCode" class="text-amber-300 font-mono text-sm tracking-widest font-black">123456</strong>
+                        <div class="text-[10px] text-neutral-400">(Or Owner Master PIN: <b class="text-rose-400">7860</b>)</div>
+                    </div>
+                </div>
+                <button type="button" onclick="autoFillDevOtp()" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-amber-500/40 shrink-0 transition">
+                    Auto-Fill
+                </button>
+            </div>
+
+            <!-- OTP Form -->
+            <form onsubmit="handleVerifyOtpSubmit(event)" class="flex flex-col gap-3">
+                <div>
+                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1.5 block text-center">
+                        Enter 6-Digit OTP Code
+                    </label>
+                    <input 
+                        id="otpVerificationInput" 
+                        type="text" 
+                        inputmode="numeric" 
+                        maxlength="6" 
+                        required 
+                        placeholder="••••••" 
+                        class="w-full text-center text-2xl tracking-[0.4em] font-mono font-black py-3 bg-black/80 border-2 border-neutral-700 focus:border-rose-500 rounded-2xl text-white outline-none transition"
+                        autocomplete="one-time-code"
+                    >
+                </div>
+
+                <!-- Error Alert in Modal -->
+                <div id="otpModalErrorAlert" class="hidden p-2.5 bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation shrink-0"></i>
+                    <span id="otpModalErrorText">Invalid OTP</span>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    id="btnVerifyOtpSubmit" 
+                    class="w-full bg-gradient-to-r from-rose-600 via-rose-500 to-red-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-sm py-3.5 rounded-2xl shadow-xl shadow-rose-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                    <i class="fa-solid fa-lock-open"></i>
+                    <span id="btnVerifyOtpText">Verify OTP & Open Dashboard</span>
+                </button>
+
+                <!-- Resend Controls -->
+                <div class="flex items-center justify-between text-xs pt-1 px-1">
+                    <span id="otpResendTimerLabel" class="text-neutral-500 font-mono text-[11px]">Resend in <span id="otpCountdownSeconds">60</span>s</span>
+                    <button 
+                        type="button" 
+                        id="btnResendOtp" 
+                        onclick="handleResendOtp()" 
+                        disabled 
+                        class="text-rose-400 hover:text-rose-300 disabled:text-neutral-600 disabled:cursor-not-allowed font-bold underline transition"
+                    >
+                        Resend OTP
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

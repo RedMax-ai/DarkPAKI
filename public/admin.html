@@ -993,6 +993,19 @@
               <span class="text-[10px] text-neutral-400 mt-2 block">Obtain free keys from Cloudflare Dashboard -> Turnstile -> Add Widget. Once entered, the login page uses your live production key with zero test labels!</span>
             </div>
 
+            <div class="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-transparent border border-blue-500/25">
+              <label class="block text-xs font-bold text-cyan-400 mb-1.5 flex items-center justify-between">
+                <span>Google OAuth / Firebase Web Client ID (Google Sign-In)</span>
+                <a href="https://firebase.google.com/" target="_blank" class="text-[10px] bg-blue-500/20 text-blue-300 hover:text-white px-2 py-0.5 rounded-full font-mono transition">
+                  Firebase Console ↗
+                </a>
+              </label>
+              <div class="mt-2">
+                <input type="text" id="settingGoogleClientId" placeholder="e.g. 123456789-abcdefgh.apps.googleusercontent.com" class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-400 transition">
+              </div>
+              <span class="text-[10px] text-neutral-400 mt-2 block">Obtain your free Web Client ID from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-cyan-400 underline">Google Cloud Console</a> or <a href="https://firebase.google.com/" target="_blank" class="text-cyan-400 underline">Firebase Studio</a>. Paste it here to enable 1-Click Sign-In with Google without any 401 error!</span>
+            </div>
+
             <div class="p-4 rounded-xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent border border-indigo-500/25">
               <label class="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" id="settingSafeMode" class="w-5 h-5 accent-indigo-500 rounded">
@@ -1868,6 +1881,8 @@
           document.getElementById('settingAllowSkip').checked = Boolean(res.data.allowInstantSkip);
           document.getElementById('settingTurnstileSiteKey').value = res.data.turnstileSiteKey || '';
           document.getElementById('settingTurnstileSecretKey').value = res.data.turnstileSecretKey || '';
+          const gIdEl = document.getElementById('settingGoogleClientId');
+          if (gIdEl) gIdEl.value = res.data.googleClientId || '';
         }
       } catch (err) {
         console.error('Error loading settings:', err);
@@ -1886,13 +1901,14 @@
       const allowInstantSkip = document.getElementById('settingAllowSkip').checked;
       const turnstileSiteKey = document.getElementById('settingTurnstileSiteKey').value.trim();
       const turnstileSecretKey = document.getElementById('settingTurnstileSecretKey').value.trim();
+      const googleClientId = document.getElementById('settingGoogleClientId')?.value?.trim() || '';
       const newPin = document.getElementById('settingNewPin').value.trim();
 
       try {
         const res = await adminFetch('/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, turnstileSiteKey, turnstileSecretKey, newPin })
+          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin })
         });
         if (res.success) {
           showToast('Settings saved successfully!', 'success');

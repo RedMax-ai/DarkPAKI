@@ -88,6 +88,7 @@ function getStats(req, res, next) {
     const bannerAdHtml = db.prepare("SELECT value FROM settings WHERE key = 'banner_ad_html'").get()?.value || '';
     const monetagMetaTag = db.prepare("SELECT value FROM settings WHERE key = 'monetag_meta_tag'").get()?.value || '';
     const safeModeEnabled = db.prepare("SELECT value FROM settings WHERE key = 'safe_mode_enabled'").get()?.value !== 'false';
+    const googleClientId = db.prepare("SELECT value FROM settings WHERE key = 'google_client_id'").get()?.value || '';
 
     res.json({
       success: true,
@@ -114,6 +115,7 @@ function getStats(req, res, next) {
           bannerAdHtml,
           monetagMetaTag,
           safeModeEnabled,
+          googleClientId,
           cdnApiKey: config.cdnApiKey
         }
       }
@@ -427,6 +429,7 @@ function getSettings(req, res, next) {
     const bannerAdHtml = db.prepare("SELECT value FROM settings WHERE key = 'banner_ad_html'").get()?.value || '';
     const monetagMetaTag = db.prepare("SELECT value FROM settings WHERE key = 'monetag_meta_tag'").get()?.value || '';
     const safeModeEnabled = db.prepare("SELECT value FROM settings WHERE key = 'safe_mode_enabled'").get()?.value !== 'false';
+    const googleClientId = db.prepare("SELECT value FROM settings WHERE key = 'google_client_id'").get()?.value || '';
     const turnstileSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_site_key'").get()?.value || '';
     const turnstileSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_secret_key'").get()?.value || '';
 
@@ -441,6 +444,7 @@ function getSettings(req, res, next) {
         bannerAdHtml,
         monetagMetaTag,
         safeModeEnabled,
+        googleClientId,
         turnstileSiteKey,
         turnstileSecretKey,
         cdnApiKey: config.cdnApiKey
@@ -453,7 +457,12 @@ function getSettings(req, res, next) {
 
 function updateSettings(req, res, next) {
   try {
-    const { telegramUrl, allowInstantSkip, adVideoUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, newPin } = req.body;
+    const { telegramUrl, allowInstantSkip, adVideoUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin } = req.body;
+
+    if (googleClientId !== undefined) {
+      const cleanGId = sanitizeString(googleClientId);
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('google_client_id', ?)").run(cleanGId);
+    }
 
     if (turnstileSiteKey !== undefined) {
       const cleanKey = sanitizeString(turnstileSiteKey);

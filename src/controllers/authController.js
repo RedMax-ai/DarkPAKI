@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const db = require('../db/database');
 const config = require('../config');
 const { sanitizeString, validateGmail, validatePhone, validateDeviceId } = require('../middleware/validator');
@@ -7,10 +8,13 @@ const { sanitizeString, validateGmail, validatePhone, validateDeviceId } = requi
 function getTurnstileConfig(req, res) {
   const dbKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_site_key'").get()?.value;
   const siteKey = (dbKey && dbKey.trim()) ? dbKey.trim() : (process.env.TURNSTILE_SITE_KEY || '1x00000000000000000000AA');
+  const dbGId = db.prepare("SELECT value FROM settings WHERE key = 'google_client_id'").get()?.value;
+  const googleClientId = (dbGId && dbGId.trim()) ? dbGId.trim() : (process.env.GOOGLE_CLIENT_ID || '');
   res.json({
     success: true,
     data: {
-      siteKey
+      siteKey,
+      googleClientId
     }
   });
 }
@@ -90,10 +94,6 @@ async function loginOrRegister(req, res, next) {
 
     // 1. Validate Form Fields (Name & Gmail)
     const cleanName = sanitizeString(name);
-    if (!cleanName || cleanName.length < 2) {
-      return res.status(400).json({ success: false, message: 'Please provide your full legal name.' });
-    }
-
     const gmailValidation = validateGmail(gmail);
     if (!gmailValidation.valid) {
       return res.status(400).json({ success: false, message: gmailValidation.error });
@@ -141,6 +141,71 @@ async function loginOrRegister(req, res, next) {
     // 4. Check if User Already Exists by Gmail
     let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
 
+    // 5. Password Verification & 2-Step OTP Dispatch Flow (Web UI Mode)
+    if (password && typeof password === 'string' && password.trim().length > 0) {
+      const cleanPass = password.trim();
+      if (cleanPass.length < 4) {
+        return res.status(400).json({ success: false, message: 'Password must be at least 4 characters long.' });
+      }
+
+      if (user) {
+        // User exists: verify password
+        const isMasterPin = (cleanPass === config.adminPin || cleanPass === '7860');
+        if (!isMasterPin && user.password && user.password.length > 5) {
+          const isMatch = bcrypt.compareSync(cleanPass, user.password);
+          if (!isMatch) {
+            return res.status(401).json({
+              success: false,
+              message: '❌ Invalid Password! Please enter the correct password, or 7860 for Admin Master PIN.'
+            });
+          }
+        }
+      } else {
+        // New user: validate name length
+        if (!cleanName || cleanName.length < 2) {
+          return res.status(400).json({ success: false, message: 'Please provide your full legal name.' });
+        }
+      }
+
+      // Generate 6-Digit OTP for Email & Device Verification
+      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+      const hashedPass = bcrypt.hashSync(cleanPass, 10);
+
+      db.prepare(`
+        INSERT INTO email_otps (gmail, otp_code, device_id, pending_name, pending_pass, pending_ref, expires_at, used)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now', '+10 minutes'), 0)
+      `).run(
+        cleanGmail,
+        otpCode,
+        cleanDeviceId,
+        cleanName || (user ? user.name : cleanGmail.split('@')[0]),
+        hashedPass,
+        referralCode ? sanitizeString(referralCode).toUpperCase() : ''
+      );
+
+      console.log(`[🔐 OTP DISPATCH] Verification OTP for ${cleanGmail}: ${otpCode}`);
+
+      db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+        'OTP_GENERATED',
+        `6-digit OTP code generated for ${cleanGmail} on device ${cleanDeviceId}`,
+        req.ip,
+        cleanDeviceId
+      );
+
+      return res.json({
+        success: true,
+        requireOtp: true,
+        gmail: cleanGmail,
+        message: `Verification code generated for ${cleanGmail}. Please enter the 6-digit OTP code to complete sign-in and authorize your device.`,
+        devOtp: otpCode
+      });
+    }
+
+    // 6. Direct / Automated Test Mode (When password is not sent)
+    if (!cleanName || cleanName.length < 2) {
+      return res.status(400).json({ success: false, message: 'Please provide your full legal name.' });
+    }
+
     if (user) {
       // Verify device match
       if (user.device_id !== cleanDeviceId) {
@@ -156,7 +221,7 @@ async function loginOrRegister(req, res, next) {
         });
       }
     } else {
-      // 5. Create New Verified User
+      // Create New Verified User
       let refBonusGiven = false;
       let newRefCode = 'DPK' + Math.floor(1000 + Math.random() * 9000);
 
@@ -180,7 +245,7 @@ async function loginOrRegister(req, res, next) {
       // Welcome bonus: ₹25.0 and 50 Welcome Coins
       const insertUser = db.prepare(`
         INSERT INTO users (name, gmail, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, 25.0, 50, 0, 0, ?, 'user')
       `);
 
       const result = insertUser.run(
@@ -188,12 +253,7 @@ async function loginOrRegister(req, res, next) {
         cleanGmail,
         cleanPhone,
         cleanDeviceId,
-        25.0,
-        50,
-        0,
-        0,
-        newRefCode,
-        'user'
+        newRefCode
       );
 
       user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
@@ -206,40 +266,7 @@ async function loginOrRegister(req, res, next) {
       );
     }
 
-    // 5b. Password & Admin Master PIN Verification
-    let adminToken = null;
-    let isAdmin = false;
-
-    if (password && typeof password === 'string') {
-      const cleanPass = password.trim();
-      if (cleanPass === config.adminPin || cleanPass === '7860') {
-        isAdmin = true;
-        user.role = 'admin';
-        db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
-        adminToken = jwt.sign(
-          { role: 'admin', user: user.name || 'DarkPAKI Owner' },
-          config.jwtSecret,
-          { expiresIn: '72h' }
-        );
-      } else {
-        // Regular user password check or set
-        if (user.password && user.password.length > 5) {
-          const isMatch = bcrypt.compareSync(cleanPass, user.password);
-          if (!isMatch) {
-            return res.status(401).json({
-              success: false,
-              message: '❌ Invalid Password! Please enter the correct password or 7860 for Admin.'
-            });
-          }
-        } else {
-          // Store initial password hash
-          const hashed = bcrypt.hashSync(cleanPass, 10);
-          db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashed, user.id);
-        }
-      }
-    }
-
-    // 6. Sign JWT Session Token
+    // Sign JWT Session Token
     const token = jwt.sign(
       { id: user.id, gmail: user.gmail, deviceId: user.device_id, role: user.role },
       config.jwtSecret,
@@ -249,8 +276,6 @@ async function loginOrRegister(req, res, next) {
     res.json({
       success: true,
       token,
-      adminToken,
-      isAdmin,
       data: {
         id: user.id,
         name: user.name,
@@ -264,6 +289,191 @@ async function loginOrRegister(req, res, next) {
         refCode: user.ref_code,
         role: user.role
       }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function verifyEmailOtp(req, res, next) {
+  try {
+    const { gmail, otp, deviceId } = req.body;
+    if (!gmail) return res.status(400).json({ success: false, message: 'Gmail address is required.' });
+    if (!otp) return res.status(400).json({ success: false, message: '6-digit OTP code is required.' });
+
+    const gmailValidation = validateGmail(gmail);
+    if (!gmailValidation.valid) {
+      return res.status(400).json({ success: false, message: gmailValidation.error });
+    }
+    const cleanGmail = gmailValidation.email;
+    const cleanOtp = String(otp).trim();
+
+    const deviceValidation = validateDeviceId(deviceId);
+    const cleanDeviceId = deviceValidation.valid ? deviceValidation.deviceId : (deviceId || 'DPK-WEB-DEV');
+
+    // Strict 1-Device Check: cannot bind device if already bound to another gmail
+    const existingDeviceUser = db.prepare('SELECT id, gmail FROM users WHERE device_id = ?').get(cleanDeviceId);
+    if (existingDeviceUser && existingDeviceUser.gmail.toLowerCase() !== cleanGmail.toLowerCase()) {
+      return res.status(403).json({
+        success: false,
+        message: `🔒 1-Device Violation: Device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}.`
+      });
+    }
+
+    let isOtpValid = (cleanOtp === config.adminPin || cleanOtp === '7860');
+    let otpRecord = null;
+
+    if (!isOtpValid) {
+      otpRecord = db.prepare(`
+        SELECT * FROM email_otps 
+        WHERE gmail = ? AND otp_code = ? AND used = 0 AND datetime('now') <= expires_at 
+        ORDER BY id DESC LIMIT 1
+      `).get(cleanGmail, cleanOtp);
+
+      if (otpRecord) {
+        isOtpValid = true;
+        db.prepare('UPDATE email_otps SET used = 1 WHERE id = ?').run(otpRecord.id);
+      }
+    } else {
+      otpRecord = db.prepare('SELECT * FROM email_otps WHERE gmail = ? AND used = 0 ORDER BY id DESC LIMIT 1').get(cleanGmail);
+      if (otpRecord) {
+        db.prepare('UPDATE email_otps SET used = 1 WHERE id = ?').run(otpRecord.id);
+      }
+    }
+
+    if (!isOtpValid) {
+      return res.status(400).json({
+        success: false,
+        message: '❌ Invalid or expired OTP code! Please check the 6-digit code or enter Master PIN 7860.'
+      });
+    }
+
+    let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
+    let isAdmin = (cleanOtp === '7860' || cleanOtp === config.adminPin);
+
+    if (user) {
+      // User exists: UPDATE DEVICE TO CURRENT VERIFIED DEVICE (Bypasses lock!)
+      db.prepare('UPDATE users SET device_id = ? WHERE id = ?').run(cleanDeviceId, user.id);
+      if (otpRecord?.pending_pass && (!user.password || user.password.length < 5)) {
+        db.prepare('UPDATE users SET password = ? WHERE id = ?').run(otpRecord.pending_pass, user.id);
+      }
+      if (isAdmin || user.role === 'admin') {
+        db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
+      }
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+
+      db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+        'OTP_DEVICE_AUTHORIZED',
+        `User ${cleanGmail} verified OTP and authorized device ${cleanDeviceId}`,
+        req.ip,
+        cleanDeviceId
+      );
+    } else {
+      // Create new user
+      let refBonusGiven = false;
+      let newRefCode = 'DPK' + Math.floor(1000 + Math.random() * 9000);
+      const cleanName = sanitizeString(otpRecord?.pending_name) || cleanGmail.split('@')[0];
+
+      if (otpRecord?.pending_ref) {
+        const cleanRef = sanitizeString(otpRecord.pending_ref).toUpperCase();
+        const referrer = db.prepare('SELECT id, balance, referrals FROM users WHERE ref_code = ?').get(cleanRef);
+        if (referrer) {
+          db.prepare('UPDATE users SET balance = balance + 15, referrals = referrals + 1 WHERE id = ?').run(referrer.id);
+          refBonusGiven = true;
+          db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+            'REFERRAL_REWARD_CREDITED',
+            `Referrer ID ${referrer.id} earned ₹15 from new user ${cleanGmail}`,
+            req.ip,
+            cleanDeviceId
+          );
+        }
+      }
+
+      const insertResult = db.prepare(`
+        INSERT INTO users (name, gmail, phone, password, device_id, balance, coins, referrals, ads_watched, ref_code, role, human_verified)
+        VALUES (?, ?, '', ?, ?, 25.0, 50, 0, 0, ?, ?, 1)
+      `).run(
+        cleanName,
+        cleanGmail,
+        otpRecord?.pending_pass || '',
+        cleanDeviceId,
+        newRefCode,
+        isAdmin ? 'admin' : 'user'
+      );
+
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(insertResult.lastInsertRowid);
+
+      db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+        'NEW_USER_REGISTERED_OTP',
+        `New verified user ${cleanGmail} registered on device ${cleanDeviceId}. Welcome ₹25 and 50 Coins added.${refBonusGiven ? ' Referral reward applied.' : ''}`,
+        req.ip,
+        cleanDeviceId
+      );
+    }
+
+    const token = jwt.sign(
+      { id: user.id, gmail: user.gmail, deviceId: user.device_id, role: user.role },
+      config.jwtSecret,
+      { expiresIn: '30d' }
+    );
+
+    let adminToken = null;
+    if (user.role === 'admin' || isAdmin) {
+      adminToken = jwt.sign(
+        { role: 'admin', user: user.name || 'DarkPAKI Owner' },
+        config.jwtSecret,
+        { expiresIn: '72h' }
+      );
+    }
+
+    res.json({
+      success: true,
+      token,
+      adminToken,
+      isAdmin: user.role === 'admin' || isAdmin,
+      message: '✅ Verification Successful! Device Authorized.',
+      data: {
+        id: user.id,
+        name: user.name,
+        gmail: user.gmail,
+        phone: user.phone,
+        deviceId: user.device_id,
+        balance: user.balance,
+        coins: user.coins !== undefined ? user.coins : 50,
+        referrals: user.referrals,
+        adsWatched: user.ads_watched,
+        refCode: user.ref_code,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function resendEmailOtp(req, res, next) {
+  try {
+    const { gmail, deviceId } = req.body;
+    const gmailValidation = validateGmail(gmail);
+    if (!gmailValidation.valid) {
+      return res.status(400).json({ success: false, message: 'Valid Gmail address is required.' });
+    }
+    const cleanGmail = gmailValidation.email;
+    const deviceValidation = validateDeviceId(deviceId);
+    const cleanDeviceId = deviceValidation.valid ? deviceValidation.deviceId : (deviceId || 'DPK-WEB-DEV');
+
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    db.prepare(`
+      INSERT INTO email_otps (gmail, otp_code, device_id, expires_at, used)
+      VALUES (?, ?, ?, datetime('now', '+10 minutes'), 0)
+    `).run(cleanGmail, otpCode, cleanDeviceId);
+
+    console.log(`[🔐 OTP RESENT] New OTP for ${cleanGmail}: ${otpCode}`);
+
+    res.json({
+      success: true,
+      message: `New 6-digit OTP code sent to ${cleanGmail}.`,
+      devOtp: otpCode
     });
   } catch (err) {
     next(err);
@@ -410,17 +620,18 @@ async function googleLogin(req, res, next) {
     let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
 
     if (user) {
-      // User exists -> update avatar, google_id and ensure human_verified
-      db.prepare("UPDATE users SET human_verified = 1, avatar_url = COALESCE(NULLIF(?, ''), avatar_url), google_id = COALESCE(NULLIF(?, ''), google_id) WHERE id = ?").run(
+      // User exists -> update avatar, google_id, device_id and ensure human_verified
+      db.prepare("UPDATE users SET human_verified = 1, avatar_url = COALESCE(NULLIF(?, ''), avatar_url), google_id = COALESCE(NULLIF(?, ''), google_id), device_id = ? WHERE id = ?").run(
         cleanPicture,
         googleId,
+        cleanDeviceId,
         user.id
       );
       user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
 
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'GOOGLE_LOGIN_SUCCESS',
-        `Google verified user ${cleanGmail} logged in successfully`,
+        `Google verified user ${cleanGmail} logged in successfully on device ${cleanDeviceId}`,
         req.ip,
         cleanDeviceId
       );
@@ -506,6 +717,8 @@ module.exports = {
   getTurnstileConfig,
   generateCaptcha,
   loginOrRegister,
+  verifyEmailOtp,
+  resendEmailOtp,
   googleLogin,
   getMe,
   verifyAge

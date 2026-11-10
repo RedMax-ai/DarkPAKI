@@ -220,6 +220,28 @@ async function runTests() {
   const aiLikeRes = await request('POST', `/ai/images/${aiGenRes.body.data.id}/like`, { deviceId: 'DPK-DEV-OTHER' });
   assert(aiLikeRes.status === 200 && aiLikeRes.body.data.liked === true, 'AI image like toggle persisted in database');
 
+  // 21. Email + Password + OTP Verification & Device Authorization Flow
+  const otpUserGmail = 'otp.test' + Date.now() + '@gmail.com';
+  const otpInitDevice = 'DPK-OTP-DEV-1';
+  const otpInitRes = await request('POST', '/auth/login', {
+    name: 'OTP Verified User',
+    gmail: otpUserGmail,
+    password: 'securePass123',
+    deviceId: otpInitDevice,
+    turnstileToken: 'CLOUDFLARE_PASS',
+    termsAccepted: true
+  });
+  assert(otpInitRes.status === 200 && otpInitRes.body.requireOtp === true && otpInitRes.body.devOtp, 'Password verified: 6-digit OTP code dispatched for account');
+
+  const otpCode = otpInitRes.body.devOtp;
+  const otpNewDevice = 'DPK-OTP-DEV-2'; // Authorize on second device via OTP
+  const otpVerifyRes = await request('POST', '/auth/verify-otp', {
+    gmail: otpUserGmail,
+    otp: otpCode,
+    deviceId: otpNewDevice
+  });
+  assert(otpVerifyRes.status === 200 && otpVerifyRes.body.token && otpVerifyRes.body.data.deviceId === otpNewDevice, 'OTP verification binds & authorizes new device successfully');
+
   // Automatic Cleanup of Temporary Test Artifacts (Preserves Clean Database)
   const db = require('./src/db/database');
   if (uploadVidRes?.body?.data?.id) db.prepare('DELETE FROM videos WHERE id = ?').run(uploadVidRes.body.data.id);
@@ -229,6 +251,7 @@ async function runTests() {
   }
   if (testDeviceId) {
     db.prepare('DELETE FROM users WHERE device_id = ?').run(testDeviceId);
+    db.prepare('DELETE FROM users WHERE gmail LIKE \'otp.test%\'').run();
     db.prepare('DELETE FROM demand_votes WHERE device_id = ?').run(testDeviceId);
     db.prepare('DELETE FROM withdrawals WHERE user_id NOT IN (SELECT id FROM users)').run();
   }

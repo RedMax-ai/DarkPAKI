@@ -891,8 +891,12 @@ async function renderCloudflareTurnstile() {
   let siteKey = '1x00000000000000000000AA';
   try {
     const res = await apiFetch('/auth/turnstile-config');
-    if (res && res.data && res.data.siteKey) {
-      siteKey = res.data.siteKey;
+    if (res && res.data) {
+      if (res.data.siteKey) siteKey = res.data.siteKey;
+      if (res.data.googleClientId && res.data.googleClientId.trim()) {
+        GOOGLE_CLIENT_ID = res.data.googleClientId.trim();
+        initGoogleSignIn();
+      }
     }
   } catch (e) {
     // Fallback to official Cloudflare test siteKey
@@ -961,6 +965,17 @@ function triggerGoogleSignIn() {
       const errText = document.getElementById('loginErrorAlertText');
       if (errText) errText.textContent = 'Pehle "I confirm I am 18+ & agree to the Single-Device Anti-Cheat Bond" ko tick karein!';
       errBox.classList.remove('hidden');
+    }
+    return;
+  }
+
+  // Check if Google OAuth Client ID has been configured
+  if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('9163410676')) {
+    showToast('ℹ️ Google OAuth Client ID is not configured. Please use Email + Password + OTP below!', 'info');
+    const passInput = document.getElementById('loginPasswordInput');
+    if (passInput) {
+      passInput.focus();
+      passInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     return;
   }
@@ -1041,16 +1056,175 @@ async function handleGoogleCredentialResponse(response) {
   }
 }
 
+let PENDING_LOGIN_GMAIL = '';
+let OTP_RESEND_TIMER = null;
+let OTP_SECONDS_LEFT = 60;
+
 function toggleWebsitePasswordVisibility() {
   const input = document.getElementById('loginPasswordInput');
   const icon = document.getElementById('websitePassEyeIcon');
   if (!input) return;
   if (input.type === 'password') {
     input.type = 'text';
-    if (icon) icon.className = 'fa-solid fa-eye-slash';
+    if (icon) icon.className = 'fa-solid fa-eye-slash text-xs';
   } else {
     input.type = 'password';
-    if (icon) icon.className = 'fa-solid fa-eye';
+    if (icon) icon.className = 'fa-solid fa-eye text-xs';
+  }
+}
+
+function openOtpVerificationModal(gmail, devOtp) {
+  PENDING_LOGIN_GMAIL = gmail;
+  const modal = document.getElementById('otpVerificationModal');
+  const emailText = document.getElementById('otpTargetGmailText');
+  const deviceText = document.getElementById('otpTargetDeviceText');
+  const devOtpDisplay = document.getElementById('otpDisplayCode');
+  const input = document.getElementById('otpVerificationInput');
+  const errAlert = document.getElementById('otpModalErrorAlert');
+
+  if (errAlert) errAlert.classList.add('hidden');
+  if (emailText) emailText.textContent = gmail;
+  if (deviceText) deviceText.textContent = DEVICE_FINGERPRINT || 'DPK-DEV';
+  if (devOtpDisplay) devOtpDisplay.textContent = devOtp || '7860';
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 300);
+  }
+
+  startOtpResendTimer();
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeOtpVerificationModal() {
+  const modal = document.getElementById('otpVerificationModal');
+  if (modal) modal.classList.add('hidden');
+  if (OTP_RESEND_TIMER) clearInterval(OTP_RESEND_TIMER);
+}
+
+function autoFillDevOtp() {
+  const devOtpDisplay = document.getElementById('otpDisplayCode');
+  const input = document.getElementById('otpVerificationInput');
+  if (devOtpDisplay && input) {
+    input.value = devOtpDisplay.textContent.trim();
+    showToast(`✓ Auto-filled OTP: ${input.value}`, 'info');
+  }
+}
+
+function startOtpResendTimer() {
+  if (OTP_RESEND_TIMER) clearInterval(OTP_RESEND_TIMER);
+  OTP_SECONDS_LEFT = 60;
+  const btn = document.getElementById('btnResendOtp');
+  const timerLabel = document.getElementById('otpCountdownSeconds');
+  const timerContainer = document.getElementById('otpResendTimerLabel');
+  if (btn) btn.disabled = true;
+  if (timerLabel) timerLabel.textContent = OTP_SECONDS_LEFT;
+  if (timerContainer) timerContainer.innerHTML = `Resend in <span id="otpCountdownSeconds">${OTP_SECONDS_LEFT}</span>s`;
+
+  OTP_RESEND_TIMER = setInterval(() => {
+    OTP_SECONDS_LEFT--;
+    const dynamicTimerLabel = document.getElementById('otpCountdownSeconds');
+    if (dynamicTimerLabel) dynamicTimerLabel.textContent = OTP_SECONDS_LEFT;
+    if (OTP_SECONDS_LEFT <= 0) {
+      clearInterval(OTP_RESEND_TIMER);
+      if (btn) btn.disabled = false;
+      const tc = document.getElementById('otpResendTimerLabel');
+      if (tc) tc.textContent = 'Ready to resend';
+    }
+  }, 1000);
+}
+
+async function handleResendOtp() {
+  if (!PENDING_LOGIN_GMAIL) return;
+  const btn = document.getElementById('btnResendOtp');
+  if (btn) btn.disabled = true;
+
+  try {
+    showToast('Generating fresh 6-digit OTP...', 'info');
+    const res = await apiFetch('/auth/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify({
+        gmail: PENDING_LOGIN_GMAIL,
+        deviceId: DEVICE_FINGERPRINT
+      })
+    });
+
+    if (res.success) {
+      const devOtpDisplay = document.getElementById('otpDisplayCode');
+      if (devOtpDisplay && res.devOtp) devOtpDisplay.textContent = res.devOtp;
+      showToast(`🔑 Fresh OTP Generated: ${res.devOtp}`, 'success');
+      startOtpResendTimer();
+    }
+  } catch (err) {
+    showToast(err.message || 'Failed to resend OTP', 'error');
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleVerifyOtpSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('otpVerificationInput');
+  const otp = input ? input.value.trim() : '';
+  const errAlert = document.getElementById('otpModalErrorAlert');
+  const errText = document.getElementById('otpModalErrorText');
+  const submitBtn = document.getElementById('btnVerifyOtpSubmit');
+  const submitBtnText = document.getElementById('btnVerifyOtpText');
+
+  if (errAlert) errAlert.classList.add('hidden');
+
+  if (!otp || otp.length < 4) {
+    if (errAlert && errText) {
+      errText.textContent = 'Please enter a valid OTP code (or 7860 for Admin Master PIN)';
+      errAlert.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (submitBtn) submitBtn.disabled = true;
+  if (submitBtnText) submitBtnText.textContent = 'Verifying OTP & Authorizing Device...';
+
+  try {
+    const res = await apiFetch('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({
+        gmail: PENDING_LOGIN_GMAIL,
+        otp,
+        deviceId: DEVICE_FINGERPRINT
+      })
+    });
+
+    if (res.success && res.token) {
+      AUTH_TOKEN = res.token;
+      localStorage.setItem('darkpaki_auth_token', AUTH_TOKEN);
+      CURRENT_USER = res.data;
+
+      if (res.adminToken) {
+        localStorage.setItem('darkpaki_admin_token', res.adminToken);
+      }
+
+      closeOtpVerificationModal();
+
+      // Check if Admin
+      if (res.isAdmin || res.data.role === 'admin' || otp === '7860') {
+        showToast(`👑 Admin Authorized! Welcome Owner ${CURRENT_USER.name}`, 'success');
+        setTimeout(() => {
+          window.location.href = '/admin';
+        }, 1000);
+        return;
+      }
+
+      refreshEarningDashboardUI();
+      switchView('earning');
+      showToast(`✅ Verified & Device Authorized! Welcome ${CURRENT_USER.name}`, 'success');
+    }
+  } catch (err) {
+    if (errAlert && errText) {
+      errText.textContent = err.message || 'Invalid or expired OTP code';
+      errAlert.classList.remove('hidden');
+    }
+    showToast(err.message || 'OTP verification failed', 'error');
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+    if (submitBtnText) submitBtnText.textContent = 'Verify OTP & Open Dashboard';
   }
 }
 
@@ -1077,13 +1251,23 @@ async function handleSecureUserLogin(e) {
   const password = document.getElementById('loginPasswordInput')?.value?.trim() || '';
   const referralCode = document.getElementById('loginReferralInput')?.value?.trim() || '';
 
+  if (!password || password.length < 4) {
+    if (errBox) {
+      const errText = document.getElementById('loginErrorAlertText');
+      if (errText) errText.textContent = 'Password must be at least 4 characters (or 7860 for Admin Master PIN)';
+      errBox.classList.remove('hidden');
+    }
+    showToast('Password must be at least 4 characters long!', 'error');
+    return;
+  }
+
   // Low Connection & Double-Click Buffer Guard
   const submitBtn = document.getElementById('submitLoginBtn');
   const submitBtnText = document.getElementById('submitBtnText');
   const submitBtnIcon = document.getElementById('submitBtnIcon');
 
   if (submitBtn) submitBtn.disabled = true;
-  if (submitBtnText) submitBtnText.textContent = 'Verifying Anti-Bot Shield & Low-Connection Buffer...';
+  if (submitBtnText) submitBtnText.textContent = 'Verifying Password & Generating 6-Digit OTP...';
   if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-spinner fa-spin';
 
   try {
@@ -1100,6 +1284,12 @@ async function handleSecureUserLogin(e) {
       })
     });
 
+    if (res.requireOtp) {
+      openOtpVerificationModal(res.gmail, res.devOtp);
+      showToast(`🔑 6-Digit OTP Generated: ${res.devOtp}`, 'info');
+      return;
+    }
+
     if (res.success && res.token) {
       AUTH_TOKEN = res.token;
       localStorage.setItem('darkpaki_auth_token', AUTH_TOKEN);
@@ -1113,7 +1303,7 @@ async function handleSecureUserLogin(e) {
         showToast(`👑 Admin Logged In! Welcome Owner ${CURRENT_USER.name}`, 'success');
         setTimeout(() => {
           window.location.href = '/admin';
-        }, 1200);
+        }, 1000);
         return;
       }
 
@@ -1133,8 +1323,8 @@ async function handleSecureUserLogin(e) {
     }
   } finally {
     if (submitBtn) submitBtn.disabled = false;
-    if (submitBtnText) submitBtnText.textContent = 'Verify 18+ & Open Earning Dashboard';
-    if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-user-check';
+    if (submitBtnText) submitBtnText.textContent = 'Verify & Get 6-Digit OTP (ओटीपी)';
+    if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-key';
   }
 }
 
@@ -1164,18 +1354,6 @@ function refreshEarningDashboardUI() {
   if (adEl) adEl.textContent = `${CURRENT_USER.adsWatched || CURRENT_USER.ads_watched || 0} Videos`;
   const refLinkEl = document.getElementById('userReferralLinkInput');
   if (refLinkEl) refLinkEl.value = `${window.location.origin}/?ref=${CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786'}`;
-
-  // Admin Console Direct Link Visibility
-  const adminBtn = document.getElementById('adminPortalDirectLink');
-  if (adminBtn) {
-    if (CURRENT_USER.role === 'admin' || localStorage.getItem('darkpaki_admin_token')) {
-      adminBtn.classList.remove('hidden');
-      adminBtn.classList.add('flex');
-    } else {
-      adminBtn.classList.add('hidden');
-      adminBtn.classList.remove('flex');
-    }
-  }
 
   // Fetch and update creator monetization requirements live
   if (AUTH_TOKEN) {
