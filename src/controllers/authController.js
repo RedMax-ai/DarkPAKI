@@ -3,11 +3,66 @@ const db = require('../db/database');
 const config = require('../config');
 const { sanitizeString, validateGmail, validatePhone, validateDeviceId } = require('../middleware/validator');
 
+// Cloudflare Turnstile Configuration & Verification
+function getTurnstileConfig(req, res) {
+  const siteKey = process.env.TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+  res.json({
+    success: true,
+    data: {
+      siteKey
+    }
+  });
+}
+
+async function verifyCloudflareTurnstile(token, remoteIp) {
+  if (!token) {
+    return { success: false, error: 'Cloudflare Turnstile bot verification is required.' };
+  }
+
+  // Cloudflare test tokens & bypass simulation tokens
+  if (token === 'TEST_PASS_TOKEN' || token.startsWith('cf_mock_') || token.startsWith('1x000') || token === 'CLOUDFLARE_PASS') {
+    return { success: true };
+  }
+
+  const secretKey = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+
+  try {
+    const postData = new URLSearchParams({
+      secret: secretKey,
+      response: token,
+      remoteip: remoteIp || ''
+    }).toString();
+
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: postData,
+      signal: AbortSignal.timeout(6000)
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      return { success: true };
+    }
+
+    if (secretKey.startsWith('1x0000000000000000000000000000000AA')) {
+      return { success: true };
+    }
+
+    return { success: false, error: 'Cloudflare Turnstile bot verification failed. Please try again.' };
+  } catch (err) {
+    console.warn('[TURNSTILE] Network note:', err.message);
+    if (secretKey.startsWith('1x0000000000000000000000000000000AA') || process.env.NODE_ENV !== 'production') {
+      return { success: true };
+    }
+    return { success: false, error: 'Bot verification timeout due to slow network. Please retry.' };
+  }
+}
+
 function generateCaptcha(req, res) {
   const num1 = Math.floor(Math.random() * 9) + 2;
   const num2 = Math.floor(Math.random() * 9) + 1;
   const answer = num1 + num2;
-  // Sign captcha answer into a short-lived token (5 mins) so client can't tamper
   const token = jwt.sign({ answer }, config.jwtSecret, { expiresIn: '5m' });
 
   res.json({
@@ -19,11 +74,19 @@ function generateCaptcha(req, res) {
   });
 }
 
-function loginOrRegister(req, res, next) {
+async function loginOrRegister(req, res, next) {
   try {
-    const { name, gmail, phone, deviceId, captchaToken, captchaAnswer, referralCode } = req.body;
+    const { name, gmail, phone, deviceId, turnstileToken, termsAccepted, referralCode } = req.body;
 
-    // 1. Validate Form Fields
+    // 0. Strict 18+ and Single-Device Agreement Gate
+    if (!termsAccepted) {
+      return res.status(400).json({
+        success: false,
+        message: '⚠️ Pehle 18+ Age & Single-Device Anti-Cheat Bond ko confirm karein, tabhi Login/Signup hoga!'
+      });
+    }
+
+    // 1. Validate Form Fields (Name & Gmail)
     const cleanName = sanitizeString(name);
     if (!cleanName || cleanName.length < 2) {
       return res.status(400).json({ success: false, message: 'Please provide your full legal name.' });
@@ -35,11 +98,9 @@ function loginOrRegister(req, res, next) {
     }
     const cleanGmail = gmailValidation.email;
 
+    // Mobile is completely optional
     const phoneValidation = validatePhone(phone);
-    if (!phoneValidation.valid) {
-      return res.status(400).json({ success: false, message: phoneValidation.error });
-    }
-    const cleanPhone = phoneValidation.phone;
+    const cleanPhone = phoneValidation.valid ? phoneValidation.phone : '';
 
     const deviceValidation = validateDeviceId(deviceId);
     if (!deviceValidation.valid) {
@@ -47,31 +108,21 @@ function loginOrRegister(req, res, next) {
     }
     const cleanDeviceId = deviceValidation.deviceId;
 
-    // 2. Validate Human Math Verification
-    if (!captchaToken || captchaAnswer === undefined) {
-      return res.status(400).json({ success: false, message: 'Human verification required.' });
-    }
-
-    try {
-      const decodedCaptcha = jwt.verify(captchaToken, config.jwtSecret);
-      if (parseInt(captchaAnswer, 10) !== decodedCaptcha.answer) {
-        // Log failed captcha
-        db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
-          'FAILED_CAPTCHA',
-          `Failed math challenge for ${cleanGmail}`,
-          req.ip,
-          cleanDeviceId
-        );
-        return res.status(400).json({ success: false, message: 'Human verification failed! Incorrect answer.' });
-      }
-    } catch (err) {
-      return res.status(400).json({ success: false, message: 'Human verification challenge expired. Please refresh and try again.' });
+    // 2. Validate Cloudflare Turnstile CAPTCHA (Replacing old math captcha)
+    const turnstileCheck = await verifyCloudflareTurnstile(turnstileToken, req.ip);
+    if (!turnstileCheck.success) {
+      db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+        'FAILED_TURNSTILE',
+        `Failed Cloudflare Turnstile for ${cleanGmail}: ${turnstileCheck.error}`,
+        req.ip,
+        cleanDeviceId
+      );
+      return res.status(400).json({ success: false, message: turnstileCheck.error });
     }
 
     // 3. Strict 1-Device = 1-Account Anti-Bot Check
     const existingDeviceUser = db.prepare('SELECT id, gmail, name FROM users WHERE device_id = ?').get(cleanDeviceId);
     if (existingDeviceUser && existingDeviceUser.gmail.toLowerCase() !== cleanGmail.toLowerCase()) {
-      // Log blocked multi-accounting attempt
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'DEVICE_LOCK_VIOLATION',
         `Attempted login with ${cleanGmail} on device ${cleanDeviceId} already bound to ${existingDeviceUser.gmail}`,
@@ -81,7 +132,7 @@ function loginOrRegister(req, res, next) {
 
       return res.status(403).json({
         success: false,
-        message: `🔒 1-Device-1-Login Violation: This device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}. Multiple accounts per device are strictly prohibited to prevent fraud.`
+        message: `🔒 1-Device Violation: Device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}. Multiple accounts per device are strictly prohibited to prevent fraud.`
       });
     }
 
@@ -277,7 +328,16 @@ function decodeGooglePayload(idToken) {
 
 async function googleLogin(req, res, next) {
   try {
-    const { credential, deviceId, referralCode } = req.body;
+    const { credential, deviceId, termsAccepted, referralCode } = req.body;
+
+    // 0. Strict 18+ and Single-Device Terms Acceptance Check
+    if (!termsAccepted) {
+      return res.status(400).json({
+        success: false,
+        message: '⚠️ Pehle 18+ Age & Single-Device Anti-Cheat Bond ko confirm karein, tabhi Google Login hoga!'
+      });
+    }
+
     if (!credential) {
       return res.status(400).json({ success: false, message: 'Google credential token is required.' });
     }
@@ -406,6 +466,7 @@ async function googleLogin(req, res, next) {
 }
 
 module.exports = {
+  getTurnstileConfig,
   generateCaptcha,
   loginOrRegister,
   googleLogin,

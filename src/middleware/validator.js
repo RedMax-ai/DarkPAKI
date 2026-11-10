@@ -38,14 +38,14 @@ function validateGmail(email) {
   return { valid: true, email: clean };
 }
 
-// Indian Phone Validation (10 digits starting with 6-9)
+// Phone Validation (Optional: 10 digits starting with 6-9 if provided)
 function validatePhone(phone) {
-  if (!phone || typeof phone !== 'string') {
-    return { valid: false, error: 'Mobile number is required.' };
+  if (!phone || typeof phone !== 'string' || phone.trim() === '') {
+    return { valid: true, phone: '' };
   }
   const clean = phone.trim();
   if (!/^[6-9]\d{9}$/.test(clean)) {
-    return { valid: false, error: 'Mobile number must be a valid 10-digit number starting with 6-9.' };
+    return { valid: false, error: 'If provided, mobile number must be a valid 10-digit number.' };
   }
   return { valid: true, phone: clean };
 }

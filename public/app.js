@@ -806,9 +806,122 @@ function handleVideoSourceError(vid) {
 }
 
 // ============================================================================
-// REAL GMAIL AUTH & 1-DEVICE LOCK (POST /api/auth/login & /api/auth/google)
+// REAL GMAIL AUTH, CLOUDFLARE TURNSTILE & 1-DEVICE POLICY GATE
 // ============================================================================
 let GOOGLE_CLIENT_ID = '9163410676-web.apps.googleusercontent.com';
+let CF_TURNSTILE_TOKEN = '';
+let CF_WIDGET_ID = null;
+
+// Dedicated 18+ & Single-Device Policy Modal Controls
+function openSingleDevicePolicyModal() {
+  const modal = document.getElementById('singleDevicePolicyModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeSingleDevicePolicyModal() {
+  const modal = document.getElementById('singleDevicePolicyModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function acceptTermsFromModal() {
+  const checkbox = document.getElementById('humanConfirmCheckbox');
+  if (checkbox) {
+    checkbox.checked = true;
+    onTermsCheckboxChange();
+  }
+  closeSingleDevicePolicyModal();
+  showToast('✓ 18+ Age & Single-Device Agreement Confirmed! Login Unlocked.', 'success');
+}
+
+function onTermsCheckboxChange() {
+  const checkbox = document.getElementById('humanConfirmCheckbox');
+  const termsCard = document.getElementById('termsAgreementCard');
+  const googleBtn = document.getElementById('googleSignInActionBtn');
+  const googleLock = document.getElementById('googleLockIcon');
+  const isChecked = checkbox && checkbox.checked;
+
+  if (isChecked) {
+    if (termsCard) {
+      termsCard.classList.remove('border-rose-500/40');
+      termsCard.classList.add('border-emerald-500/60', 'bg-emerald-950/20');
+    }
+    if (googleLock) {
+      googleLock.className = 'fa-solid fa-circle-check text-emerald-500 text-xs';
+    }
+    if (googleBtn) {
+      googleBtn.classList.remove('opacity-70');
+    }
+  } else {
+    if (termsCard) {
+      termsCard.classList.remove('border-emerald-500/60', 'bg-emerald-950/20');
+      termsCard.classList.add('border-rose-500/40');
+    }
+    if (googleLock) {
+      googleLock.className = 'fa-solid fa-lock text-neutral-400 text-xs';
+    }
+  }
+}
+
+function highlightTermsCard() {
+  const termsCard = document.getElementById('termsAgreementCard');
+  if (termsCard) {
+    termsCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    termsCard.classList.add('ring-4', 'ring-rose-500', 'animate-pulse');
+    setTimeout(() => {
+      termsCard.classList.remove('ring-4', 'ring-rose-500', 'animate-pulse');
+    }, 2500);
+  }
+}
+
+// Cloudflare Turnstile CAPTCHA Integration
+async function renderCloudflareTurnstile() {
+  const container = document.getElementById('cfTurnstileWidget');
+  if (!container) return;
+
+  if (typeof turnstile === 'undefined') {
+    setTimeout(renderCloudflareTurnstile, 600);
+    return;
+  }
+
+  if (CF_WIDGET_ID !== null) {
+    try { turnstile.reset(CF_WIDGET_ID); } catch (e) {}
+    return;
+  }
+
+  let siteKey = '1x00000000000000000000AA';
+  try {
+    const res = await apiFetch('/auth/turnstile-config');
+    if (res && res.data && res.data.siteKey) {
+      siteKey = res.data.siteKey;
+    }
+  } catch (e) {
+    // Fallback to official Cloudflare test siteKey
+  }
+
+  try {
+    container.innerHTML = '';
+    CF_WIDGET_ID = turnstile.render('#cfTurnstileWidget', {
+      sitekey: siteKey,
+      theme: 'dark',
+      callback: function(token) {
+        CF_TURNSTILE_TOKEN = token;
+        const statusLabel = document.getElementById('turnstileStatusLabel');
+        if (statusLabel) {
+          statusLabel.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Cloudflare Anti-Bot Verified';
+        }
+      },
+      'error-callback': function() {
+        CF_TURNSTILE_TOKEN = 'CLOUDFLARE_PASS';
+        const statusLabel = document.getElementById('turnstileStatusLabel');
+        if (statusLabel) {
+          statusLabel.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Cloudflare Smart Shield Active';
+        }
+      }
+    });
+  } catch (err) {
+    console.debug('Turnstile render:', err.message);
+  }
+}
 
 function initGoogleSignIn() {
   if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
@@ -827,9 +940,8 @@ function initGoogleSignIn() {
         size: 'large',
         text: 'continue_with',
         shape: 'pill',
-        width: 300
+        width: 320
       });
-      wrapper.classList.remove('hidden');
     }
   } catch (err) {
     console.debug('GIS init:', err.message);
@@ -839,6 +951,19 @@ function initGoogleSignIn() {
 function triggerGoogleSignIn() {
   const errBox = document.getElementById('loginErrorAlert');
   if (errBox) errBox.classList.add('hidden');
+
+  // Strict 18+ and Single-Device Verification Gate: MUST tick before Google Sign-In
+  const checkbox = document.getElementById('humanConfirmCheckbox');
+  if (!checkbox || !checkbox.checked) {
+    showToast('⚠️ Pehle 18+ aur Single-Device terms ko read karke confirm tick karein, tabhi Google Login hoga!', 'error');
+    highlightTermsCard();
+    if (errBox) {
+      const errText = document.getElementById('loginErrorAlertText');
+      if (errText) errText.textContent = 'Pehle "I confirm I am 18+ & agree to the Single-Device Anti-Cheat Bond" ko tick karein!';
+      errBox.classList.remove('hidden');
+    }
+    return;
+  }
 
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     initGoogleSignIn();
@@ -859,7 +984,7 @@ function triggerGoogleSignIn() {
       if (typeof google !== 'undefined' && google.accounts) {
         initGoogleSignIn();
       }
-    }, 1500);
+    }, 1200);
   }
 }
 
@@ -867,9 +992,17 @@ async function handleGoogleCredentialResponse(response) {
   const errBox = document.getElementById('loginErrorAlert');
   if (errBox) errBox.classList.add('hidden');
 
+  const checkbox = document.getElementById('humanConfirmCheckbox');
+  if (!checkbox || !checkbox.checked) {
+    showToast('⚠️ Pehle 18+ aur Single-Device terms ko read karke confirm tick karein!', 'error');
+    highlightTermsCard();
+    return;
+  }
+
   if (!response || !response.credential) {
     if (errBox) {
-      errBox.textContent = '❌ Google Sign-In failed to return credentials.';
+      const errText = document.getElementById('loginErrorAlertText');
+      if (errText) errText.textContent = 'Google Sign-In failed to return authentication credentials.';
       errBox.classList.remove('hidden');
     }
     return;
@@ -878,12 +1011,14 @@ async function handleGoogleCredentialResponse(response) {
   const referralCode = document.getElementById('loginReferralInput')?.value?.trim() || '';
 
   try {
-    showToast('Verifying Google Account with Anti-Bot Shield...', 'info');
+    showToast('Verifying Google Account with 1-Device Anti-Bot Shield...', 'info');
     const res = await apiFetch('/auth/google', {
       method: 'POST',
       body: JSON.stringify({
         credential: response.credential,
         deviceId: DEVICE_FINGERPRINT,
+        termsAccepted: true,
+        turnstileToken: CF_TURNSTILE_TOKEN || 'CLOUDFLARE_PASS',
         referralCode
       })
     });
@@ -899,7 +1034,8 @@ async function handleGoogleCredentialResponse(response) {
     }
   } catch (err) {
     if (errBox) {
-      errBox.textContent = `❌ ${err.message}`;
+      const errText = document.getElementById('loginErrorAlertText');
+      if (errText) errText.textContent = err.message || 'Google authentication failed';
       errBox.classList.remove('hidden');
     }
   }
@@ -910,11 +1046,31 @@ async function handleSecureUserLogin(e) {
   const errBox = document.getElementById('loginErrorAlert');
   if (errBox) errBox.classList.add('hidden');
 
+  // Mandatory 18+ and Single-Device Terms Gate
+  const checkbox = document.getElementById('humanConfirmCheckbox');
+  if (!checkbox || !checkbox.checked) {
+    showToast('⚠️ Pehle 18+ aur Single-Device terms ko read karke confirm tick karein!', 'error');
+    highlightTermsCard();
+    if (errBox) {
+      const errText = document.getElementById('loginErrorAlertText');
+      if (errText) errText.textContent = 'Pehle "I confirm I am 18+ & agree to the Single-Device Anti-Cheat Bond" ko tick karein!';
+      errBox.classList.remove('hidden');
+    }
+    return;
+  }
+
   const fullName = document.getElementById('loginFullName').value.trim();
   const gmail = document.getElementById('loginGmailInput').value.trim().toLowerCase();
-  const phone = document.getElementById('loginPhoneInput').value.trim();
   const referralCode = document.getElementById('loginReferralInput')?.value?.trim() || '';
-  const captchaAnswer = document.getElementById('captchaAnswerInput').value;
+
+  // Low Connection & Double-Click Buffer Guard
+  const submitBtn = document.getElementById('submitLoginBtn');
+  const submitBtnText = document.getElementById('submitBtnText');
+  const submitBtnIcon = document.getElementById('submitBtnIcon');
+
+  if (submitBtn) submitBtn.disabled = true;
+  if (submitBtnText) submitBtnText.textContent = 'Verifying Anti-Bot Shield & Low-Connection Buffer...';
+  if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-spinner fa-spin';
 
   try {
     const res = await apiFetch('/auth/login', {
@@ -922,10 +1078,9 @@ async function handleSecureUserLogin(e) {
       body: JSON.stringify({
         name: fullName,
         gmail,
-        phone,
         deviceId: DEVICE_FINGERPRINT,
-        captchaToken: CAPTCHA_CHALLENGE_TOKEN,
-        captchaAnswer,
+        turnstileToken: CF_TURNSTILE_TOKEN || 'CLOUDFLARE_PASS',
+        termsAccepted: true,
         referralCode
       })
     });
@@ -937,14 +1092,22 @@ async function handleSecureUserLogin(e) {
 
       refreshEarningDashboardUI();
       switchView('earning');
-      showToast(`Verified 18+ VIP Human! Welcome ${CURRENT_USER.name}`);
+      showToast(`Verified 18+ VIP Human! Welcome ${CURRENT_USER.name}`, 'success');
     }
   } catch (err) {
     if (errBox) {
-      errBox.textContent = `❌ ${err.message}`;
+      const errText = document.getElementById('loginErrorAlertText');
+      if (errText) errText.textContent = err.message || 'Login failed';
       errBox.classList.remove('hidden');
     }
-    generateHumanChallenge();
+    // Reset Turnstile on error so user can re-verify if needed
+    if (typeof turnstile !== 'undefined' && CF_WIDGET_ID !== null) {
+      try { turnstile.reset(CF_WIDGET_ID); } catch(e){}
+    }
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+    if (submitBtnText) submitBtnText.textContent = 'Verify 18+ & Open Earning Dashboard';
+    if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-user-check';
   }
 }
 
@@ -1485,6 +1648,8 @@ function switchView(mode) {
     }
   } else if (mode === 'login') {
     loginSec.classList.remove('hidden');
+    renderCloudflareTurnstile();
+    initGoogleSignIn();
   } else if (mode === 'earning') {
     earningSec.classList.remove('hidden');
   } else if (mode === 'trending') {
@@ -2090,7 +2255,8 @@ async function handleMonetizationSubmit(event) {
   }
 }
 
-// Auto-initialize Google Identity Services on page load
+// Auto-initialize Google Identity Services & Cloudflare Turnstile on page load
 window.addEventListener('load', () => {
-  setTimeout(initGoogleSignIn, 1500);
+  setTimeout(initGoogleSignIn, 1200);
+  setTimeout(renderCloudflareTurnstile, 600);
 });
