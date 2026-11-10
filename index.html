@@ -789,6 +789,20 @@
                 </div>
 
                 <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block">Password / Master PIN</label>
+                        <span class="text-[10px] text-amber-400 font-mono">Admin PIN: 7860</span>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
+                        <input id="loginPasswordInput" type="password" placeholder="Enter your password (or 7860 for Admin)" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-10 py-2.5 text-xs sm:text-sm text-white outline-none transition">
+                        <button type="button" onclick="toggleWebsitePasswordVisibility()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs">
+                            <i class="fa-solid fa-eye" id="websitePassEyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
                     <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Referral Code (Optional)</label>
                     <div class="relative">
                         <i class="fa-solid fa-ticket absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
@@ -820,6 +834,15 @@
                     <i id="submitBtnIcon" class="fa-solid fa-user-check"></i>
                     <span id="submitBtnText">Verify & Open Dashboard</span>
                 </button>
+
+                <!-- Direct Admin Portal Access Link -->
+                <div class="mt-1 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+                    <span class="text-neutral-400 text-[11px]">Admin Access:</span>
+                    <a href="/admin" class="text-rose-400 hover:text-rose-300 font-bold inline-flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-user-shield text-xs"></i>
+                        <span>Admin Console (PIN: 7860) ➔</span>
+                    </a>
+                </div>
             </form>
         </div>
     </section>
@@ -848,6 +871,9 @@
             </div>
 
             <div class="flex items-center gap-2">
+                <a id="adminPortalDirectLink" href="/admin" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-lg shadow-purple-600/30 items-center gap-1.5">
+                    <i class="fa-solid fa-crown text-amber-300"></i> Admin Console
+                </a>
                 <button onclick="switchView('home')" class="bg-white/10 hover:bg-white/15 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition">
                     <i class="fa-solid fa-play mr-1 text-rose-500"></i> Watch & Earn
                 </button>

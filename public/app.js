@@ -1041,6 +1041,19 @@ async function handleGoogleCredentialResponse(response) {
   }
 }
 
+function toggleWebsitePasswordVisibility() {
+  const input = document.getElementById('loginPasswordInput');
+  const icon = document.getElementById('websitePassEyeIcon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) icon.className = 'fa-solid fa-eye-slash';
+  } else {
+    input.type = 'password';
+    if (icon) icon.className = 'fa-solid fa-eye';
+  }
+}
+
 async function handleSecureUserLogin(e) {
   e.preventDefault();
   const errBox = document.getElementById('loginErrorAlert');
@@ -1061,6 +1074,7 @@ async function handleSecureUserLogin(e) {
 
   const fullName = document.getElementById('loginFullName').value.trim();
   const gmail = document.getElementById('loginGmailInput').value.trim().toLowerCase();
+  const password = document.getElementById('loginPasswordInput')?.value?.trim() || '';
   const referralCode = document.getElementById('loginReferralInput')?.value?.trim() || '';
 
   // Low Connection & Double-Click Buffer Guard
@@ -1078,6 +1092,7 @@ async function handleSecureUserLogin(e) {
       body: JSON.stringify({
         name: fullName,
         gmail,
+        password,
         deviceId: DEVICE_FINGERPRINT,
         turnstileToken: CF_TURNSTILE_TOKEN || 'CLOUDFLARE_PASS',
         termsAccepted: true,
@@ -1089,6 +1104,18 @@ async function handleSecureUserLogin(e) {
       AUTH_TOKEN = res.token;
       localStorage.setItem('darkpaki_auth_token', AUTH_TOKEN);
       CURRENT_USER = res.data;
+
+      if (res.adminToken) {
+        localStorage.setItem('darkpaki_admin_token', res.adminToken);
+      }
+
+      if (password === '7860' || res.isAdmin || res.data.role === 'admin') {
+        showToast(`👑 Admin Logged In! Welcome Owner ${CURRENT_USER.name}`, 'success');
+        setTimeout(() => {
+          window.location.href = '/admin';
+        }, 1200);
+        return;
+      }
 
       refreshEarningDashboardUI();
       switchView('earning');
@@ -1137,6 +1164,18 @@ function refreshEarningDashboardUI() {
   if (adEl) adEl.textContent = `${CURRENT_USER.adsWatched || CURRENT_USER.ads_watched || 0} Videos`;
   const refLinkEl = document.getElementById('userReferralLinkInput');
   if (refLinkEl) refLinkEl.value = `${window.location.origin}/?ref=${CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786'}`;
+
+  // Admin Console Direct Link Visibility
+  const adminBtn = document.getElementById('adminPortalDirectLink');
+  if (adminBtn) {
+    if (CURRENT_USER.role === 'admin' || localStorage.getItem('darkpaki_admin_token')) {
+      adminBtn.classList.remove('hidden');
+      adminBtn.classList.add('flex');
+    } else {
+      adminBtn.classList.add('hidden');
+      adminBtn.classList.remove('flex');
+    }
+  }
 
   // Fetch and update creator monetization requirements live
   if (AUTH_TOKEN) {

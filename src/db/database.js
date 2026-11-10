@@ -197,6 +197,7 @@ function initializeSchema() {
   runMigration('ALTER TABLE users ADD COLUMN human_verified INTEGER NOT NULL DEFAULT 1;');
   runMigration("ALTER TABLE users ADD COLUMN avatar_url TEXT DEFAULT '';");
   runMigration("ALTER TABLE users ADD COLUMN google_id TEXT DEFAULT '';");
+  runMigration("ALTER TABLE users ADD COLUMN password TEXT DEFAULT '';");
 
   runMigration("ALTER TABLE videos ADD COLUMN status TEXT NOT NULL DEFAULT 'APPROVED';");
   runMigration('ALTER TABLE videos ADD COLUMN owner_name TEXT;');

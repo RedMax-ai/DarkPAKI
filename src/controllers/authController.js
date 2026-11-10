@@ -78,7 +78,7 @@ function generateCaptcha(req, res) {
 
 async function loginOrRegister(req, res, next) {
   try {
-    const { name, gmail, phone, deviceId, turnstileToken, termsAccepted, referralCode } = req.body;
+    const { name, gmail, phone, deviceId, turnstileToken, termsAccepted, referralCode, password } = req.body;
 
     // 0. Strict 18+ and Single-Device Agreement Gate
     if (!termsAccepted) {
@@ -206,6 +206,39 @@ async function loginOrRegister(req, res, next) {
       );
     }
 
+    // 5b. Password & Admin Master PIN Verification
+    let adminToken = null;
+    let isAdmin = false;
+
+    if (password && typeof password === 'string') {
+      const cleanPass = password.trim();
+      if (cleanPass === config.adminPin || cleanPass === '7860') {
+        isAdmin = true;
+        user.role = 'admin';
+        db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
+        adminToken = jwt.sign(
+          { role: 'admin', user: user.name || 'DarkPAKI Owner' },
+          config.jwtSecret,
+          { expiresIn: '72h' }
+        );
+      } else {
+        // Regular user password check or set
+        if (user.password && user.password.length > 5) {
+          const isMatch = bcrypt.compareSync(cleanPass, user.password);
+          if (!isMatch) {
+            return res.status(401).json({
+              success: false,
+              message: '❌ Invalid Password! Please enter the correct password or 7860 for Admin.'
+            });
+          }
+        } else {
+          // Store initial password hash
+          const hashed = bcrypt.hashSync(cleanPass, 10);
+          db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashed, user.id);
+        }
+      }
+    }
+
     // 6. Sign JWT Session Token
     const token = jwt.sign(
       { id: user.id, gmail: user.gmail, deviceId: user.device_id, role: user.role },
@@ -216,6 +249,8 @@ async function loginOrRegister(req, res, next) {
     res.json({
       success: true,
       token,
+      adminToken,
+      isAdmin,
       data: {
         id: user.id,
         name: user.name,
