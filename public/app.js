@@ -1498,112 +1498,6 @@ async function submitUserDemand(e) {
   }
 }
 
-// ============================================================================
-// REAL USER CONTACT & VIDEO/FILE SUBMISSION (POST /api/contact/submit)
-// ============================================================================
-async function handleContactSubmit(e) {
-  e.preventDefault();
-  const name = document.getElementById('contactUserName')?.value.trim();
-  const method = document.getElementById('contactMethod')?.value;
-  const val = document.getElementById('contactValue')?.value.trim();
-  const title = document.getElementById('contactVideoTitle')?.value.trim();
-  const fileUrl = document.getElementById('contactFileUrl')?.value.trim();
-  const message = document.getElementById('contactMessage')?.value.trim();
-  const btn = document.getElementById('btnSubmitContact');
-
-  if (!name || !val || !message) {
-    showToast("Please fill in all required fields (Name, Contact & Message).");
-    return;
-  }
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Submitting Request...`;
-  }
-
-  try {
-    const res = await apiFetch('/contact/submit', {
-      method: 'POST',
-      body: JSON.stringify({
-        userName: name,
-        contactMethod: method,
-        contactValue: val,
-        videoTitle: title,
-        fileUrl: fileUrl,
-        message: message
-      })
-    });
-
-    if (res.success && res.data) {
-      showToast(`✓ Ticket #${res.data.ticketId} saved to database!`);
-
-      // Clear non-contact fields
-      const titleEl = document.getElementById('contactVideoTitle');
-      if (titleEl) titleEl.value = '';
-      const urlEl = document.getElementById('contactFileUrl');
-      if (urlEl) urlEl.value = '';
-      const msgEl = document.getElementById('contactMessage');
-      if (msgEl) msgEl.value = '';
-
-      // Reload submitted list
-      loadMyContactRequests();
-
-      // Popup confirmation
-      const modalTitle = document.getElementById('modalTitleText');
-      const modalBody = document.getElementById('modalBodyText');
-      if (modalTitle && modalBody) {
-        modalTitle.textContent = "Request Submitted Successfully ✓";
-        modalBody.innerHTML = `Your Ticket <b>#${res.data.ticketId}</b> has been persisted in SQLite database. Our admin team will attend to your request via <b>${res.data.contactMethod.toUpperCase()}: ${res.data.contactValue}</b>.`;
-        document.getElementById('sponsorModal')?.classList.remove('hidden');
-      }
-    }
-  } catch (err) {
-    showToast(`❌ ${err.message}`);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = `<i class="fa-solid fa-paper-plane mr-1"></i> <span>Submit Contact Request & Media Link</span>`;
-    }
-  }
-}
-
-async function loadMyContactRequests() {
-  const container = document.getElementById('myContactRequestsList');
-  if (!container) return;
-
-  try {
-    const res = await apiFetch('/contact/my-requests');
-    if (res.success && Array.isArray(res.data)) {
-      if (res.data.length === 0) {
-        container.innerHTML = `<p class="text-xs text-neutral-500 text-center py-4">No submissions yet from this device. Submit your first request above!</p>`;
-        return;
-      }
-
-      container.innerHTML = res.data.map(item => {
-        const ticket = `DPK-REQ-${item.id.toString().padStart(4, '0')}`;
-        return `
-          <div class="bg-black/60 border border-white/10 hover:border-rose-500/30 rounded-2xl p-3 flex flex-col gap-1.5 transition">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-black text-rose-400 font-mono">#${ticket}</span>
-              <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
-                ${item.status}
-              </span>
-            </div>
-            <p class="text-xs font-bold text-white">${item.video_title || 'General Contact Request'}</p>
-            <p class="text-[11px] text-neutral-300">${item.message}</p>
-            ${item.file_url ? `<a href="${item.file_url}" target="_blank" rel="noopener noreferrer" class="text-[10px] text-sky-400 hover:underline flex items-center gap-1"><i class="fa-solid fa-link"></i> Media Link: ${item.file_url.substring(0, 45)}...</a>` : ''}
-            <div class="flex items-center justify-between text-[10px] text-neutral-500 pt-1 border-t border-white/5">
-              <span>Via ${item.contact_method?.toUpperCase()}: ${item.contact_value}</span>
-              <span>${new Date(item.created_at).toLocaleDateString()}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-  } catch (err) {
-    container.innerHTML = `<p class="text-xs text-neutral-500 text-center py-2">Unable to load requests.</p>`;
-  }
-}
 
 // ============================================================================
 // NAVIGATION & UI UTILITIES
@@ -1612,11 +1506,10 @@ function switchView(mode) {
   const homeSec = document.getElementById('homeGuiSection');
   const watchSec = document.getElementById('watchPlayerSection');
   const demandSec = document.getElementById('demandAndCommentHub');
-  const contactSec = document.getElementById('contactSection');
   const loginSec = document.getElementById('authLoginSection');
   const earningSec = document.getElementById('earningPageSection');
 
-  [homeSec, watchSec, demandSec, contactSec, loginSec, earningSec].forEach(sec => {
+  [homeSec, watchSec, demandSec, loginSec, earningSec].forEach(sec => {
     if (sec) sec.classList.add('hidden');
   });
 
@@ -1626,26 +1519,19 @@ function switchView(mode) {
   }
 
   // Bottom Navigation Highlight
-  const botActive = "text-rose-500 flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl bg-rose-500/15 transition";
-  const botInactive = "text-neutral-400 hover:text-rose-400 flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl transition";
+  const botActive = "text-rose-500 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl bg-rose-500/15 transition";
+  const botInactive = "text-neutral-400 hover:text-rose-400 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition";
   const bHome = document.getElementById('bottomNavHome');
   const bTrend = document.getElementById('bottomNavTrending');
-  const bContact = document.getElementById('bottomNavContact');
   const bEarn = document.getElementById('bottomNavEarning');
   if (bHome) bHome.className = mode === 'home' ? botActive : botInactive;
   if (bTrend) bTrend.className = mode === 'trending' ? botActive : botInactive;
-  if (bContact) bContact.className = mode === 'contact' ? botActive : botInactive;
-  if (bEarn) bEarn.className = (mode === 'earning' || mode === 'login') ? botActive : "text-amber-400 hover:text-amber-300 flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl transition";
+  if (bEarn) bEarn.className = (mode === 'earning' || mode === 'login') ? botActive : "text-amber-400 hover:text-amber-300 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition";
 
   if (mode === 'watch') {
     watchSec.classList.remove('hidden');
   } else if (mode === 'demand') {
     demandSec.classList.remove('hidden');
-  } else if (mode === 'contact') {
-    if (contactSec) {
-      contactSec.classList.remove('hidden');
-      loadMyContactRequests();
-    }
   } else if (mode === 'login') {
     loginSec.classList.remove('hidden');
     renderCloudflareTurnstile();
@@ -1932,8 +1818,6 @@ function bindDirectDOMListeners() {
   if (botHome) botHome.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
   const botTrending = document.getElementById('bottomNavTrending');
   if (botTrending) botTrending.addEventListener('click', (e) => { e.preventDefault(); switchView('trending'); });
-  const botContact = document.getElementById('bottomNavContact');
-  if (botContact) botContact.addEventListener('click', (e) => { e.preventDefault(); switchView('contact'); });
   const botSearch = document.getElementById('bottomNavSearch');
   if (botSearch) botSearch.addEventListener('click', (e) => { e.preventDefault(); focusSearchBar(); });
   const botEarn = document.getElementById('bottomNavEarning');

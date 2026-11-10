@@ -67,7 +67,6 @@ function getStats(req, res, next) {
     const totalVideos = db.prepare('SELECT COUNT(*) as count FROM videos').get().count;
     const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
     const totalDemands = db.prepare('SELECT COUNT(*) as count FROM demands').get().count;
-    const totalContacts = db.prepare('SELECT COUNT(*) as count FROM user_contacts').get().count;
     const pendingVideosCount = db.prepare("SELECT COUNT(*) as count FROM videos WHERE status = 'PENDING'").get()?.count || 0;
     const pendingMonetizationCount = db.prepare("SELECT COUNT(*) as count FROM monetization_applications WHERE status = 'PENDING'").get()?.count || 0;
     const monetizedCreatorsCount = db.prepare("SELECT COUNT(*) as count FROM users WHERE is_monetized = 1").get()?.count || 0;
@@ -97,7 +96,6 @@ function getStats(req, res, next) {
           totalVideos,
           totalUsers,
           totalDemands,
-          totalContacts,
           pendingVideosCount,
           pendingMonetizationCount,
           monetizedCreatorsCount,

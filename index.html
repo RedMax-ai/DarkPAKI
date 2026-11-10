@@ -272,38 +272,27 @@
          ============================================================================ -->
     <section id="homeGuiSection" class="relative z-10 max-w-4xl w-full mx-auto px-3 sm:px-6 pt-3.5 pb-8 flex flex-col gap-4">
         
-        <!-- Quick Banner: User Contact & Files + Watch Ads for Coins + Refer & Convert to Cash -->
-        <div class="grid grid-cols-3 gap-2 sm:gap-2.5">
-            <!-- 1. User Contact & Send Video / Files -->
-            <div onclick="switchView('contact')" class="bg-gradient-to-r from-[#170e16] to-[#120c15] border border-rose-500/40 hover:border-rose-400 rounded-2xl p-2 sm:p-2.5 flex items-center gap-2 cursor-pointer transition shadow-lg group">
-                <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
-                    <i class="fa-solid fa-file-video text-xs sm:text-sm"></i>
+        <!-- Quick Banner: Watch Ads for Coins + Refer & Convert to Cash -->
+        <div class="grid grid-cols-2 gap-2 sm:gap-3">
+            <!-- 1. Watch Ads -> Earn Coins -->
+            <div onclick="watchAdForCoins()" class="bg-gradient-to-r from-[#191307] to-[#140e06] border border-amber-500/40 hover:border-amber-400 rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 cursor-pointer transition shadow-lg group">
+                <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
+                    <i class="fa-solid fa-coins text-sm"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-[9px] text-rose-400 font-black uppercase tracking-wider">Contact & Send</p>
-                    <p class="text-[11px] font-bold text-white truncate">Video & Files</p>
+                    <p class="text-[10px] text-amber-400 font-black uppercase tracking-wider">Watch Ads</p>
+                    <p class="text-xs sm:text-sm font-bold text-white truncate">Earn Coins</p>
                 </div>
             </div>
 
-            <!-- 2. Watch Ads -> Earn Coins -->
-            <div onclick="watchAdForCoins()" class="bg-gradient-to-r from-[#191307] to-[#140e06] border border-amber-500/40 hover:border-amber-400 rounded-2xl p-2 sm:p-2.5 flex items-center gap-2 cursor-pointer transition shadow-lg group">
-                <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
-                    <i class="fa-solid fa-coins text-xs sm:text-sm"></i>
+            <!-- 2. Refer to Earn & Convert Coins to Cash -->
+            <div onclick="openEarningOrLogin()" class="bg-gradient-to-r from-[#0b1713] to-[#07130f] border border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 cursor-pointer transition shadow-lg group">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
+                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-[9px] text-amber-400 font-black uppercase tracking-wider">Watch Ads</p>
-                    <p class="text-[11px] font-bold text-white truncate">Earn Coins</p>
-                </div>
-            </div>
-
-            <!-- 3. Refer to Earn & Convert Coins to Cash -->
-            <div onclick="openEarningOrLogin()" class="bg-gradient-to-r from-[#0b1713] to-[#07130f] border border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-2 sm:p-2.5 flex items-center gap-2 cursor-pointer transition shadow-lg group">
-                <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
-                    <i class="fa-solid fa-arrows-rotate text-xs sm:text-sm"></i>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-[9px] text-emerald-400 font-black uppercase tracking-wider">Refer & Convert</p>
-                    <p class="text-[11px] font-bold text-white truncate">Coins ➔ ₹ Cash</p>
+                    <p class="text-[10px] text-emerald-400 font-black uppercase tracking-wider">Refer & Convert</p>
+                    <p class="text-xs sm:text-sm font-bold text-white truncate">Coins ➔ ₹ Cash</p>
                 </div>
             </div>
         </div>
@@ -619,130 +608,7 @@
         </div>
     </section>
 
-    <!-- ============================================================================
-         PAGE: USER CONTACT ME + ATTEND VIDEO & FILES SUBMISSION PORTAL
-         ============================================================================ -->
-    <section id="contactSection" class="hidden relative z-10 max-w-3xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-12 flex flex-col gap-5">
-        
-        <!-- Header Banner -->
-        <div class="bg-gradient-to-r from-[#170e16] via-[#110c14] to-[#0c0c12] border border-rose-500/40 rounded-3xl p-5 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center shadow-lg shadow-rose-600/40 shrink-0">
-                    <i class="fa-solid fa-headset text-lg"></i>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h2 class="text-base sm:text-lg font-black text-white">User Contact & Video/File Desk</h2>
-                        <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-black px-2 py-0.5 rounded-full">
-                            ● 24/7 Active
-                        </span>
-                    </div>
-                    <p class="text-xs text-neutral-300 mt-0.5">Submit custom video requests, send media files, or message admin directly.</p>
-                </div>
-            </div>
-            <button onclick="switchView('home')" class="bg-white/10 hover:bg-white/15 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition self-start sm:self-auto">
-                <i class="fa-solid fa-arrow-left mr-1"></i> Back to Videos
-            </button>
-        </div>
 
-        <!-- Direct Social Contact Options -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <a href="https://t.me/darkpaki_official" target="_blank" rel="noopener noreferrer" class="bg-gradient-to-r from-[#0d1a24] to-[#0a1218] hover:border-sky-400 border border-sky-500/30 rounded-2xl p-4 flex items-center gap-3.5 transition shadow-lg group">
-                <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
-                    <i class="fa-brands fa-telegram text-xl"></i>
-                </div>
-                <div>
-                    <span class="text-[10px] text-sky-400 font-black uppercase tracking-wider">Fast Response</span>
-                    <h4 class="text-sm font-bold text-white">Telegram Admin Direct</h4>
-                    <p class="text-[11px] text-neutral-400">@darkpaki_official</p>
-                </div>
-            </a>
-
-            <a href="https://wa.me/?text=Hello%20DarkPAKI%20VIP%20Admin%2C%20I%20want%20to%20submit%20a%20video%20request" target="_blank" rel="noopener noreferrer" class="bg-gradient-to-r from-[#0b1b12] to-[#08130d] hover:border-emerald-400 border border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3.5 transition shadow-lg group">
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
-                    <i class="fa-brands fa-whatsapp text-xl"></i>
-                </div>
-                <div>
-                    <span class="text-[10px] text-emerald-400 font-black uppercase tracking-wider">Direct WhatsApp</span>
-                    <h4 class="text-sm font-bold text-white">WhatsApp VIP Desk</h4>
-                    <p class="text-[11px] text-neutral-400">Instant Chat & Media Send</p>
-                </div>
-            </a>
-        </div>
-
-        <!-- Contact & Video/File Submission Form -->
-        <div class="bg-[#0c0c12] border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                    <i class="fa-solid fa-file-arrow-up text-rose-500"></i>
-                    <span>Submit Video Request & Send Files</span>
-                </h3>
-                <span class="text-[10px] text-neutral-400 font-mono">SQLite WAL Logged</span>
-            </div>
-
-            <form onsubmit="handleContactSubmit(event)" class="flex flex-col gap-3.5">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase text-neutral-400 mb-1">Your Name / VIP Alias *</label>
-                        <input id="contactUserName" type="text" required placeholder="e.g. VIP Member" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition">
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase text-neutral-400 mb-1">Contact Method *</label>
-                        <select id="contactMethod" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition">
-                            <option value="telegram">Telegram (@handle)</option>
-                            <option value="whatsapp">WhatsApp Number</option>
-                            <option value="phone">Direct Phone Call</option>
-                            <option value="email">Email Address</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-bold uppercase text-neutral-400 mb-1">Contact Handle or Number *</label>
-                    <input id="contactValue" type="text" required placeholder="e.g. @your_telegram or +91 9876543210" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition">
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-bold uppercase text-neutral-400 mb-1">Video Request Title / Topic</label>
-                    <input id="contactVideoTitle" type="text" placeholder="e.g. Late Night Desi 4K Session or Creator Attendance Request" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition">
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-bold uppercase text-neutral-400 mb-1">File / Media URL (Google Drive, Mega, Telegram or MediaFire link)</label>
-                    <input id="contactFileUrl" type="url" placeholder="https://drive.google.com/... or https://mega.nz/..." class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition">
-                    <span class="text-[10px] text-neutral-500 mt-1 block">Paste your cloud storage link or file transfer link here.</span>
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-bold uppercase text-neutral-400 mb-1">Detailed Message / Instructions *</label>
-                    <textarea id="contactMessage" required rows="3" placeholder="Provide full details about the video you want us to attend, upload, or instructions..." class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition resize-none"></textarea>
-                </div>
-
-                <button id="btnSubmitContact" type="submit" class="w-full bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 active:scale-95 text-white font-black text-xs sm:text-sm py-3 rounded-2xl shadow-xl shadow-rose-600/30 transition flex items-center justify-center gap-2 cursor-pointer mt-1">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    <span>Submit Contact Request & Media Link</span>
-                </button>
-            </form>
-        </div>
-
-        <!-- My Recent Submitted Requests -->
-        <div class="bg-[#0c0c12] border border-white/10 rounded-3xl p-5 shadow-xl flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-                <h4 class="text-xs sm:text-sm font-black text-white flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left text-neutral-400"></i>
-                    <span>My Submitted Requests & Status</span>
-                </h4>
-                <button onclick="loadMyContactRequests()" class="text-[11px] text-rose-400 hover:underline">
-                    <i class="fa-solid fa-rotate mr-1"></i> Refresh
-                </button>
-            </div>
-            <div id="myContactRequestsList" class="flex flex-col gap-2">
-                <p class="text-xs text-neutral-500 text-center py-4">Loading your recent submissions...</p>
-            </div>
-        </div>
-
-    </section>
 
     <!-- ============================================================================
          PAGE 4: GMAIL AUTH + HUMAN CHECK + 1-DEVICE LOCK + 18+ CONSENT
@@ -1231,8 +1097,7 @@
             <div>
                 <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-2.5">Community & Support</h4>
                 <ul class="space-y-1.5 text-[11px]">
-                    <li><a href="#" onclick="openTelegramChannel(); return false;" class="hover:text-sky-400 transition flex items-center gap-1.5"><i class="fa-brands fa-telegram text-sky-400"></i> Official Telegram</a></li>
-                    <li><a href="#" onclick="switchView('contact'); return false;" class="hover:text-rose-400 transition flex items-center gap-1.5"><i class="fa-solid fa-headset text-rose-400"></i> Contact / Video Requests</a></li>
+                    <li><a href="#" onclick="openTelegramChannel(); return false;" class="hover:text-sky-400 transition flex items-center gap-1.5"><i class="fa-brands fa-telegram text-sky-400"></i> Official Telegram Support</a></li>
                     <li><a href="#" onclick="triggerAgeGateModal(); return false;" class="hover:text-amber-400 transition flex items-center gap-1.5"><i class="fa-solid fa-key text-amber-400"></i> VIP Vault Gate</a></li>
                 </ul>
             </div>
@@ -1266,10 +1131,6 @@
             <span class="text-[10px] font-black">Upload</span>
         </button>
 
-        <button id="bottomNavContact" onclick="switchView('contact')" class="text-neutral-400 hover:text-rose-400 flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl transition">
-            <i class="fa-solid fa-headset text-base sm:text-lg"></i>
-            <span class="text-[10px] font-black">Contact Me</span>
-        </button>
 
         <button id="bottomNavTelegram" onclick="openTelegramChannel()" class="text-sky-400 hover:text-sky-300 flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl transition">
             <i class="fa-brands fa-telegram text-lg sm:text-xl"></i>

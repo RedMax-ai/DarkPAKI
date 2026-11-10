@@ -108,7 +108,6 @@ app.use('/api/videos', require('./routes/videoRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/earning', require('./routes/earningRoutes'));
 app.use('/api/demands', require('./routes/demandRoutes'));
-app.use('/api/contact', require('./routes/contactRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 

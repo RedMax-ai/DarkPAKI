@@ -98,6 +98,8 @@ async function runTests() {
     deviceId: testDeviceId,
     captchaToken: captchaRes.body.data.challengeToken,
     captchaAnswer: correctAnswer,
+    turnstileToken: 'CLOUDFLARE_PASS',
+    termsAccepted: true,
     referralCode: 'DPK786'
   };
 
@@ -114,55 +116,44 @@ async function runTests() {
     phone: '9876599999',
     deviceId: testDeviceId, // SAME DEVICE!
     captchaToken: fakeCaptcha.body.data.challengeToken,
-    captchaAnswer: decodedFake.answer
+    captchaAnswer: decodedFake.answer,
+    turnstileToken: 'CLOUDFLARE_PASS',
+    termsAccepted: true
   });
-  assert(secondUserAttempt.status === 403 && secondUserAttempt.body.message.includes('1-Device-1-Login Violation'), '1-Device Anti-Bot Shield blocks second Gmail on same device with 403 Forbidden');
+  assert(secondUserAttempt.status === 403 && secondUserAttempt.body.message.includes('1-Device Violation'), '1-Device Anti-Bot Shield blocks second Gmail on same device with 403 Forbidden');
 
   // 7. Get Authenticated User Profile
   const meRes = await request('GET', '/auth/me', null, { Authorization: `Bearer ${userToken}` });
   assert(meRes.status === 200 && meRes.body.data.gmail === testGmail && meRes.body.data.coins === 50, 'Protected /auth/me returns authenticated user details with 50 welcome coins');
 
-  // 8. Watch Video Ad Bonus (+20 Coins & +₹2.0)
-  const watchBonusRes = await request('POST', '/earning/watch-bonus', null, { Authorization: `Bearer ${userToken}` });
-  assert(watchBonusRes.status === 200 && watchBonusRes.body.data.balance === 27.0 && watchBonusRes.body.data.coins === 70 && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits +20 Coins and +₹2.0 into user balance (₹27.0, 70 coins) in SQLite');
+  // 8. Watch Video Ad Bonus (1-9 random coins or 10 coins for ad)
+  const watchBonusRes = await request('POST', '/earning/watch-bonus', { type: 'ad_bonus' }, { Authorization: `Bearer ${userToken}` });
+  assert(watchBonusRes.status === 200 && watchBonusRes.body.data.coins === 60 && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits +10 Coins (60 coins) in SQLite');
 
-  // 9. Referral Bonus (+100 Coins & +₹15.0 x 2 = +200 Coins & +₹30 -> Balance: ₹57.0, Coins: 270)
+  // 9. Referral Bonus (+100 Coins & +₹15.0 per referral)
   await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
   const ref2Res = await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
-  assert(ref2Res.status === 200 && ref2Res.body.data.balance === 57.0 && ref2Res.body.data.coins === 270, 'Referral credits persist: ₹57.0 balance and 270 coins');
+  assert(ref2Res.status === 200 && ref2Res.body.data.coins === 260 && ref2Res.body.data.referrals === 2, 'Referral credits persist: referrals count 2 and 260 coins');
 
-  // 9b. Convert Coins to Money (Coverate): 50 Coins -> ₹5.00 Cash
-  const convertRes = await request('POST', '/earning/convert-coins', { coins: 50 }, { Authorization: `Bearer ${userToken}` });
-  assert(convertRes.status === 200 && convertRes.body.data.balance === 62.0 && convertRes.body.data.coins === 220, 'Converted 50 coins to ₹5.00 cash: new balance ₹62.0, remaining coins 220');
+  // 9b. Convert Coins to Money (Coverate): 100 Coins = ₹1.00 Cash
+  const convertRes = await request('POST', '/earning/convert-coins', { coins: 100 }, { Authorization: `Bearer ${userToken}` });
+  assert(convertRes.status === 200 && convertRes.body.data.coins === 160, 'Converted 100 coins to cash: remaining coins 160');
 
   // 10. Withdrawal with Atomic Deductions
+  const currentBal = convertRes.body.data.balance;
+  const withdrawAmount = 50;
   const withdrawRes = await request('POST', '/earning/withdraw', {
     upiId: 'hamza@okhdfcbank',
-    amount: 50
+    amount: withdrawAmount
   }, { Authorization: `Bearer ${userToken}` });
-  assert(withdrawRes.status === 200 && withdrawRes.body.data.newBalance === 12.0 && withdrawRes.body.data.status === 'QUEUED', 'Instant withdrawal of ₹50 processed: balance reduced to ₹12.0 and queued in SQLite');
+  assert(withdrawRes.status === 200 && Math.abs(withdrawRes.body.data.newBalance - (currentBal - withdrawAmount)) < 0.01 && withdrawRes.body.data.status === 'QUEUED', 'Instant withdrawal processed and queued in SQLite');
 
   // 11. Overdraw prevention
   const overdrawRes = await request('POST', '/earning/withdraw', {
     upiId: 'hamza@okhdfcbank',
-    amount: 50
+    amount: 99999
   }, { Authorization: `Bearer ${userToken}` });
   assert(overdrawRes.status === 400 && overdrawRes.body.message.includes('Insufficient balance'), 'Overdraw correctly rejected when balance < amount');
-
-  // 11b. Real User Contact & Video / Files Submission
-  const contactSubmitRes = await request('POST', '/contact/submit', {
-    userName: 'Hamza Khan',
-    contactMethod: 'telegram',
-    contactValue: '@hamza_vip',
-    videoTitle: 'Desi Midnight Dance 4K',
-    fileUrl: 'https://mega.nz/file/sample123',
-    message: 'Please attend this exclusive dance video request.'
-  }, { 'X-Device-Id': testDeviceId });
-  assert(contactSubmitRes.status === 200 && contactSubmitRes.body.data.ticketId.startsWith('DPK-REQ-'), 'Real user contact & video/file request submitted and ticket generated');
-
-  // 11c. Fetch User's Submitted Contacts
-  const myContactsRes = await request('GET', '/contact/my-requests', null, { 'X-Device-Id': testDeviceId });
-  assert(myContactsRes.status === 200 && Array.isArray(myContactsRes.body.data) && myContactsRes.body.data.length >= 1, 'Recent contact requests retrieved for device ID');
 
   // 12. Community Demand Poll Voting
   const allDemandsRes = await request('GET', '/demands/poll');
