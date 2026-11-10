@@ -808,7 +808,7 @@ function handleVideoSourceError(vid) {
 // ============================================================================
 // REAL GMAIL AUTH, CLOUDFLARE TURNSTILE & 1-DEVICE POLICY GATE
 // ============================================================================
-let GOOGLE_CLIENT_ID = '820053333329-6hdq4c0hnr72lbms7mgu7spbd4rd3tc1.apps.googleusercontent.com';
+let GOOGLE_CLIENT_ID = window.GOOGLE_CLIENT_ID || '820053333329-6hdq4c0hnr72lbms7mgu7spbd4rd3tc1.apps.googleusercontent.com';
 let CF_TURNSTILE_TOKEN = '';
 let CF_WIDGET_ID = null;
 
