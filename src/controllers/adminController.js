@@ -429,6 +429,8 @@ function getSettings(req, res, next) {
     const bannerAdHtml = db.prepare("SELECT value FROM settings WHERE key = 'banner_ad_html'").get()?.value || '';
     const monetagMetaTag = db.prepare("SELECT value FROM settings WHERE key = 'monetag_meta_tag'").get()?.value || '';
     const safeModeEnabled = db.prepare("SELECT value FROM settings WHERE key = 'safe_mode_enabled'").get()?.value !== 'false';
+    const turnstileSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_site_key'").get()?.value || '';
+    const turnstileSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_secret_key'").get()?.value || '';
 
     res.json({
       success: true,
@@ -441,6 +443,8 @@ function getSettings(req, res, next) {
         bannerAdHtml,
         monetagMetaTag,
         safeModeEnabled,
+        turnstileSiteKey,
+        turnstileSecretKey,
         cdnApiKey: config.cdnApiKey
       }
     });
@@ -451,7 +455,17 @@ function getSettings(req, res, next) {
 
 function updateSettings(req, res, next) {
   try {
-    const { telegramUrl, allowInstantSkip, adVideoUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, newPin } = req.body;
+    const { telegramUrl, allowInstantSkip, adVideoUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, newPin } = req.body;
+
+    if (turnstileSiteKey !== undefined) {
+      const cleanKey = sanitizeString(turnstileSiteKey);
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('turnstile_site_key', ?)").run(cleanKey);
+    }
+
+    if (turnstileSecretKey !== undefined) {
+      const cleanSecret = sanitizeString(turnstileSecretKey);
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('turnstile_secret_key', ?)").run(cleanSecret);
+    }
 
     if (telegramUrl !== undefined) {
       const cleanUrl = sanitizeString(telegramUrl);

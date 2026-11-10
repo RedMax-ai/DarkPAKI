@@ -274,7 +274,7 @@
         
         <!-- Quick Banner: User Contact & Files + Watch Ads for Coins + Refer & Convert to Cash -->
         <div class="grid grid-cols-3 gap-2 sm:gap-2.5">
-            <!-- 1. Real User Contact & Send Video / Files -->
+            <!-- 1. User Contact & Send Video / Files -->
             <div onclick="switchView('contact')" class="bg-gradient-to-r from-[#170e16] to-[#120c15] border border-rose-500/40 hover:border-rose-400 rounded-2xl p-2 sm:p-2.5 flex items-center gap-2 cursor-pointer transition shadow-lg group">
                 <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
                     <i class="fa-solid fa-file-video text-xs sm:text-sm"></i>
@@ -391,7 +391,7 @@
 
         <!-- 1000x Adaptive Video Grid (2-Cols Mobile, 3-Cols Desktop) -->
         <div id="homeVideoGrid" class="grid video-grid-adaptive">
-            <!-- Dynamically populated from real SQLite database -->
+            <!-- Dynamically populated from SQLite database -->
         </div>
     </section>
 
@@ -620,7 +620,7 @@
     </section>
 
     <!-- ============================================================================
-         PAGE: REAL USER CONTACT ME + ATTEND VIDEO & FILES SUBMISSION PORTAL
+         PAGE: USER CONTACT ME + ATTEND VIDEO & FILES SUBMISSION PORTAL
          ============================================================================ -->
     <section id="contactSection" class="hidden relative z-10 max-w-3xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-12 flex flex-col gap-5">
         
@@ -745,94 +745,169 @@
     </section>
 
     <!-- ============================================================================
-         PAGE 4: REAL GMAIL AUTH + HUMAN CHECK + 1-DEVICE LOCK + 18+ CONSENT
+         PAGE 4: GMAIL AUTH + HUMAN CHECK + 1-DEVICE LOCK + 18+ CONSENT
          ============================================================================ -->
     <!-- ============================================================================
-         PAGE 4: REAL GMAIL AUTHENTICATION & SINGLE-DEVICE BOND GATE
+         PAGE 4: AUTHENTICATION & SINGLE-DEVICE BOND GATE
          ============================================================================ -->
-    <section id="authLoginSection" class="hidden relative z-10 max-w-lg w-full mx-auto px-3.5 sm:px-6 pt-4 pb-14">
-        <div class="relative bg-gradient-to-b from-[#15101a] via-[#0d0912] to-[#07050a] border-2 border-rose-500/40 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(244,63,94,0.25)] flex flex-col gap-5 overflow-hidden">
+    <section id="authLoginSection" class="hidden relative z-10 max-w-lg w-full mx-auto px-3.5 sm:px-6 pt-3 pb-14">
+        <style>
+            @keyframes mascotFloat {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-8px) rotate(1deg); }
+            }
+            @keyframes mascotShadow {
+                0%, 100% { transform: scale(1); opacity: 0.5; }
+                50% { transform: scale(0.82); opacity: 0.22; }
+            }
+            @keyframes mascotBlink {
+                0%, 90%, 96%, 100% { transform: scaleY(1); }
+                93% { transform: scaleY(0.1); }
+            }
+            .mascot-3d-float {
+                animation: mascotFloat 3.8s ease-in-out infinite;
+            }
+            .mascot-3d-shadow {
+                animation: mascotShadow 3.8s ease-in-out infinite;
+            }
+            .mascot-eyes {
+                transform-origin: 80px 80px;
+                animation: mascotBlink 4s infinite;
+            }
+        </style>
+
+        <div class="relative bg-gradient-to-b from-[#15101a] via-[#0d0912] to-[#07050a] border-2 border-rose-500/40 rounded-3xl p-6 sm:p-7 shadow-[0_0_50px_rgba(244,63,94,0.25)] flex flex-col gap-4 overflow-hidden">
             <!-- Background Glow Accent -->
             <div class="absolute -top-24 -right-24 w-48 h-48 bg-rose-600/20 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
             <!-- Top Header & Security Badges -->
-            <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-3">
-                <span class="inline-flex items-center gap-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] sm:text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow">
-                    <i class="fa-solid fa-fingerprint text-rose-400"></i> 1-Device Anti-Cheat Guard
+            <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-2.5">
+                <span class="inline-flex items-center gap-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
+                    <i class="fa-solid fa-fingerprint text-rose-400"></i> 1-Device Protected
                 </span>
-                <span id="deviceFpBadge" class="text-[10px] font-mono text-emerald-400 bg-black/80 px-2.5 py-1 rounded-lg border border-emerald-500/30 flex items-center gap-1">
+                <span id="deviceFpBadge" class="text-[10px] font-mono text-emerald-400 bg-black/80 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span>ID: Detecting...</span>
                 </span>
             </div>
 
-            <!-- Title & Value Proposition -->
-            <div>
-                <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                    <span>Verified Real Gmail Access</span>
-                    <span class="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">₹25 + 50 Coins</span>
-                </h2>
-                <p class="text-xs text-neutral-400 mt-1 leading-relaxed">
-                    Strict 1 verified account per mobile/PC device. Multi-accounting, spam bots, and fake emails are blocked.
-                </p>
-            </div>
+            <!-- 3D CYBERPUNK CINEMA MASCOT -->
+            <div class="flex flex-col items-center justify-center -my-1 relative select-none">
+                <div class="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center mascot-3d-float">
+                    <!-- Ambient Glow Behind Mascot -->
+                    <div class="absolute inset-0 bg-gradient-to-tr from-rose-500/30 via-purple-500/30 to-amber-500/30 rounded-full blur-2xl"></div>
+                    <svg class="w-full h-full drop-shadow-[0_15px_25px_rgba(244,63,94,0.35)] relative z-10" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="headGrad" cx="40%" cy="30%" r="70%">
+                                <stop offset="0%" stop-color="#3b374d"/>
+                                <stop offset="50%" stop-color="#1d192b"/>
+                                <stop offset="100%" stop-color="#0e0c17"/>
+                            </radialGradient>
+                            <linearGradient id="visorGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#f43f5e"/>
+                                <stop offset="50%" stop-color="#be185d"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                            <linearGradient id="visorGleam" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+                                <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0"/>
+                            </linearGradient>
+                            <linearGradient id="headphoneGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#fb7185"/>
+                                <stop offset="100%" stop-color="#f43f5e"/>
+                            </linearGradient>
+                            <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="3" result="blur"/>
+                                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                            </filter>
+                        </defs>
 
-            <!-- STEP 1: MANDATORY 18+ & SINGLE-DEVICE COMPLIANCE CARD -->
-            <div id="termsAgreementCard" class="relative rounded-2xl p-4 bg-gradient-to-r from-rose-950/40 via-purple-950/30 to-black/60 border-2 border-rose-500/40 transition-all duration-300">
-                <div class="flex items-start gap-3">
-                    <input id="humanConfirmCheckbox" type="checkbox" onchange="onTermsCheckboxChange()" class="mt-1 w-5 h-5 accent-rose-500 rounded cursor-pointer shrink-0">
-                    <div class="flex-1">
-                        <label for="humanConfirmCheckbox" class="text-xs sm:text-sm font-bold text-white cursor-pointer select-none leading-snug block">
-                            I confirm I am 18+ & agree to the Single-Device Anti-Cheat Bond
-                        </label>
-                        <p class="text-[11px] text-neutral-400 mt-1 leading-relaxed">
-                            <strong class="text-rose-400">Mandatory Rule:</strong> Pehle is agreement ko read karke tick karein, tabhi Google Sign-In aur Form unlock honge.
-                        </p>
-                        <button type="button" onclick="openSingleDevicePolicyModal()" class="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-rose-300 hover:text-white bg-rose-600/20 hover:bg-rose-600/40 border border-rose-500/50 px-3.5 py-1.5 rounded-xl transition shadow">
-                            <i class="fa-solid fa-file-shield text-rose-400"></i>
-                            <span>Read Full 18+ & Device Policy Agreement ↗</span>
-                        </button>
-                    </div>
+                        <!-- Headphone Band -->
+                        <path d="M35 70 C35 30, 125 30, 125 70" stroke="url(#headphoneGrad)" stroke-width="8" stroke-linecap="round" fill="none"/>
+                        <path d="M45 66 C45 38, 115 38, 115 66" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+                        <!-- Mascot Head (3D Metallic Sphere) -->
+                        <circle cx="80" cy="80" r="46" fill="url(#headGrad)"/>
+                        <ellipse cx="65" cy="55" rx="20" ry="10" fill="#ffffff" fill-opacity="0.12" transform="rotate(-25 65 55)"/>
+
+                        <!-- 3D Headphones -->
+                        <rect x="22" y="60" width="14" height="34" rx="7" fill="#181524" stroke="url(#headphoneGrad)" stroke-width="3"/>
+                        <circle cx="29" cy="77" r="3.5" fill="#38bdf8" filter="url(#neonGlow)"/>
+                        <rect x="124" y="60" width="14" height="34" rx="7" fill="#181524" stroke="url(#headphoneGrad)" stroke-width="3"/>
+                        <circle cx="131" cy="77" r="3.5" fill="#38bdf8" filter="url(#neonGlow)"/>
+
+                        <!-- Cyber Visor / VR Goggles -->
+                        <rect x="42" y="66" width="76" height="28" rx="14" fill="url(#visorGrad)" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.4"/>
+                        <path d="M44 73 C60 69, 100 69, 116 73 L114 78 C98 75, 62 75, 46 78 Z" fill="url(#visorGleam)"/>
+
+                        <!-- Expressive Animated Eyes -->
+                        <g class="mascot-eyes">
+                            <ellipse cx="64" cy="80" rx="5.5" ry="7.5" fill="#ffffff" filter="url(#neonGlow)"/>
+                            <circle cx="66" cy="78" r="2.5" fill="#06b6d4"/>
+                            <circle cx="63" cy="76" r="1.5" fill="#ffffff"/>
+
+                            <ellipse cx="96" cy="80" rx="5.5" ry="7.5" fill="#ffffff" filter="url(#neonGlow)"/>
+                            <circle cx="98" cy="78" r="2.5" fill="#06b6d4"/>
+                            <circle cx="95" cy="76" r="1.5" fill="#ffffff"/>
+                        </g>
+
+                        <!-- Cute Smile -->
+                        <path d="M72 104 Q80 111 88 104" stroke="#f43f5e" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                        <circle cx="70" cy="103" r="1.5" fill="#fb7185"/>
+                        <circle cx="90" cy="103" r="1.5" fill="#fb7185"/>
+
+                        <!-- Antenna with Glowing VIP Diamond -->
+                        <line x1="80" y1="34" x2="80" y2="18" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/>
+                        <polygon points="80,10 86,18 80,26 74,18" fill="#fbbf24" stroke="#ffffff" stroke-width="1" filter="url(#neonGlow)"/>
+                    </svg>
+                    <div class="mascot-3d-shadow w-20 h-2.5 bg-black/60 rounded-full blur-sm mx-auto -mt-1"></div>
                 </div>
             </div>
 
+            <!-- Title & Value Proposition -->
+            <div class="text-center">
+                <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">
+                    Welcome to DarkPAKI
+                </h2>
+                <p class="text-xs text-neutral-400 mt-0.5 leading-relaxed">
+                    Sign in to stream HD videos, follow creators, and manage your vault
+                </p>
+            </div>
+
             <!-- Error Banner -->
-            <div id="loginErrorAlert" class="hidden bg-rose-500/15 border border-rose-500/50 text-rose-300 text-xs p-3.5 rounded-2xl font-medium leading-relaxed flex items-start gap-2.5">
+            <div id="loginErrorAlert" class="hidden bg-rose-500/15 border border-rose-500/50 text-rose-300 text-xs p-3 rounded-2xl font-medium leading-relaxed flex items-start gap-2.5">
                 <i class="fa-solid fa-triangle-exclamation text-rose-400 mt-0.5 shrink-0"></i>
                 <span id="loginErrorAlertText">Error message</span>
             </div>
 
-            <!-- STEP 2: INSTANT 1-CLICK GOOGLE SIGN-IN -->
+            <!-- 1-CLICK GOOGLE SIGN-IN -->
             <div class="flex flex-col gap-2">
                 <div id="googleBtnOverlayWrapper" class="relative group">
-                    <button type="button" id="googleSignInActionBtn" onclick="triggerGoogleSignIn()" class="w-full bg-white hover:bg-neutral-100 text-neutral-900 font-bold text-xs sm:text-sm py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-white/10 transition-all duration-200 active:scale-[0.98]">
+                    <button type="button" id="googleSignInActionBtn" onclick="triggerGoogleSignIn()" class="w-full bg-white hover:bg-neutral-100 text-neutral-900 font-bold text-xs sm:text-sm py-3 px-4 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-white/10 transition-all duration-200 active:scale-[0.98]">
                         <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                         </svg>
-                        <span id="googleBtnLabel">Continue with Google (1-Click Real Gmail)</span>
+                        <span id="googleBtnLabel">Continue with Google</span>
                         <i id="googleLockIcon" class="fa-solid fa-lock text-neutral-400 text-xs"></i>
                     </button>
                 </div>
                 <div id="googleSignInWrapper" class="hidden flex justify-center my-1"></div>
 
-                <div class="flex items-center gap-3 my-2">
+                <div class="flex items-center gap-3 my-1">
                     <div class="flex-1 h-px bg-white/10"></div>
                     <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">or sign in with email</span>
                     <div class="flex-1 h-px bg-white/10"></div>
                 </div>
             </div>
 
-            <!-- STEP 3: MANUAL REGISTRATION FORM (MOBILE & MATH CAPTCHA REMOVED) -->
-            <form id="realLoginForm" onsubmit="handleSecureUserLogin(event)" class="flex flex-col gap-3.5">
+            <!-- REGISTRATION FORM -->
+            <form id="realLoginForm" onsubmit="handleSecureUserLogin(event)" class="flex flex-col gap-3">
                 <div>
-                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider flex items-center justify-between mb-1">
-                        <span>Full Real Name *</span>
-                        <span class="text-[10px] text-neutral-400">Legal Creator Name</span>
-                    </label>
+                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Full Name</label>
                     <div class="relative">
                         <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
                         <input id="loginFullName" type="text" required minlength="3" placeholder="Enter your full name" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white outline-none transition">
@@ -840,10 +915,7 @@
                 </div>
 
                 <div>
-                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider flex items-center justify-between mb-1">
-                        <span>Official Gmail Address *</span>
-                        <span class="text-[10px] text-rose-400">@gmail.com only</span>
-                    </label>
+                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Gmail Address</label>
                     <div class="relative">
                         <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
                         <input id="loginGmailInput" type="email" required placeholder="yourname@gmail.com" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white outline-none transition">
@@ -851,32 +923,38 @@
                 </div>
 
                 <div>
-                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider flex items-center justify-between mb-1">
-                        <span>Referral Code (Optional)</span>
-                        <span class="text-[10px] text-amber-400 font-mono">+₹15 for friend</span>
-                    </label>
+                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Referral Code (Optional)</label>
                     <div class="relative">
                         <i class="fa-solid fa-ticket absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
-                        <input id="loginReferralInput" type="text" placeholder="e.g. DPK786 (Leave blank if none)" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white outline-none uppercase font-mono transition">
+                        <input id="loginReferralInput" type="text" placeholder="Enter referral code if you have one" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white outline-none uppercase font-mono transition">
                     </div>
                 </div>
 
-                <!-- CLOUDFLARE TURNSTILE SMART ANTI-BOT CAPTCHA -->
-                <div class="bg-black/60 border border-neutral-700/80 rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5 transition">
-                    <div id="cfTurnstileWidget" class="my-1 flex justify-center"></div>
+                <!-- CLOUDFLARE TURNSTILE CAPTCHA CONTAINER -->
+                <div class="bg-black/60 border border-neutral-700/80 rounded-2xl p-2.5 flex flex-col items-center justify-center gap-1 transition overflow-hidden">
+                    <div id="cfTurnstileWidget" class="my-0.5 flex justify-center"></div>
                     <span id="turnstileStatusLabel" class="text-[10px] text-neutral-400 flex items-center gap-1.5 font-mono">
-                        <i class="fa-solid fa-shield-halved text-emerald-400"></i> Cloudflare Smart Anti-Bot Protection
+                        <i class="fa-solid fa-shield-halved text-emerald-400"></i> Cloudflare Anti-Bot Protection
                     </span>
+                </div>
+
+                <!-- COMPACT 18+ AGREEMENT (Placed directly above the Submit/Verify button) -->
+                <div id="termsAgreementCard" class="flex items-center justify-between gap-2.5 p-3 rounded-xl bg-black/50 border border-white/10 hover:border-rose-500/40 transition">
+                    <label for="humanConfirmCheckbox" class="flex items-center gap-2.5 cursor-pointer text-xs text-neutral-300 select-none">
+                        <input id="humanConfirmCheckbox" type="checkbox" onchange="onTermsCheckboxChange()" class="w-4 h-4 accent-rose-500 rounded cursor-pointer shrink-0">
+                        <span>I confirm I am 18+ & agree to the Single-Device Policy</span>
+                    </label>
+                    <button type="button" onclick="openSingleDevicePolicyModal()" class="text-[11px] font-bold text-rose-400 hover:text-rose-300 underline whitespace-nowrap">
+                        Read Terms
+                    </button>
                 </div>
 
                 <!-- Low-Connection Resilient Submit Button -->
                 <button type="submit" id="submitLoginBtn" class="mt-1 bg-gradient-to-r from-rose-600 via-rose-500 to-red-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-sm py-3.5 rounded-2xl shadow-xl shadow-rose-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                     <i id="submitBtnIcon" class="fa-solid fa-user-check"></i>
-                    <span id="submitBtnText">Verify 18+ & Open Earning Dashboard</span>
+                    <span id="submitBtnText">Verify & Open Dashboard</span>
                 </button>
             </form>
-        </div>
-    </section>
         </div>
     </section>
 
@@ -913,7 +991,7 @@
             </div>
         </div>
 
-        <!-- Dual Wallet Balance & Real Stats Grid -->
+        <!-- Dual Wallet Balance & Live Stats Grid -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             <!-- 1. Coins Wallet -->
             <div class="bg-[#0e0e14] border border-amber-500/40 rounded-3xl p-3.5 sm:p-4 shadow-xl flex flex-col justify-between">
@@ -927,7 +1005,7 @@
             <!-- 2. Cash Wallet -->
             <div class="bg-[#0e0e14] border border-emerald-500/40 rounded-3xl p-3.5 sm:p-4 shadow-xl flex flex-col justify-between">
                 <span class="text-[10px] font-black uppercase text-emerald-400 tracking-wider flex items-center gap-1">
-                    <i class="fa-solid fa-wallet text-emerald-400"></i> Real Cash ₹
+                    <i class="fa-solid fa-wallet text-emerald-400"></i> Balance ₹
                 </span>
                 <p id="userWalletBalance" class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 font-mono">₹25.00</p>
                 <span class="text-[10px] text-emerald-300/80 font-medium">Instant UPI Ready</span>
@@ -953,7 +1031,7 @@
         </div>
 
         <!-- ============================================================================
-             CONVERT COINS TO REAL MONEY (COVERATE MONEY)
+             CONVERT COINS TO CASH
              ============================================================================ -->
         
         <!-- ============================================================================
@@ -970,7 +1048,7 @@
                             <span>Creator Monetization Program</span>
                             <span id="creatorMonetizedBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">★ Monetized Active</span>
                         </h3>
-                        <p class="text-[11px] text-purple-300/80">Earn real money on your videos & ads • 100 Coins = ₹1.00 Cash</p>
+                        <p class="text-[11px] text-purple-300/80">Earn on your videos & ads • 100 Coins = ₹1.00 Cash</p>
                     </div>
                 </div>
                 <button onclick="checkAndOpenMonetizationModal()" id="applyMonetizationBtn" class="bg-gradient-to-r from-purple-600 to-rose-600 hover:from-purple-500 hover:to-rose-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-lg shadow-purple-600/25 flex items-center gap-1.5 shrink-0">
@@ -1016,7 +1094,7 @@
                         <i class="fa-solid fa-arrows-rotate text-sm"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm sm:text-base font-black text-white">Convert Coins to Real Money (Coverate)</h3>
+                        <h3 class="text-sm sm:text-base font-black text-white">Convert Coins to Cash</h3>
                         <p class="text-[11px] text-amber-300/90 font-medium">Official Rate: 100 Coins = ₹1.00 Cash • Min 10 Coins</p>
                     </div>
                 </div>
@@ -1409,7 +1487,7 @@
                     <input type="text" id="monetizeRealName" required placeholder="As per official ID" class="w-full bg-black/50 border border-white/10 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-white">
                 </div>
                 <div>
-                    <label class="block font-bold text-neutral-300 mb-1">Real Gmail Address *</label>
+                    <label class="block font-bold text-neutral-300 mb-1">Gmail Address *</label>
                     <input type="email" id="monetizeRealGmail" required placeholder="creator@gmail.com" class="w-full bg-black/50 border border-white/10 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-white">
                 </div>
                 <div>
@@ -1423,7 +1501,7 @@
 
                 <div class="p-3 bg-black/40 border border-white/10 rounded-xl text-[11px] text-neutral-400">
                     <i class="fa-solid fa-info-circle text-sky-400 mr-1"></i>
-                    DarkPAKI Admin verifies real Gmail, original content vs duplicate videos, and ensures real followers with anti-spam check.
+                    DarkPAKI Admin verifies Gmail, original content vs duplicate videos, and authentic followers with anti-spam check.
                 </div>
 
                 <button type="submit" id="monetizeSubmitBtn" class="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2">
@@ -1461,7 +1539,7 @@
                     <i class="fa-solid fa-triangle-exclamation text-rose-400 mt-0.5 text-base shrink-0"></i>
                     <div class="text-xs text-rose-200">
                         <strong class="font-bold text-white block mb-0.5">Strict Legal Warning (RTA-5042-1996 Compliant):</strong>
-                        Is website par mature 18+ creator content, exclusive cinema trailers, aur real cash earnings shaamil hain. Ye sabhi niyam padhna aur manna anivarya hai.
+                        Is website par mature 18+ creator content, exclusive cinema trailers, aur cash earnings shaamil hain. Ye sabhi niyam padhna aur manna anivarya hai.
                     </div>
                 </div>
 
@@ -1489,10 +1567,10 @@
                     <div class="bg-black/40 border border-white/10 rounded-2xl p-3.5">
                         <h4 class="text-white font-bold text-xs sm:text-sm flex items-center gap-2">
                             <span class="w-5 h-5 rounded-full bg-emerald-600/40 text-emerald-300 flex items-center justify-center text-[10px] font-bold">3</span>
-                            <span>Real Money & Earning Integrity (100 Coins = ₹1.00)</span>
+                            <span>Earning Integrity & Payouts (100 Coins = ₹1.00)</span>
                         </h4>
                         <p class="text-neutral-400 text-xs mt-1 leading-relaxed">
-                            Earning balance real advertisers dwara fund kiya jata hai. Kisi bhi auto-clicker, bot script, ya fake emulator use karne par account permanent suspend ho jayega aur saare coins/rupees forfeit ho jayenge.
+                            Earning balance verified advertisers dwara fund kiya jata hai. Kisi bhi auto-clicker, bot script, ya fake emulator use karne par account permanent suspend ho jayega aur saare coins/rupees forfeit ho jayenge.
                         </p>
                     </div>
 

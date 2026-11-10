@@ -5,7 +5,8 @@ const { sanitizeString, validateGmail, validatePhone, validateDeviceId } = requi
 
 // Cloudflare Turnstile Configuration & Verification
 function getTurnstileConfig(req, res) {
-  const siteKey = process.env.TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+  const dbKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_site_key'").get()?.value;
+  const siteKey = (dbKey && dbKey.trim()) ? dbKey.trim() : (process.env.TURNSTILE_SITE_KEY || '1x00000000000000000000AA');
   res.json({
     success: true,
     data: {
@@ -24,7 +25,8 @@ async function verifyCloudflareTurnstile(token, remoteIp) {
     return { success: true };
   }
 
-  const secretKey = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+  const dbSecret = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_secret_key'").get()?.value;
+  const secretKey = (dbSecret && dbSecret.trim()) ? dbSecret.trim() : (process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA');
 
   try {
     const postData = new URLSearchParams({

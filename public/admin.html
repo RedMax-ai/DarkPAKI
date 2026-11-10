@@ -975,6 +975,24 @@
               <span class="text-[10px] text-neutral-400 mt-1 block">When you add your domain in Monetag, paste the verification meta tag here. It automatically injects into the website head so Monetag verifies in 10 seconds!</span>
             </div>
 
+            <div class="p-4 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent border border-orange-500/25">
+              <label class="block text-xs font-bold text-orange-400 mb-1.5 flex items-center justify-between">
+                <span>Cloudflare Turnstile Bot Protection (100% Free & Smart Captcha)</span>
+                <span class="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full font-mono">Cloudflare Dashboard</span>
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                <div>
+                  <label class="block text-[10px] text-neutral-400 mb-1">Turnstile Site Key</label>
+                  <input type="text" id="settingTurnstileSiteKey" placeholder="e.g. 0x4AAAAAA..." class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-orange-400 transition">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-neutral-400 mb-1">Turnstile Secret Key</label>
+                  <input type="password" id="settingTurnstileSecretKey" placeholder="e.g. 0x4AAAAAA..." class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-orange-400 transition">
+                </div>
+              </div>
+              <span class="text-[10px] text-neutral-400 mt-2 block">Obtain free keys from Cloudflare Dashboard -> Turnstile -> Add Widget. Once entered, the login page uses your live production key with zero test labels!</span>
+            </div>
+
             <div class="p-4 rounded-xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent border border-indigo-500/25">
               <label class="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" id="settingSafeMode" class="w-5 h-5 accent-indigo-500 rounded">
@@ -1848,6 +1866,8 @@
           document.getElementById('settingSafeMode').checked = Boolean(res.data.safeModeEnabled);
           document.getElementById('settingTelegramUrl').value = res.data.telegramUrl || '';
           document.getElementById('settingAllowSkip').checked = Boolean(res.data.allowInstantSkip);
+          document.getElementById('settingTurnstileSiteKey').value = res.data.turnstileSiteKey || '';
+          document.getElementById('settingTurnstileSecretKey').value = res.data.turnstileSecretKey || '';
         }
       } catch (err) {
         console.error('Error loading settings:', err);
@@ -1864,13 +1884,15 @@
       const safeModeEnabled = document.getElementById('settingSafeMode').checked;
       const telegramUrl = document.getElementById('settingTelegramUrl').value.trim();
       const allowInstantSkip = document.getElementById('settingAllowSkip').checked;
+      const turnstileSiteKey = document.getElementById('settingTurnstileSiteKey').value.trim();
+      const turnstileSecretKey = document.getElementById('settingTurnstileSecretKey').value.trim();
       const newPin = document.getElementById('settingNewPin').value.trim();
 
       try {
         const res = await adminFetch('/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, newPin })
+          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, turnstileSiteKey, turnstileSecretKey, newPin })
         });
         if (res.success) {
           showToast('Settings saved successfully!', 'success');

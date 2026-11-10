@@ -1199,14 +1199,14 @@ function copyReferralLink() {
 function shareReferralWhatsApp() {
   const refCode = CURRENT_USER ? (CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786') : 'DPK786';
   const url = `${window.location.origin}/?ref=${refCode}`;
-  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Watch uncut 4K videos, earn coins & real ₹ cash straight to UPI. Register here: ${url}`);
+  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Watch uncut 4K videos, earn coins & ₹ cash straight to UPI. Register here: ${url}`);
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
 function shareReferralTelegram() {
   const refCode = CURRENT_USER ? (CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786') : 'DPK786';
   const url = `${window.location.origin}/?ref=${refCode}`;
-  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Earn coins & real ₹ cash with instant UPI withdrawal.`);
+  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Earn coins & ₹ cash with instant UPI withdrawal.`);
   window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
 }
 
@@ -2243,7 +2243,7 @@ async function handleMonetizationSubmit(event) {
     });
     if (res.success) {
       closeMonetizationModal();
-      alert('🎉 Monetization Application Submitted!\n\nDarkPAKI Admin will verify your channel, original content, and real followers. Once approved, your videos will display the verified Gold Monetization badge and earn revenue!');
+      alert('🎉 Monetization Application Submitted!\n\nDarkPAKI Admin will verify your channel, original content, and authentic followers. Once approved, your videos will display the verified Gold Monetization badge and earn revenue!');
       refreshEarningDashboardUI();
     } else {
       showToast(res.message || 'Submission failed');
