@@ -34,8 +34,22 @@
       }
     }
     </script>
-    <!-- Monetag MultiTag Ad Engine (Popunder, In-Page Push, Vignette Banner - Zone 307862) -->
-    <script src="https://quge5.com/88/tag.min.js" data-zone="307862" async data-cfasync="false"></script>
+    <!-- Monetag Publisher Verified Zones: Strictly In-Page Push, Vignette Banner, Push Notifications (No Popunders) -->
+    <!-- 1. In-Page Push (Native Banner) - Zone 12223945 -->
+    <script src="https://alwingulla.com/88/tag.min.js" data-zone="12223945" async data-cfasync="false"></script>
+    <!-- 2. Vignette Banner (High CPM UX Banner) - Zone 12223946 -->
+    <script src="https://alwingulla.com/88/tag.min.js" data-zone="12223946" async data-cfasync="false"></script>
+    <!-- 3. Push Notifications (Native Browser Push) - Zone 12223947 -->
+    <script src="https://alwingulla.com/88/tag.min.js" data-zone="12223947" async data-cfasync="false"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').catch(function(e) {
+            console.debug('Push SW registration info:', e);
+          });
+        });
+      }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -534,7 +548,7 @@
             </button>
         </div>
 
-        <!-- Monetization Responsive Ad Banner Slot (ExoClick / JuicyAds / Adsterra) -->
+        <!-- Monetization In-Page Native Banner Slot (Monetag Zone 12223945) -->
         <div id="adBannerSlot" class="hidden w-full my-3 p-3 bg-black/50 border border-white/10 rounded-2xl flex flex-col items-center justify-center overflow-hidden min-h-[100px] text-center">
             <span class="text-[9px] uppercase tracking-wider text-neutral-500 font-bold mb-1">Sponsored Advertisement</span>
             <div id="adBannerContent" class="w-full flex items-center justify-center"></div>

@@ -115,7 +115,9 @@ app.use('/api/ai', require('./routes/aiRoutes'));
 // Monetag Service Worker for In-Page Push & Notification Ads
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.send(`/* Monetag Service Worker */ try { importScripts('https://monetag.com/sw.js'); } catch(e){}`);
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.send(`/* Monetag Push Notification Service Worker */\ntry { importScripts('https://alwingulla.com/88/sw.min.js'); } catch(e){ console.error('Monetag SW error:', e); }`);
 });
 
 // Search Engine Indexing (robots.txt & sitemap.xml)
