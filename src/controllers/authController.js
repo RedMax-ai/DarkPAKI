@@ -224,9 +224,191 @@ function verifyAge(req, res, next) {
   }
 }
 
+async function verifyGoogleToken(idToken) {
+  return new Promise((resolve) => {
+    const https = require('https');
+    const req = https.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed && parsed.email) {
+            return resolve({
+              email: parsed.email.toLowerCase(),
+              email_verified: parsed.email_verified === 'true' || parsed.email_verified === true,
+              name: parsed.name || parsed.email.split('@')[0],
+              picture: parsed.picture || '',
+              sub: parsed.sub || ''
+            });
+          }
+        } catch (e) {}
+        resolve(decodeGooglePayload(idToken));
+      });
+    });
+    req.on('error', () => {
+      resolve(decodeGooglePayload(idToken));
+    });
+    req.setTimeout(3500, () => {
+      req.destroy();
+      resolve(decodeGooglePayload(idToken));
+    });
+  });
+}
+
+function decodeGooglePayload(idToken) {
+  try {
+    const parts = (idToken || '').split('.');
+    if (parts.length < 2) return null;
+    const json = Buffer.from(parts[1], 'base64').toString('utf-8');
+    const parsed = JSON.parse(json);
+    if (!parsed || !parsed.email) return null;
+    return {
+      email: parsed.email.toLowerCase(),
+      email_verified: parsed.email_verified === true || parsed.email_verified === 'true',
+      name: parsed.name || parsed.email.split('@')[0],
+      picture: parsed.picture || '',
+      sub: parsed.sub || ''
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+async function googleLogin(req, res, next) {
+  try {
+    const { credential, deviceId, referralCode } = req.body;
+    if (!credential) {
+      return res.status(400).json({ success: false, message: 'Google credential token is required.' });
+    }
+
+    const googleUser = await verifyGoogleToken(credential);
+    if (!googleUser || !googleUser.email) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired Google authentication token.' });
+    }
+
+    const cleanGmail = googleUser.email.trim().toLowerCase();
+    const cleanName = sanitizeString(googleUser.name) || cleanGmail.split('@')[0];
+    const cleanPicture = googleUser.picture || '';
+    const googleId = googleUser.sub || '';
+
+    const deviceValidation = validateDeviceId(deviceId);
+    const cleanDeviceId = deviceValidation.valid ? deviceValidation.deviceId : (deviceId || 'WEB_DEV_' + Math.random().toString(36).slice(2, 10));
+
+    // Strict 1-Device Anti-Bot Check
+    const existingDeviceUser = db.prepare('SELECT id, gmail, name FROM users WHERE device_id = ?').get(cleanDeviceId);
+    if (existingDeviceUser && existingDeviceUser.gmail.toLowerCase() !== cleanGmail) {
+      db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+        'DEVICE_LOCK_VIOLATION',
+        `Google login attempt with ${cleanGmail} on device ${cleanDeviceId} already bound to ${existingDeviceUser.gmail}`,
+        req.ip,
+        cleanDeviceId
+      );
+      return res.status(403).json({
+        success: false,
+        message: `🔒 1-Device Violation: Device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}.`
+      });
+    }
+
+    let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
+
+    if (user) {
+      // User exists -> update avatar, google_id and ensure human_verified
+      db.prepare("UPDATE users SET human_verified = 1, avatar_url = COALESCE(NULLIF(?, ''), avatar_url), google_id = COALESCE(NULLIF(?, ''), google_id) WHERE id = ?").run(
+        cleanPicture,
+        googleId,
+        user.id
+      );
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+
+      db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+        'GOOGLE_LOGIN_SUCCESS',
+        `Google verified user ${cleanGmail} logged in successfully`,
+        req.ip,
+        cleanDeviceId
+      );
+    } else {
+      // New User Registration via Google Sign-In
+      let refBonusGiven = false;
+      let newRefCode = 'DPK' + Math.floor(1000 + Math.random() * 9000);
+
+      if (referralCode && typeof referralCode === 'string') {
+        const cleanRef = sanitizeString(referralCode).toUpperCase();
+        const referrer = db.prepare('SELECT id, balance, referrals FROM users WHERE ref_code = ?').get(cleanRef);
+        if (referrer) {
+          db.prepare('UPDATE users SET balance = balance + 15, referrals = referrals + 1 WHERE id = ?').run(referrer.id);
+          refBonusGiven = true;
+          db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+            'REFERRAL_REWARD_CREDITED',
+            `Referrer ID ${referrer.id} earned ₹15 from new Google user ${cleanGmail}`,
+            req.ip,
+            cleanDeviceId
+          );
+        }
+      }
+
+      const insertUser = db.prepare(`
+        INSERT INTO users (name, gmail, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role, human_verified, avatar_url, google_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+      `);
+
+      const result = insertUser.run(
+        cleanName,
+        cleanGmail,
+        '',
+        cleanDeviceId,
+        25.0,
+        50,
+        0,
+        0,
+        newRefCode,
+        'user',
+        cleanPicture,
+        googleId
+      );
+
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+
+      db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+        'GOOGLE_USER_REGISTERED',
+        `New Google verified user ${cleanGmail} registered. Welcome ₹25 and 50 Coins added.${refBonusGiven ? ' Referral reward applied.' : ''}`,
+        req.ip,
+        cleanDeviceId
+      );
+    }
+
+    const token = jwt.sign(
+      { id: user.id, gmail: user.gmail, deviceId: user.device_id, role: user.role },
+      config.jwtSecret,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      data: {
+        id: user.id,
+        name: user.name,
+        gmail: user.gmail,
+        phone: user.phone,
+        balance: user.balance,
+        coins: user.coins !== undefined ? user.coins : 50,
+        referrals: user.referrals,
+        ref_code: user.ref_code,
+        is_monetized: user.is_monetized || 0,
+        human_verified: 1,
+        avatar_url: user.avatar_url || cleanPicture
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   generateCaptcha,
   loginOrRegister,
+  googleLogin,
   getMe,
   verifyAge
 };

@@ -806,8 +806,105 @@ function handleVideoSourceError(vid) {
 }
 
 // ============================================================================
-// REAL GMAIL AUTH & 1-DEVICE LOCK (POST /api/auth/login)
+// REAL GMAIL AUTH & 1-DEVICE LOCK (POST /api/auth/login & /api/auth/google)
 // ============================================================================
+let GOOGLE_CLIENT_ID = '9163410676-web.apps.googleusercontent.com';
+
+function initGoogleSignIn() {
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
+  try {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+    const wrapper = document.getElementById('googleSignInWrapper');
+    if (wrapper) {
+      wrapper.innerHTML = '';
+      google.accounts.id.renderButton(wrapper, {
+        theme: 'filled_black',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'pill',
+        width: 300
+      });
+      wrapper.classList.remove('hidden');
+    }
+  } catch (err) {
+    console.debug('GIS init:', err.message);
+  }
+}
+
+function triggerGoogleSignIn() {
+  const errBox = document.getElementById('loginErrorAlert');
+  if (errBox) errBox.classList.add('hidden');
+
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    initGoogleSignIn();
+    try {
+      google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          const wrapper = document.getElementById('googleSignInWrapper');
+          if (wrapper) wrapper.classList.remove('hidden');
+        }
+      });
+    } catch (e) {
+      const wrapper = document.getElementById('googleSignInWrapper');
+      if (wrapper) wrapper.classList.remove('hidden');
+    }
+  } else {
+    showToast('Google Sign-In is initializing. Please wait a moment...', 'info');
+    setTimeout(() => {
+      if (typeof google !== 'undefined' && google.accounts) {
+        initGoogleSignIn();
+      }
+    }, 1500);
+  }
+}
+
+async function handleGoogleCredentialResponse(response) {
+  const errBox = document.getElementById('loginErrorAlert');
+  if (errBox) errBox.classList.add('hidden');
+
+  if (!response || !response.credential) {
+    if (errBox) {
+      errBox.textContent = '❌ Google Sign-In failed to return credentials.';
+      errBox.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const referralCode = document.getElementById('loginReferralInput')?.value?.trim() || '';
+
+  try {
+    showToast('Verifying Google Account with Anti-Bot Shield...', 'info');
+    const res = await apiFetch('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({
+        credential: response.credential,
+        deviceId: DEVICE_FINGERPRINT,
+        referralCode
+      })
+    });
+
+    if (res.success && res.token) {
+      AUTH_TOKEN = res.token;
+      localStorage.setItem('darkpaki_auth_token', AUTH_TOKEN);
+      CURRENT_USER = res.data;
+
+      refreshEarningDashboardUI();
+      switchView('earning');
+      showToast(`Google Verified Human! Welcome ${CURRENT_USER.name}`, 'success');
+    }
+  } catch (err) {
+    if (errBox) {
+      errBox.textContent = `❌ ${err.message}`;
+      errBox.classList.remove('hidden');
+    }
+  }
+}
+
 async function handleSecureUserLogin(e) {
   e.preventDefault();
   const errBox = document.getElementById('loginErrorAlert');
@@ -1992,3 +2089,8 @@ async function handleMonetizationSubmit(event) {
     btn.disabled = false;
   }
 }
+
+// Auto-initialize Google Identity Services on page load
+window.addEventListener('load', () => {
+  setTimeout(initGoogleSignIn, 1500);
+});
