@@ -980,26 +980,31 @@ function triggerGoogleSignIn() {
     return;
   }
 
+  const overlay = document.getElementById('googleBtnOverlayWrapper');
+  const wrapper = document.getElementById('googleSignInWrapper');
+
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     initGoogleSignIn();
+    // Swap custom placeholder button with official Google button so only 1 button is ever shown
+    if (wrapper) {
+      wrapper.classList.remove('hidden');
+      if (overlay) overlay.classList.add('hidden');
+    }
     try {
       google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          const wrapper = document.getElementById('googleSignInWrapper');
           if (wrapper) wrapper.classList.remove('hidden');
+          if (overlay) overlay.classList.add('hidden');
         }
       });
     } catch (e) {
-      const wrapper = document.getElementById('googleSignInWrapper');
       if (wrapper) wrapper.classList.remove('hidden');
+      if (overlay) overlay.classList.add('hidden');
     }
   } else {
-    showToast('Google Sign-In is initializing. Please wait a moment...', 'info');
-    setTimeout(() => {
-      if (typeof google !== 'undefined' && google.accounts) {
-        initGoogleSignIn();
-      }
-    }, 1200);
+    showToast('Google Sign-In is blocked or loading. You can use Email + Password (PIN 7860 for Admin) below!', 'info');
+    const passInput = document.getElementById('loginPasswordInput');
+    if (passInput) passInput.focus();
   }
 }
 
@@ -1071,6 +1076,28 @@ function toggleWebsitePasswordVisibility() {
     input.type = 'password';
     if (icon) icon.className = 'fa-solid fa-eye text-xs';
   }
+}
+
+function fillAdminCredentials() {
+  const nameInput = document.getElementById('loginFullName');
+  const gmailInput = document.getElementById('loginGmailInput');
+  const passInput = document.getElementById('loginPasswordInput');
+  const checkbox = document.getElementById('humanConfirmCheckbox');
+
+  if (nameInput && (!nameInput.value || nameInput.value.trim() === '')) {
+    nameInput.value = 'Naved Master';
+  }
+  if (gmailInput) {
+    gmailInput.value = 'naved.official@gmail.com';
+  }
+  if (passInput) {
+    passInput.value = '7860';
+  }
+  if (checkbox) {
+    checkbox.checked = true;
+  }
+  onTermsCheckboxChange();
+  showToast('👑 Master Admin PIN (7860) applied! Click Verify to enter Dashboard.', 'info');
 }
 
 function openOtpVerificationModal(gmail, devOtp) {

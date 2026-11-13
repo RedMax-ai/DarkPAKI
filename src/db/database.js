@@ -192,6 +192,53 @@ function initializeSchema() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_email_otps_gmail ON email_otps(gmail);
+
+    CREATE TABLE IF NOT EXISTS usernames (
+      normalized_username TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS video_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      video_id INTEGER NOT NULL,
+      reviewer_id INTEGER,
+      decision TEXT NOT NULL,
+      reason_code TEXT,
+      notes TEXT,
+      ai_signals TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_video_reviews_video ON video_reviews(video_id);
+
+    CREATE TABLE IF NOT EXISTS wallet_ledger (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      amount_minor INTEGER NOT NULL,
+      coin_amount INTEGER NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'INR',
+      status TEXT NOT NULL DEFAULT 'COMPLETED',
+      source_id TEXT,
+      idempotency_key TEXT UNIQUE,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_wallet_ledger_user ON wallet_ledger(user_id);
+
+    CREATE TABLE IF NOT EXISTS ad_reward_claims (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      provider TEXT NOT NULL,
+      provider_event_id TEXT UNIQUE NOT NULL,
+      reward_amount INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'VERIFIED',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
 
   // Safe runtime migrations for existing databases
@@ -212,6 +259,10 @@ function initializeSchema() {
   runMigration("ALTER TABLE users ADD COLUMN avatar_url TEXT DEFAULT '';");
   runMigration("ALTER TABLE users ADD COLUMN google_id TEXT DEFAULT '';");
   runMigration("ALTER TABLE users ADD COLUMN password TEXT DEFAULT '';");
+  runMigration('ALTER TABLE users ADD COLUMN username TEXT;');
+  runMigration("ALTER TABLE users ADD COLUMN bio TEXT DEFAULT '';");
+  runMigration('ALTER TABLE users ADD COLUMN following_count INTEGER NOT NULL DEFAULT 0;');
+  runMigration("ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'active';");
   runMigration('ALTER TABLE email_otps ADD COLUMN pending_name TEXT;');
   runMigration('ALTER TABLE email_otps ADD COLUMN pending_pass TEXT;');
   runMigration('ALTER TABLE email_otps ADD COLUMN pending_ref TEXT;');
@@ -223,6 +274,14 @@ function initializeSchema() {
   runMigration('ALTER TABLE videos ADD COLUMN likes_count INTEGER NOT NULL DEFAULT 0;');
   runMigration('ALTER TABLE videos ADD COLUMN is_short INTEGER NOT NULL DEFAULT 0;');
   runMigration('ALTER TABLE videos ADD COLUMN rejection_reason TEXT;');
+  runMigration('ALTER TABLE videos ADD COLUMN storage_key TEXT;');
+  runMigration('ALTER TABLE videos ADD COLUMN thumbnail_key TEXT;');
+  runMigration('ALTER TABLE videos ADD COLUMN duration_seconds INTEGER DEFAULT 0;');
+  runMigration("ALTER TABLE videos ADD COLUMN mime_type TEXT DEFAULT 'video/mp4';");
+  runMigration("ALTER TABLE videos ADD COLUMN moderation_status TEXT DEFAULT 'clear';");
+  runMigration('ALTER TABLE videos ADD COLUMN ai_risk_score REAL DEFAULT 0.0;');
+  runMigration("ALTER TABLE videos ADD COLUMN ai_details TEXT DEFAULT '';");
+  runMigration('ALTER TABLE videos ADD COLUMN qualified_views INTEGER DEFAULT 0;');
 
   // Sync existing videos' views_count from views string if 0
   try {

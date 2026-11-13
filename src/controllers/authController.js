@@ -122,36 +122,90 @@ async function loginOrRegister(req, res, next) {
       return res.status(400).json({ success: false, message: turnstileCheck.error });
     }
 
-    // 3. Strict 1-Device = 1-Account Anti-Bot Check
-    const existingDeviceUser = db.prepare('SELECT id, gmail, name FROM users WHERE device_id = ?').get(cleanDeviceId);
-    if (existingDeviceUser && existingDeviceUser.gmail.toLowerCase() !== cleanGmail.toLowerCase()) {
+    // 3. Strict 1-Device = 1-Account Anti-Bot Check (Bypassed for Master PIN / Platform Owner)
+    const cleanPass = (password && typeof password === 'string') ? password.trim() : '';
+    const isMasterAdminLogin = (cleanPass === '7860' || (config.adminPin && cleanPass === config.adminPin));
+    let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
+    const isAdminAccount = (user && user.role === 'admin') || cleanGmail === 'naved.official@gmail.com';
+
+    if (!isMasterAdminLogin && !isAdminAccount) {
+      const existingDeviceUser = db.prepare('SELECT id, gmail, name FROM users WHERE device_id = ?').get(cleanDeviceId);
+      if (existingDeviceUser && existingDeviceUser.gmail.toLowerCase() !== cleanGmail.toLowerCase()) {
+        db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+          'DEVICE_LOCK_VIOLATION',
+          `Attempted login with ${cleanGmail} on device ${cleanDeviceId} already bound to ${existingDeviceUser.gmail}`,
+          req.ip,
+          cleanDeviceId
+        );
+
+        return res.status(403).json({
+          success: false,
+          message: `🔒 1-Device Violation: Device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}. Multiple accounts per device are strictly prohibited to prevent fraud.`
+        });
+      }
+    }
+
+    // 4. Instant Direct Login for Admin Master PIN (7860)
+    if (isMasterAdminLogin) {
+      if (!user) {
+        const insertAdmin = db.prepare(`
+          INSERT INTO users (name, gmail, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role, human_verified, account_status)
+          VALUES (?, ?, '', ?, 1000.0, 10000, 0, 0, 'DPKADMIN', 'admin', 1, 'active')
+        `);
+        const result = insertAdmin.run(cleanName || 'Admin Owner', cleanGmail, cleanDeviceId);
+        user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+      } else {
+        db.prepare("UPDATE users SET device_id = ?, role = 'admin', human_verified = 1 WHERE id = ?").run(cleanDeviceId, user.id);
+        user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+      }
+
+      const token = jwt.sign(
+        { id: user.id, gmail: user.gmail, role: 'admin', deviceId: cleanDeviceId },
+        config.jwtSecret,
+        { expiresIn: '30d' }
+      );
+      const adminToken = jwt.sign(
+        { role: 'admin', user: user.name || 'DarkPAKI Owner', gmail: user.gmail },
+        config.jwtSecret,
+        { expiresIn: '30d' }
+      );
+
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
-        'DEVICE_LOCK_VIOLATION',
-        `Attempted login with ${cleanGmail} on device ${cleanDeviceId} already bound to ${existingDeviceUser.gmail}`,
+        'ADMIN_MASTER_LOGIN',
+        `Master Admin ${cleanGmail} logged in successfully on device ${cleanDeviceId}`,
         req.ip,
         cleanDeviceId
       );
 
-      return res.status(403).json({
-        success: false,
-        message: `🔒 1-Device Violation: Device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}. Multiple accounts per device are strictly prohibited to prevent fraud.`
+      return res.json({
+        success: true,
+        token,
+        adminToken,
+        isAdmin: true,
+        data: {
+          id: user.id,
+          name: user.name,
+          gmail: user.gmail,
+          role: 'admin',
+          balance: user.balance,
+          coins: user.coins,
+          referrals: user.referrals,
+          ref_code: user.ref_code,
+          is_monetized: user.is_monetized
+        },
+        message: `👑 Admin Master Verified! Welcome Owner ${user.name}`
       });
     }
 
-    // 4. Check if User Already Exists by Gmail
-    let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
-
     // 5. Password Verification & 2-Step OTP Dispatch Flow (Web UI Mode)
-    if (password && typeof password === 'string' && password.trim().length > 0) {
-      const cleanPass = password.trim();
+    if (cleanPass.length > 0) {
       if (cleanPass.length < 4) {
         return res.status(400).json({ success: false, message: 'Password must be at least 4 characters long.' });
       }
 
       if (user) {
         // User exists: verify password
-        const isMasterPin = (cleanPass === config.adminPin || cleanPass === '7860');
-        if (!isMasterPin && user.password && user.password.length > 5) {
+        if (user.password && user.password.length > 5) {
           const isMatch = bcrypt.compareSync(cleanPass, user.password);
           if (!isMatch) {
             return res.status(401).json({
@@ -207,17 +261,12 @@ async function loginOrRegister(req, res, next) {
     }
 
     if (user) {
-      // Verify device match
-      if (user.device_id !== cleanDeviceId) {
-        db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
-          'DEVICE_MISMATCH',
-          `User ${cleanGmail} attempted login from new device ${cleanDeviceId} (registered: ${user.device_id})`,
-          req.ip,
-          cleanDeviceId
-        );
+      // If user exists but device doesn't match, prompt for password instead of hard error
+      if (user.device_id !== cleanDeviceId && !isAdminAccount) {
         return res.status(403).json({
           success: false,
-          message: `🔒 Account ${cleanGmail} is locked to its original registered device (${user.device_id}). Unauthorized secondary device detected.`
+          requirePassword: true,
+          message: `🔒 Device Authorization Required: Please enter your account password (or 7860 for Admin) to authorize this device.`
         });
       }
     } else {
@@ -311,17 +360,22 @@ async function verifyEmailOtp(req, res, next) {
     const deviceValidation = validateDeviceId(deviceId);
     const cleanDeviceId = deviceValidation.valid ? deviceValidation.deviceId : (deviceId || 'DPK-WEB-DEV');
 
-    // Strict 1-Device Check: cannot bind device if already bound to another gmail
-    const existingDeviceUser = db.prepare('SELECT id, gmail FROM users WHERE device_id = ?').get(cleanDeviceId);
-    if (existingDeviceUser && existingDeviceUser.gmail.toLowerCase() !== cleanGmail.toLowerCase()) {
-      return res.status(403).json({
-        success: false,
-        message: `🔒 1-Device Violation: Device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}.`
-      });
-    }
-
     let isOtpValid = (cleanOtp === config.adminPin || cleanOtp === '7860');
     let otpRecord = null;
+
+    let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
+    let isAdmin = isOtpValid || (user && user.role === 'admin') || cleanGmail === 'naved.official@gmail.com';
+
+    // Strict 1-Device Check: cannot bind device if already bound to another gmail (exempt for Admin)
+    if (!isAdmin) {
+      const existingDeviceUser = db.prepare('SELECT id, gmail FROM users WHERE device_id = ?').get(cleanDeviceId);
+      if (existingDeviceUser && existingDeviceUser.gmail.toLowerCase() !== cleanGmail.toLowerCase()) {
+        return res.status(403).json({
+          success: false,
+          message: `🔒 1-Device Violation: Device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}.`
+        });
+      }
+    }
 
     if (!isOtpValid) {
       otpRecord = db.prepare(`
@@ -348,8 +402,8 @@ async function verifyEmailOtp(req, res, next) {
       });
     }
 
-    let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
-    let isAdmin = (cleanOtp === '7860' || cleanOtp === config.adminPin);
+    user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
+    isAdmin = isAdmin || (cleanOtp === '7860' || cleanOtp === config.adminPin);
 
     if (user) {
       // User exists: UPDATE DEVICE TO CURRENT VERIFIED DEVICE (Bypasses lock!)
@@ -602,22 +656,25 @@ async function googleLogin(req, res, next) {
     const deviceValidation = validateDeviceId(deviceId);
     const cleanDeviceId = deviceValidation.valid ? deviceValidation.deviceId : (deviceId || 'WEB_DEV_' + Math.random().toString(36).slice(2, 10));
 
-    // Strict 1-Device Anti-Bot Check
-    const existingDeviceUser = db.prepare('SELECT id, gmail, name FROM users WHERE device_id = ?').get(cleanDeviceId);
-    if (existingDeviceUser && existingDeviceUser.gmail.toLowerCase() !== cleanGmail) {
-      db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
-        'DEVICE_LOCK_VIOLATION',
-        `Google login attempt with ${cleanGmail} on device ${cleanDeviceId} already bound to ${existingDeviceUser.gmail}`,
-        req.ip,
-        cleanDeviceId
-      );
-      return res.status(403).json({
-        success: false,
-        message: `🔒 1-Device Violation: Device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}.`
-      });
-    }
-
     let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
+    const isAdmin = (user && user.role === 'admin') || cleanGmail === 'naved.official@gmail.com';
+
+    // Strict 1-Device Anti-Bot Check (Exempt for Admin)
+    if (!isAdmin) {
+      const existingDeviceUser = db.prepare('SELECT id, gmail, name FROM users WHERE device_id = ?').get(cleanDeviceId);
+      if (existingDeviceUser && existingDeviceUser.gmail.toLowerCase() !== cleanGmail) {
+        db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+          'DEVICE_LOCK_VIOLATION',
+          `Google login attempt with ${cleanGmail} on device ${cleanDeviceId} already bound to ${existingDeviceUser.gmail}`,
+          req.ip,
+          cleanDeviceId
+        );
+        return res.status(403).json({
+          success: false,
+          message: `🔒 1-Device Violation: Device (${cleanDeviceId}) is permanently bound to ${existingDeviceUser.gmail}.`
+        });
+      }
+    }
 
     if (user) {
       // User exists -> update avatar, google_id, device_id and ensure human_verified

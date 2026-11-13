@@ -1,6 +1,7 @@
 const db = require('../db/database');
 const config = require('../config');
 const { sanitizeString } = require('../middleware/validator');
+const aiModeration = require('../services/aiModerationService');
 
 function getVideos(req, res, next) {
   try {
