@@ -160,14 +160,15 @@ async function runTests() {
   const meRes = await request('GET', '/auth/me', null, { Authorization: `Bearer ${userToken}` });
   assert(meRes.status === 200 && meRes.body.data.gmail === testGmail && meRes.body.data.coins === 50, 'Protected /auth/me returns authenticated user details with 50 welcome coins');
 
-  // 8. Watch Video Ad Bonus (20 coins + $0.022 for ad)
+  // 8. Watch Video Ad Bonus (Random 20, 25, or 30 coins & cash)
   const watchBonusRes = await request('POST', '/earning/watch-bonus', { type: 'ad_bonus' }, { Authorization: `Bearer ${userToken}` });
-  assert(watchBonusRes.status === 200 && watchBonusRes.body.data.coins === 70 && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits +20 Coins (70 coins) in SQLite');
+  assert(watchBonusRes.status === 200 && [20, 25, 30].includes(watchBonusRes.body.data.coinsEarned) && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits random 20, 25, or 30 Coins in SQLite');
 
   // 9. Referral Bonus (+100 Coins & +$0.165 per referral)
   await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
   const ref2Res = await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
-  assert(ref2Res.status === 200 && ref2Res.body.data.coins === 270 && ref2Res.body.data.referrals === 2, 'Referral credits persist: referrals count 2 and 270 coins');
+  const expectedTotalCoins = 50 + watchBonusRes.body.data.coinsEarned + 200;
+  assert(ref2Res.status === 200 && ref2Res.body.data.coins === expectedTotalCoins && ref2Res.body.data.referrals === 2, `Referral credits persist: referrals count 2 and ${expectedTotalCoins} coins`);
 
   // 9b. Convert Coins to Money: Minimum 1,000 Coins Required
   const minCoinCheck = await request('POST', '/earning/convert-coins', { coins: 100 }, { Authorization: `Bearer ${userToken}` });

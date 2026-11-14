@@ -1530,7 +1530,7 @@ function shareReferralTelegram() {
 function watchAdForCoins() {
   switchView('watch');
   startAdExperience(true); // 30s Full Sponsor Ad
-  showToast("🪙 Watch full 30s sponsor ad to claim +20 Coins & +$0.022 USD Cash Bonus!");
+  showToast("🪙 Watch short sponsor ad to claim 20 - 25 - 30 Coins & Instant Cash!");
 }
 
 async function creditWatchEarningBonus() {
@@ -1544,7 +1544,7 @@ async function creditWatchEarningBonus() {
         CURRENT_USER.adsWatched = res.data.adsWatched;
         refreshEarningDashboardUI();
       }
-      showToast("🪙 +20 Coins & +$0.022 USD Watch Bonus added to wallet!");
+      showToast(`🪙 +${res.data.coinsEarned} Coins & +$${res.data.cashEarned.toFixed(3)} Watch Bonus added to wallet!`);
     }
   } catch (err) {
     console.warn('Watch bonus note:', err.message);

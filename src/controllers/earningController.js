@@ -2,30 +2,19 @@ const db = require('../db/database');
 const { sanitizeString } = require('../middleware/validator');
 
 // Credit Watch Bonus
-// Normal Video Watch: 1 to 9 Coins randomly
-// Dedicated 15s "Watch & Earn" Ad: Exactly 20 Coins & +$0.022 USD
+// Sponsor Video Ad Watch: 20, 25, or 30 Coins randomly (with proportional USD cash)
 // Conversion Rate: 100 Coins = $0.011 USD
 function creditWatchBonus(req, res, next) {
   try {
     const userId = req.user.id;
     const type = req.body?.type || 'video_watch';
 
-    let coinsEarned = 20;
-    let cashEarned = 0.022;
-    let msg = '';
-
-    if (type === 'ad_bonus') {
-      // Dedicated Watch to Earn Ad: Exactly 20 Coins & +$0.022 USD
-      coinsEarned = 20;
-      cashEarned = 0.022;
-      msg = '+20 Coins ($0.022) Watch to Earn Bonus credited!';
-    } else {
-      // Normal Video Watch: Random 1 to 9 Coins
-      coinsEarned = Math.floor(Math.random() * 9) + 1;
-      // 100 Coins = $0.011 USD => 1 Coin = $0.00011 USD
-      cashEarned = +(coinsEarned * 0.00011).toFixed(5);
-      msg = `+${coinsEarned} Coins Video Watch Bonus credited!`;
-    }
+    // 20 - 25 - 30 Random Coins per sponsor ad
+    const coinOptions = [20, 25, 30];
+    const coinsEarned = coinOptions[Math.floor(Math.random() * coinOptions.length)];
+    // 20 coins = $0.022, 25 coins = $0.0275, 30 coins = $0.033
+    const cashEarned = +(coinsEarned * 0.0011).toFixed(4);
+    const msg = `+${coinsEarned} Coins ($${cashEarned.toFixed(3)}) Watch to Earn Bonus credited!`;
 
     // Atomic update
     db.prepare('UPDATE users SET balance = balance + ?, coins = coins + ?, ads_watched = ads_watched + 1 WHERE id = ?')
