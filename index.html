@@ -911,7 +911,7 @@
                     <i class="fa-solid fa-wallet text-emerald-400"></i> Balance $
                 </span>
                 <p id="userWalletBalance" class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 font-mono">$0.00</p>
-                <span class="text-[10px] text-emerald-300/80 font-medium">Instant Crypto USDT Ready</span>
+                <span class="text-[10px] text-amber-300/90 font-medium">Binance Pay & USDT Ready</span>
             </div>
 
             <!-- 3. Total Referrals -->
@@ -1082,22 +1082,29 @@
             </div>
         </div>
 
-        <!-- Instant USD Payout (Crypto USDT) Form -->
+        <!-- Instant USD Payout (Binance Pay & Crypto USDT) Form -->
         <div class="bg-[#0c0c12] border border-white/15 rounded-3xl p-4 sm:p-5 flex flex-col gap-3 shadow-xl">
             <div class="flex items-center justify-between">
                 <h3 class="text-sm font-black text-white flex items-center gap-2">
-                    <i class="fa-brands fa-bitcoin text-emerald-400"></i>
-                    <span>Instant USD Payout (Crypto USDT)</span>
+                    <i class="fa-solid fa-bolt text-amber-400"></i>
+                    <span>Instant USD Payout (Binance Pay & Crypto USDT)</span>
                 </h3>
-                <span class="text-[10px] text-neutral-400 font-bold bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">TRC20 / BEP20</span>
+                <span class="text-[10px] text-amber-300 font-bold bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <i class="fa-solid fa-check text-[9px]"></i> 0% Fee Binance Pay / BEP20
+                </span>
             </div>
             <form onsubmit="submitWithdrawalRequest(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <input id="withdrawUpiInput" type="text" required placeholder="Enter USDT (TRC20 / BEP20) Wallet Address" class="bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none">
+                <input id="withdrawUpiInput" type="text" required placeholder="Enter Binance Pay ID, UID or USDT Address" class="bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none">
                 <input id="withdrawAmountInput" type="number" required min="10" step="1" placeholder="Amount (Min $10)" class="bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none">
-                <button type="submit" class="bg-gradient-to-r from-emerald-600 to-green-600 hover:brightness-110 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition shadow-lg shadow-green-600/30">
-                    Withdraw USDT (Min $10)
+                <button type="submit" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:brightness-110 text-black font-black text-xs py-2.5 px-4 rounded-xl transition shadow-lg shadow-amber-500/25 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-arrow-down-to-bracket text-xs"></i>
+                    <span>Withdraw USD (Min $10)</span>
                 </button>
             </form>
+            <p class="text-[11px] text-neutral-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info text-amber-400 text-xs"></i>
+                <span>Fastest & 0% Gas Fee: Enter your <b>Binance Pay ID / UID</b> or your Trust Wallet USDT (BEP20 / TRC20) address.</span>
+            </p>
         </div>
     </section>
 
@@ -1237,7 +1244,7 @@
     <script>
       window.GOOGLE_CLIENT_ID = "820053333329-6hdq4c0hnr72lbms7mgu7spbd4rd3tc1.apps.googleusercontent.com";
     </script>
-    <script src="public/app.js?v=20261115_0140"></script>
+    <script src="public/app.js?v=20261115_0205"></script>
 
     <!-- ============================================================================
          MODAL: USER VIDEO & SHORT UPLOADER (YOUTUBE SHORTS STYLE WITH ADMIN REVIEW)

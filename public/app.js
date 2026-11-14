@@ -1617,7 +1617,7 @@ async function submitWithdrawalRequest(e) {
   const amt = parseFloat(document.getElementById('withdrawAmountInput').value);
 
   if (isNaN(amt) || amt < 10) {
-    showToast("Minimum withdrawal amount is $10 USDT.", "error");
+    showToast("Minimum withdrawal amount is $10 USD.", "error");
     return;
   }
 
@@ -1630,8 +1630,8 @@ async function submitWithdrawalRequest(e) {
     if (res.success && res.data) {
       CURRENT_USER.balance = res.data.newBalance;
       refreshEarningDashboardUI();
-      document.getElementById('modalTitleText').textContent = "USDT Withdrawal Submitted ✓";
-      document.getElementById('modalBodyText').textContent = `$${amt} USDT payout to "${upi}" is queued in database under Device ID ${CURRENT_USER.deviceId || DEVICE_FINGERPRINT}.`;
+      document.getElementById('modalTitleText').textContent = "Payout Request Submitted ✓";
+      document.getElementById('modalBodyText').textContent = `$${amt} USD payout to "${upi}" (${res.data.payoutType || 'Binance Pay / Crypto'}) is queued in database.`;
       document.getElementById('sponsorModal').classList.remove('hidden');
     }
   } catch (err) {

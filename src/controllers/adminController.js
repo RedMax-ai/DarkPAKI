@@ -841,13 +841,30 @@ function getAdminWithdrawals(req, res, next) {
       ORDER BY w.id DESC
     `).all();
 
+    const processedWithdrawals = withdrawals.map(w => {
+      let payoutType = 'Crypto USDT';
+      let isBinancePay = false;
+      if (/^\d{6,12}$/.test(w.wallet_address)) {
+        payoutType = 'Binance Pay ID / UID';
+        isBinancePay = true;
+      } else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(w.wallet_address)) {
+        payoutType = 'Binance Email';
+        isBinancePay = true;
+      }
+      return {
+        ...w,
+        payoutType,
+        isBinancePay
+      };
+    });
+
     const pendingCount = db.prepare("SELECT COUNT(*) as count FROM withdrawals WHERE status IN ('PENDING', 'QUEUED')").get()?.count || 0;
     const totalPaid = db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM withdrawals WHERE status = 'COMPLETED'").get()?.total || 0;
 
     res.json({
       success: true,
       data: {
-        withdrawals,
+        withdrawals: processedWithdrawals,
         pendingCount,
         totalPaid
       }

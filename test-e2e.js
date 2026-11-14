@@ -181,12 +181,12 @@ async function runTests() {
   const convertRes = await request('POST', '/earning/convert-coins', { coins: 1000 }, { Authorization: `Bearer ${userToken}` });
   assert(convertRes.status === 200 && convertRes.body.data.coins === 500 && convertRes.body.data.coinsDeducted === 1000, 'Converted 1,000 coins to cash (1,000 Coins = $0.11 USD): remaining coins 500');
 
-  // 10. Withdrawal with $10 USDT Minimum Rule & Atomic Deductions
+  // 10. Withdrawal with $10 Minimum Rule & Atomic Deductions
   const minWithdrawCheck = await request('POST', '/earning/withdraw', {
     upiId: 'TXyz1234567890abcdefghijklmnopqrst',
     amount: 5
   }, { Authorization: `Bearer ${userToken}` });
-  assert(minWithdrawCheck.status === 400 && minWithdrawCheck.body.message.includes('Minimum withdrawal amount is $10 USDT'), 'Withdrawal < $10 rejected with minimum threshold error');
+  assert(minWithdrawCheck.status === 400 && minWithdrawCheck.body.message.includes('Minimum withdrawal amount is $10'), 'Withdrawal < $10 rejected with minimum threshold error');
 
   // Top up user balance to $20 to test valid USDT payout
   dbModule.prepare('UPDATE users SET balance = 20.0 WHERE id = ?').run(registerRes.body.data.id);
@@ -197,6 +197,14 @@ async function runTests() {
     amount: withdrawAmount
   }, { Authorization: `Bearer ${userToken}` });
   assert(withdrawRes.status === 200 && Math.abs(withdrawRes.body.data.newBalance - 10.0) < 0.01 && withdrawRes.body.data.status === 'QUEUED', 'Instant $10 USDT withdrawal processed and queued in SQLite');
+
+  // Test Binance Pay ID (0% Gas Fee) Payout Request
+  dbModule.prepare('UPDATE users SET balance = 15.0 WHERE id = ?').run(registerRes.body.data.id);
+  const binanceWithdrawRes = await request('POST', '/earning/withdraw', {
+    upiId: '248194821', // 9-digit Binance Pay ID / UID
+    amount: 10
+  }, { Authorization: `Bearer ${userToken}` });
+  assert(binanceWithdrawRes.status === 200 && binanceWithdrawRes.body.data.payoutType === 'Binance Pay ID / UID', 'Binance Pay ID (0% gas fee) payout processed and identified in SQLite');
 
   // 11. Overdraw prevention
   const overdrawRes = await request('POST', '/earning/withdraw', {

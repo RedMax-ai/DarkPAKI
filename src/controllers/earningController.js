@@ -147,13 +147,21 @@ function submitWithdrawal(req, res, next) {
     const { upiId, walletAddress, amount } = req.body;
 
     const cleanWallet = sanitizeString(walletAddress || upiId);
-    if (!cleanWallet || cleanWallet.length < 10) {
-      return res.status(400).json({ success: false, message: 'Invalid Crypto USDT (TRC20 / BEP20) wallet address format.' });
+    if (!cleanWallet || cleanWallet.length < 5) {
+      return res.status(400).json({ success: false, message: 'Invalid Binance Pay ID / UID or Crypto USDT wallet address format.' });
     }
 
     const withdrawAmount = parseFloat(amount);
     if (isNaN(withdrawAmount) || withdrawAmount < 10) {
-      return res.status(400).json({ success: false, message: 'Minimum withdrawal amount is $10 USDT.' });
+      return res.status(400).json({ success: false, message: 'Minimum withdrawal amount is $10 USD.' });
+    }
+
+    // Determine Payout System (Binance Pay ID/UID vs Crypto Wallet Address)
+    let payoutType = 'Crypto USDT';
+    if (/^\d{6,12}$/.test(cleanWallet)) {
+      payoutType = 'Binance Pay ID / UID';
+    } else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanWallet)) {
+      payoutType = 'Binance Email';
     }
 
     // Check balance in database
@@ -180,19 +188,20 @@ function submitWithdrawal(req, res, next) {
 
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'WITHDRAWAL_REQUESTED',
-        `User ID ${userId} requested withdrawal of $${withdrawAmount.toFixed(2)} USDT to ${cleanWallet}`,
+        `User ID ${userId} requested withdrawal of $${withdrawAmount.toFixed(2)} USD via ${payoutType} (${cleanWallet})`,
         req.ip,
         user.device_id
       );
 
       res.json({
         success: true,
-        message: `Withdrawal request of $${withdrawAmount.toFixed(2)} USDT to "${cleanWallet}" submitted successfully!`,
+        message: `Withdrawal request of $${withdrawAmount.toFixed(2)} USD via ${payoutType} ("${cleanWallet}") submitted successfully!`,
         data: {
           withdrawalId: result.lastInsertRowid,
           newBalance: updatedUser.balance,
           upiId: cleanWallet,
           walletAddress: cleanWallet,
+          payoutType,
           amount: withdrawAmount,
           status: 'QUEUED'
         }
