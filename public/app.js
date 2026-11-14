@@ -1002,7 +1002,7 @@ function triggerGoogleSignIn() {
       if (overlay) overlay.classList.add('hidden');
     }
   } else {
-    showToast('Google Sign-In is blocked or loading. You can use Email + Password (PIN 7860 for Admin) below!', 'info');
+    showToast('Google Sign-In is unavailable. Please use Email + Password below!', 'info');
     const passInput = document.getElementById('loginPasswordInput');
     if (passInput) passInput.focus();
   }
@@ -1078,28 +1078,6 @@ function toggleWebsitePasswordVisibility() {
   }
 }
 
-function fillAdminCredentials() {
-  const nameInput = document.getElementById('loginFullName');
-  const gmailInput = document.getElementById('loginGmailInput');
-  const passInput = document.getElementById('loginPasswordInput');
-  const checkbox = document.getElementById('humanConfirmCheckbox');
-
-  if (nameInput && (!nameInput.value || nameInput.value.trim() === '')) {
-    nameInput.value = 'Naved Master';
-  }
-  if (gmailInput) {
-    gmailInput.value = 'naved.official@gmail.com';
-  }
-  if (passInput) {
-    passInput.value = '7860';
-  }
-  if (checkbox) {
-    checkbox.checked = true;
-  }
-  onTermsCheckboxChange();
-  showToast('👑 Master Admin PIN (7860) applied! Click Verify to enter Dashboard.', 'info');
-}
-
 function openOtpVerificationModal(gmail, devOtp) {
   PENDING_LOGIN_GMAIL = gmail;
   const modal = document.getElementById('otpVerificationModal');
@@ -1112,7 +1090,7 @@ function openOtpVerificationModal(gmail, devOtp) {
   if (errAlert) errAlert.classList.add('hidden');
   if (emailText) emailText.textContent = gmail;
   if (deviceText) deviceText.textContent = DEVICE_FINGERPRINT || 'DPK-DEV';
-  if (devOtpDisplay) devOtpDisplay.textContent = devOtp || '7860';
+  if (devOtpDisplay) devOtpDisplay.textContent = devOtp || '';
   if (input) {
     input.value = '';
     setTimeout(() => input.focus(), 300);
@@ -1200,7 +1178,7 @@ async function handleVerifyOtpSubmit(e) {
 
   if (!otp || otp.length < 4) {
     if (errAlert && errText) {
-      errText.textContent = 'Please enter a valid OTP code (or 7860 for Admin Master PIN)';
+      errText.textContent = 'Please enter a valid 6-digit OTP code';
       errAlert.classList.remove('hidden');
     }
     return;
@@ -1281,7 +1259,7 @@ async function handleSecureUserLogin(e) {
   if (!password || password.length < 4) {
     if (errBox) {
       const errText = document.getElementById('loginErrorAlertText');
-      if (errText) errText.textContent = 'Password must be at least 4 characters (or 7860 for Admin Master PIN)';
+      if (errText) errText.textContent = 'Password must be at least 4 characters long';
       errBox.classList.remove('hidden');
     }
     showToast('Password must be at least 4 characters long!', 'error');

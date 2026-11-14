@@ -789,15 +789,10 @@
                 </div>
 
                 <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block">Account Password (पासवर्ड)</label>
-                        <button type="button" onclick="fillAdminCredentials()" class="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30 transition">
-                            <i class="fa-solid fa-crown text-[9px]"></i> Admin PIN (7860)
-                        </button>
-                    </div>
+                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Account Password (पासवर्ड)</label>
                     <div class="relative">
                         <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
-                        <input id="loginPasswordInput" type="password" required minlength="4" placeholder="Enter password (or 7860 for Admin Master)" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-10 py-2.5 text-xs sm:text-sm text-white outline-none transition">
+                        <input id="loginPasswordInput" type="password" required minlength="4" placeholder="Enter your password" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-10 py-2.5 text-xs sm:text-sm text-white outline-none transition">
                         <button type="button" onclick="toggleWebsitePasswordVisibility()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition">
                             <i id="websitePassEyeIcon" class="fa-solid fa-eye text-xs"></i>
                         </button>
@@ -836,14 +831,6 @@
                     <i id="submitBtnIcon" class="fa-solid fa-key"></i>
                     <span id="submitBtnText">Verify & Get 6-Digit OTP (ओटीपी)</span>
                 </button>
-
-                <!-- Direct Owner Admin Panel Link -->
-                <div class="text-center pt-2.5 border-t border-white/10 mt-1">
-                    <a href="/admin" class="text-xs text-neutral-400 hover:text-rose-400 transition inline-flex items-center gap-1.5 font-bold">
-                        <i class="fa-solid fa-shield-halved text-rose-500"></i>
-                        <span>Owner Admin Panel Login (PIN: 7860)</span>
-                    </a>
-                </div>
             </form>
         </div>
     </section>
@@ -1525,7 +1512,6 @@
                     <div class="text-[11px] leading-tight">
                         <span class="text-neutral-300">Generated OTP: </span>
                         <strong id="otpDisplayCode" class="text-amber-300 font-mono text-sm tracking-widest font-black">123456</strong>
-                        <div class="text-[10px] text-neutral-400">(Or Owner Master PIN: <b class="text-rose-400">7860</b>)</div>
                     </div>
                 </div>
                 <button type="button" onclick="autoFillDevOtp()" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-amber-500/40 shrink-0 transition">

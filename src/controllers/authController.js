@@ -210,7 +210,7 @@ async function loginOrRegister(req, res, next) {
           if (!isMatch) {
             return res.status(401).json({
               success: false,
-              message: '❌ Invalid Password! Please enter the correct password, or 7860 for Admin Master PIN.'
+              message: '❌ Invalid Password! Please check your password and try again.'
             });
           }
         }
@@ -266,7 +266,7 @@ async function loginOrRegister(req, res, next) {
         return res.status(403).json({
           success: false,
           requirePassword: true,
-          message: `🔒 Device Authorization Required: Please enter your account password (or 7860 for Admin) to authorize this device.`
+          message: `🔒 Device Authorization Required: Please enter your account password to authorize this device.`
         });
       }
     } else {
@@ -398,7 +398,7 @@ async function verifyEmailOtp(req, res, next) {
     if (!isOtpValid) {
       return res.status(400).json({
         success: false,
-        message: '❌ Invalid or expired OTP code! Please check the 6-digit code or enter Master PIN 7860.'
+        message: '❌ Invalid or expired OTP code! Please check the 6-digit code sent to your email.'
       });
     }
 
