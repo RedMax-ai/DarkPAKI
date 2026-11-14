@@ -1,0 +1,22 @@
+name: 24/7 Render Keep-Alive Pinger
+
+on:
+  schedule:
+    # Runs every 10 minutes to prevent Render free instance sleep/cold-starts
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual run anytime from GitHub Actions tab
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Live Website & Wakeup Endpoint
+        run: |
+          echo "Pinging https://dark.anizon.watch/health..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 "https://dark.anizon.watch/health")
+          echo "Response HTTP Status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Direct health failed with $HTTP_STATUS, pinging fallback onrender URL..."
+            curl -s -o /dev/null -w "%{http_code}" --max-time 45 "https://darkpaki-stream.onrender.com/health" || true
+          fi
+          echo "Keep-alive ping completed at $(date -u)"

@@ -93,12 +93,13 @@ app.use((req, res, next) => {
 // 4. Rate Limiter on API Routes
 app.use('/api', apiLimiter);
 
-// 5. API Routes
-app.get('/api/health', (req, res) => {
+// 5. API Routes & 24/7 Keep-Alive Uptime Healthcheck
+app.get(['/health', '/api/health'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    uptime: Math.floor(process.uptime()),
     database: 'SQLite WAL Active',
     environment: config.nodeEnv
   });
