@@ -1341,7 +1341,7 @@ function refreshEarningDashboardUI() {
   }
 
   const userCoins = CURRENT_USER.coins !== undefined ? CURRENT_USER.coins : 50;
-  if (headerTxt) headerTxt.textContent = `🪙 ${userCoins} • $${CURRENT_USER.balance.toFixed(0)}`;
+  if (headerTxt) headerTxt.textContent = `🪙 ${userCoins} • $${CURRENT_USER.balance.toFixed(2)}`;
   const nameEl = document.getElementById('earnUserName');
   if (nameEl) nameEl.textContent = CURRENT_USER.name;
   const gmEl = document.getElementById('earnUserGmail');
@@ -1352,7 +1352,7 @@ function refreshEarningDashboardUI() {
   const coinsEl = document.getElementById('userCoinsBalance');
   if (coinsEl) coinsEl.textContent = `${userCoins}`;
   const balEl = document.getElementById('userWalletBalance');
-  if (balEl) balEl.textContent = `$${CURRENT_USER.balance.toFixed(2)}`;
+  if (balEl) balEl.textContent = `$${CURRENT_USER.balance.toFixed(CURRENT_USER.balance < 1 ? 3 : 2)}`;
   const refEl = document.getElementById('userReferralCount');
   if (refEl) refEl.textContent = `${CURRENT_USER.referrals}`;
   const adEl = document.getElementById('userAdsWatchedCount');
@@ -1415,20 +1415,20 @@ function copyReferralLink() {
   if (!input) return;
   input.select();
   navigator.clipboard.writeText(input.value).catch(() => document.execCommand('copy'));
-  showToast("Referral link copied! Share to earn +100 Coins & +$15 USD per 18+ verified friend.");
+  showToast("Referral link copied! Share to earn +100 Coins & +$0.165 USD per 18+ verified friend.");
 }
 
 function shareReferralWhatsApp() {
   const refCode = CURRENT_USER ? (CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786') : 'DPK786';
   const url = `${window.location.origin}/?ref=${refCode}`;
-  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Watch uncut 4K videos, earn coins & $ USD cash straight to your wallet. Register here: ${url}`);
+  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Watch uncut 4K videos, earn coins & $ USD cash straight to your crypto wallet. Register here: ${url}`);
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
 function shareReferralTelegram() {
   const refCode = CURRENT_USER ? (CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786') : 'DPK786';
   const url = `${window.location.origin}/?ref=${refCode}`;
-  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Earn coins & $ USD cash with instant payouts.`);
+  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Earn coins & $ USD cash with instant USDT crypto withdrawal.`);
   window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
 }
 
@@ -1438,7 +1438,7 @@ function shareReferralTelegram() {
 function watchAdForCoins() {
   switchView('watch');
   startAdExperience(true); // 30s Full Sponsor Ad
-  showToast("🪙 Watch full 30s sponsor ad to claim +30 Coins & +$3.00 Cash Bonus!");
+  showToast("🪙 Watch full 30s sponsor ad to claim +20 Coins & +$0.022 USD Cash Bonus!");
 }
 
 async function creditWatchEarningBonus() {
@@ -1452,7 +1452,7 @@ async function creditWatchEarningBonus() {
         CURRENT_USER.adsWatched = res.data.adsWatched;
         refreshEarningDashboardUI();
       }
-      showToast("🪙 +20 Coins & +$2.00 Watch Bonus added to wallet!");
+      showToast("🪙 +20 Coins & +$0.022 USD Watch Bonus added to wallet!");
     }
   } catch (err) {
     console.warn('Watch bonus note:', err.message);
@@ -1486,8 +1486,8 @@ async function handleConvertCoins(amount) {
 function handleConvertCustomCoins() {
   const input = document.getElementById('customConvertCoinsInput');
   const val = parseInt(input?.value, 10);
-  if (isNaN(val) || val < 10) {
-    showToast("Please enter at least 10 coins (100 Coins = $1.00 USD)");
+  if (isNaN(val) || val < 100) {
+    showToast("Please enter at least 100 coins (100 Coins = $0.011 USD)");
     return;
   }
   handleConvertCoins(val);
@@ -1507,7 +1507,7 @@ async function simulateVerifiedReferral() {
       CURRENT_USER.coins = res.data.coins;
       CURRENT_USER.referrals = res.data.referrals;
       refreshEarningDashboardUI();
-      showToast("🎉 +100 Coins & +$15 Referral Bonus credited to database!");
+      showToast("🎉 +100 Coins & +$0.165 USD Referral Bonus credited to database!");
     }
   } catch (err) {
     showToast(err.message);
@@ -1524,6 +1524,11 @@ async function submitWithdrawalRequest(e) {
   const upi = document.getElementById('withdrawUpiInput').value.trim();
   const amt = parseFloat(document.getElementById('withdrawAmountInput').value);
 
+  if (isNaN(amt) || amt < 10) {
+    showToast("Minimum withdrawal amount is $10 USDT.", "error");
+    return;
+  }
+
   try {
     const res = await apiFetch('/earning/withdraw', {
       method: 'POST',
@@ -1533,8 +1538,8 @@ async function submitWithdrawalRequest(e) {
     if (res.success && res.data) {
       CURRENT_USER.balance = res.data.newBalance;
       refreshEarningDashboardUI();
-      document.getElementById('modalTitleText').textContent = "Withdrawal Request Submitted ✓";
-      document.getElementById('modalBodyText').textContent = `$${amt} payout to "${upi}" is queued in database under Device ID ${CURRENT_USER.deviceId || DEVICE_FINGERPRINT}.`;
+      document.getElementById('modalTitleText').textContent = "USDT Withdrawal Submitted ✓";
+      document.getElementById('modalBodyText').textContent = `$${amt} USDT payout to "${upi}" is queued in database under Device ID ${CURRENT_USER.deviceId || DEVICE_FINGERPRINT}.`;
       document.getElementById('sponsorModal').classList.remove('hidden');
     }
   } catch (err) {

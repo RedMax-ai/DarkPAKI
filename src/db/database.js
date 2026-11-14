@@ -40,7 +40,7 @@ function initializeSchema() {
       gmail TEXT UNIQUE NOT NULL COLLATE NOCASE,
       phone TEXT NOT NULL,
       device_id TEXT NOT NULL,
-      balance REAL NOT NULL DEFAULT 25.0,
+      balance REAL NOT NULL DEFAULT 0.275,
       coins INTEGER NOT NULL DEFAULT 50,
       referrals INTEGER NOT NULL DEFAULT 0,
       ads_watched INTEGER NOT NULL DEFAULT 0,

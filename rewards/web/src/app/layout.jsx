@@ -28,7 +28,7 @@ export default function RootLayout({ children }) {
                   <span className="logo-icon">⚡</span>
                   <span className="logo-text">RewardsPlatform</span>
                   <p className="footer-tagline">
-                    Append-Only Ledger Economy • 100 Coins = ₹1.00
+                    Append-Only Ledger Economy • 100 Coins = $0.011 USD
                   </p>
                 </div>
                 <div className="footer-meta">

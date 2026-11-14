@@ -104,7 +104,7 @@ async function runTests() {
   };
 
   const registerRes = await request('POST', '/auth/login', registerPayload);
-  assert(registerRes.status === 200 && registerRes.body.token && registerRes.body.data.balance === 25.0, 'User registered: Received JWT token, 1-Device Bound, and $25 welcome bonus');
+  assert(registerRes.status === 200 && registerRes.body.token && registerRes.body.data.balance === 0.275, 'User registered: Received JWT token, 1-Device Bound, and $0.275 welcome bonus');
   const userToken = registerRes.body.token;
 
   // 6. Multi-Account Fraud Shield (1 Device = 1 Gmail)
@@ -126,31 +126,40 @@ async function runTests() {
   const meRes = await request('GET', '/auth/me', null, { Authorization: `Bearer ${userToken}` });
   assert(meRes.status === 200 && meRes.body.data.gmail === testGmail && meRes.body.data.coins === 50, 'Protected /auth/me returns authenticated user details with 50 welcome coins');
 
-  // 8. Watch Video Ad Bonus (1-9 random coins or 10 coins for ad)
+  // 8. Watch Video Ad Bonus (20 coins + $0.022 for ad)
   const watchBonusRes = await request('POST', '/earning/watch-bonus', { type: 'ad_bonus' }, { Authorization: `Bearer ${userToken}` });
-  assert(watchBonusRes.status === 200 && watchBonusRes.body.data.coins === 60 && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits +10 Coins (60 coins) in SQLite');
+  assert(watchBonusRes.status === 200 && watchBonusRes.body.data.coins === 70 && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits +20 Coins (70 coins) in SQLite');
 
-  // 9. Referral Bonus (+100 Coins & +$15.0 per referral)
+  // 9. Referral Bonus (+100 Coins & +$0.165 per referral)
   await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
   const ref2Res = await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
-  assert(ref2Res.status === 200 && ref2Res.body.data.coins === 260 && ref2Res.body.data.referrals === 2, 'Referral credits persist: referrals count 2 and 260 coins');
+  assert(ref2Res.status === 200 && ref2Res.body.data.coins === 270 && ref2Res.body.data.referrals === 2, 'Referral credits persist: referrals count 2 and 270 coins');
 
-  // 9b. Convert Coins to Money (Coverate): 100 Coins = $1.00 Cash
+  // 9b. Convert Coins to Money (Coverate): 100 Coins = $0.011 USD Cash
   const convertRes = await request('POST', '/earning/convert-coins', { coins: 100 }, { Authorization: `Bearer ${userToken}` });
-  assert(convertRes.status === 200 && convertRes.body.data.coins === 160, 'Converted 100 coins to cash: remaining coins 160');
+  assert(convertRes.status === 200 && convertRes.body.data.coins === 170, 'Converted 100 coins to cash (100 Coins = $0.011 USD): remaining coins 170');
 
-  // 10. Withdrawal with Atomic Deductions
-  const currentBal = convertRes.body.data.balance;
-  const withdrawAmount = 50;
+  // 10. Withdrawal with $10 USDT Minimum Rule & Atomic Deductions
+  const minWithdrawCheck = await request('POST', '/earning/withdraw', {
+    upiId: 'TXyz1234567890abcdefghijklmnopqrst',
+    amount: 5
+  }, { Authorization: `Bearer ${userToken}` });
+  assert(minWithdrawCheck.status === 400 && minWithdrawCheck.body.message.includes('Minimum withdrawal amount is $10 USDT'), 'Withdrawal < $10 rejected with minimum threshold error');
+
+  // Top up user balance to $20 to test valid USDT payout
+  const dbModule = require('./src/db/database');
+  dbModule.prepare('UPDATE users SET balance = 20.0 WHERE id = ?').run(registerRes.body.data.id);
+
+  const withdrawAmount = 10;
   const withdrawRes = await request('POST', '/earning/withdraw', {
-    upiId: 'hamza@okhdfcbank',
+    upiId: 'TXyz1234567890abcdefghijklmnopqrst',
     amount: withdrawAmount
   }, { Authorization: `Bearer ${userToken}` });
-  assert(withdrawRes.status === 200 && Math.abs(withdrawRes.body.data.newBalance - (currentBal - withdrawAmount)) < 0.01 && withdrawRes.body.data.status === 'QUEUED', 'Instant withdrawal processed and queued in SQLite');
+  assert(withdrawRes.status === 200 && Math.abs(withdrawRes.body.data.newBalance - 10.0) < 0.01 && withdrawRes.body.data.status === 'QUEUED', 'Instant $10 USDT withdrawal processed and queued in SQLite');
 
   // 11. Overdraw prevention
   const overdrawRes = await request('POST', '/earning/withdraw', {
-    upiId: 'hamza@okhdfcbank',
+    upiId: 'TXyz1234567890abcdefghijklmnopqrst',
     amount: 99999
   }, { Authorization: `Bearer ${userToken}` });
   assert(overdrawRes.status === 400 && overdrawRes.body.message.includes('Insufficient balance'), 'Overdraw correctly rejected when balance < amount');

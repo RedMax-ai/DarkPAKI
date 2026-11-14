@@ -45,15 +45,15 @@ export default function LandingPage() {
           {/* Quick Metrics Bar */}
           <div className="hero-stats-bar">
             <div className="stat-pill">
-              <span className="stat-pill-num">100 Coins = ₹1.00</span>
+              <span className="stat-pill-num">100 Coins = $0.011 USD</span>
               <span className="stat-pill-label">Official Exchange Rate</span>
             </div>
             <div className="stat-pill">
-              <span className="stat-pill-num">3,000 Coins (₹30)</span>
+              <span className="stat-pill-num">+100 Coins (+$0.165)</span>
               <span className="stat-pill-label">Per Qualified Referral</span>
             </div>
             <div className="stat-pill">
-              <span className="stat-pill-num">₹500 / $5 Min</span>
+              <span className="stat-pill-num">$10 Min USDT</span>
               <span className="stat-pill-label">Fast Direct Payout</span>
             </div>
           </div>
