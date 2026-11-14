@@ -1431,7 +1431,6 @@ function refreshEarningDashboardUI() {
     if (adEl) adEl.textContent = '0 Videos';
     return;
   }
-  }
 
   const userCoins = CURRENT_USER.coins !== undefined ? CURRENT_USER.coins : 50;
   if (headerTxt) headerTxt.textContent = `🪙 ${userCoins} • $${CURRENT_USER.balance.toFixed(2)}`;
