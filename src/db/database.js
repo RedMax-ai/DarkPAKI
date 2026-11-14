@@ -283,6 +283,10 @@ function initializeSchema() {
   runMigration("ALTER TABLE videos ADD COLUMN ai_details TEXT DEFAULT '';");
   runMigration('ALTER TABLE videos ADD COLUMN qualified_views INTEGER DEFAULT 0;');
 
+  runMigration("ALTER TABLE withdrawals ADD COLUMN tx_hash TEXT DEFAULT '';");
+  runMigration("ALTER TABLE withdrawals ADD COLUMN admin_notes TEXT DEFAULT '';");
+  runMigration('ALTER TABLE withdrawals ADD COLUMN processed_at DATETIME;');
+
   // Sync existing videos' views_count from views string if 0
   try {
     const existingVideos = db.prepare('SELECT id, views, views_count FROM videos').all();

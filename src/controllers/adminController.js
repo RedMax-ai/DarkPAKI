@@ -69,6 +69,7 @@ function getStats(req, res, next) {
     const totalDemands = db.prepare('SELECT COUNT(*) as count FROM demands').get().count;
     const pendingVideosCount = db.prepare("SELECT COUNT(*) as count FROM videos WHERE status = 'PENDING'").get()?.count || 0;
     const pendingMonetizationCount = db.prepare("SELECT COUNT(*) as count FROM monetization_applications WHERE status = 'PENDING'").get()?.count || 0;
+    const pendingWithdrawalsCount = db.prepare("SELECT COUNT(*) as count FROM withdrawals WHERE status IN ('PENDING', 'QUEUED')").get()?.count || 0;
     const monetizedCreatorsCount = db.prepare("SELECT COUNT(*) as count FROM users WHERE is_monetized = 1").get()?.count || 0;
 
     const blockedAttempts = db.prepare(`
@@ -99,6 +100,7 @@ function getStats(req, res, next) {
           totalDemands,
           pendingVideosCount,
           pendingMonetizationCount,
+          pendingWithdrawalsCount,
           monetizedCreatorsCount,
           blockedAttempts,
           deviceLockStatus: 'STRICT ACTIVE'
@@ -825,6 +827,125 @@ function toggleCreatorMonetization(req, res, next) {
   }
 }
 
+// ============================================================================
+// USDT PAYOUTS / TRUST WALLET MANAGEMENT
+// ============================================================================
+function getAdminWithdrawals(req, res, next) {
+  try {
+    const withdrawals = db.prepare(`
+      SELECT w.id, w.user_id, w.upi_id as wallet_address, w.amount, w.device_id, w.status,
+             w.tx_hash, w.admin_notes, w.created_at, w.processed_at,
+             u.name as user_name, u.gmail as user_gmail, u.balance as user_balance
+      FROM withdrawals w
+      LEFT JOIN users u ON w.user_id = u.id
+      ORDER BY w.id DESC
+    `).all();
+
+    const pendingCount = db.prepare("SELECT COUNT(*) as count FROM withdrawals WHERE status IN ('PENDING', 'QUEUED')").get()?.count || 0;
+    const totalPaid = db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM withdrawals WHERE status = 'COMPLETED'").get()?.total || 0;
+
+    res.json({
+      success: true,
+      data: {
+        withdrawals,
+        pendingCount,
+        totalPaid
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function completeWithdrawal(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { txHash, notes } = req.body || {};
+
+    const withdrawal = db.prepare('SELECT * FROM withdrawals WHERE id = ?').get(id);
+    if (!withdrawal) {
+      return res.status(404).json({ success: false, message: 'Withdrawal request not found.' });
+    }
+
+    db.prepare(`
+      UPDATE withdrawals
+      SET status = 'COMPLETED',
+          tx_hash = ?,
+          admin_notes = ?,
+          processed_at = datetime('now')
+      WHERE id = ?
+    `).run(
+      txHash ? sanitizeString(txHash) : '',
+      notes ? sanitizeString(notes) : 'Paid via Trust Wallet USDT',
+      id
+    );
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+      'WITHDRAWAL_PAID_TRUST_WALLET',
+      `Admin completed withdrawal #${id} ($${withdrawal.amount} USDT to ${withdrawal.upi_id}). TXID: ${txHash || 'N/A'}`,
+      req.ip,
+      'ADMIN'
+    );
+
+    res.json({
+      success: true,
+      message: `Withdrawal #${id} ($${withdrawal.amount} USDT) marked as COMPLETED (Paid via Trust Wallet)!`
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function rejectWithdrawal(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body || {};
+
+    const withdrawal = db.prepare('SELECT * FROM withdrawals WHERE id = ?').get(id);
+    if (!withdrawal) {
+      return res.status(404).json({ success: false, message: 'Withdrawal request not found.' });
+    }
+
+    if (withdrawal.status === 'REJECTED') {
+      return res.status(400).json({ success: false, message: 'This withdrawal has already been rejected.' });
+    }
+
+    // Atomic transaction: Refund money back to user balance and update status
+    db.exec('BEGIN IMMEDIATE;');
+    try {
+      db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(withdrawal.amount, withdrawal.user_id);
+      db.prepare(`
+        UPDATE withdrawals
+        SET status = 'REJECTED',
+            admin_notes = ?,
+            processed_at = datetime('now')
+        WHERE id = ?
+      `).run(
+        reason ? sanitizeString(reason) : 'Rejected by admin: Invalid USDT wallet address or duplicate',
+        id
+      );
+      db.exec('COMMIT;');
+    } catch (txnErr) {
+      db.exec('ROLLBACK;');
+      throw txnErr;
+    }
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+      'WITHDRAWAL_REJECTED_REFUNDED',
+      `Admin rejected withdrawal #${id}. $${withdrawal.amount} USDT refunded to user #${withdrawal.user_id}. Reason: ${reason || 'N/A'}`,
+      req.ip,
+      'ADMIN'
+    );
+
+    res.json({
+      success: true,
+      message: `Withdrawal #${id} rejected. $${withdrawal.amount} USDT refunded to user account.`
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   loginAdmin,
   verifyAuth,
@@ -844,5 +965,8 @@ module.exports = {
   rejectVideo,
   getMonetizationApplications,
   reviewMonetizationApplication,
-  toggleCreatorMonetization
+  toggleCreatorMonetization,
+  getAdminWithdrawals,
+  completeWithdrawal,
+  rejectWithdrawal
 };

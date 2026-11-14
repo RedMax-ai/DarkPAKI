@@ -441,6 +441,13 @@
           </div>
           <span id="sidebarMonetizationBadge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40 hidden">0</span>
         </button>
+        <button onclick="switchTab('payouts')" id="tabBtn-payouts" class="tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-wallet w-4 text-emerald-400"></i>
+            <span>USDT Payouts (Trust Wallet)</span>
+          </div>
+          <span id="sidebarPayoutsBadge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hidden">0</span>
+        </button>
         <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
           <i class="fa-solid fa-sliders w-4 text-neutral-400"></i>
           <span>Platform Settings</span>
@@ -742,6 +749,76 @@
             <div class="p-8 text-center text-neutral-400 text-sm">
               <i class="fa-solid fa-spinner fa-spin text-lg mb-2"></i>
               <p>Loading creator monetization applications...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB: USDT PAYOUTS & TRUST WALLET TRANSFER MANAGER -->
+      <!-- =================================================================== -->
+      <section id="tab-payouts" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/10">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-wallet text-emerald-400 text-xl"></i>
+                <span>USDT Payouts & Trust Wallet Manager</span>
+                <span id="payoutsQueueCountBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">0 Pending</span>
+              </h3>
+              <p class="text-xs text-neutral-400 mt-1">Review user withdrawal requests ($10+ USDT), copy their BEP20/TRC20 address to Trust Wallet, send the USDT, and mark as Paid.</p>
+            </div>
+            <button onclick="loadAdminWithdrawals()" class="bg-white/10 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-xl border border-white/10 transition flex items-center gap-2 self-start sm:self-auto">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Refresh Payouts</span>
+            </button>
+          </div>
+
+          <!-- Quick Trust Wallet How-To Banner -->
+          <div class="bg-gradient-to-r from-emerald-950/40 via-neutral-900/40 to-black/60 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 mb-6">
+            <h4 class="text-xs font-black uppercase text-emerald-400 tracking-wider flex items-center gap-2 mb-2">
+              <i class="fa-solid fa-shield-halved"></i> Trust Wallet Payout Workflow (Step-by-Step)
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-neutral-300">
+              <div class="bg-black/40 border border-white/5 rounded-xl p-3 flex flex-col gap-1">
+                <span class="text-white font-bold flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">1</span> Copy User Address</span>
+                <p class="text-[11px] text-neutral-400">Review the requested amount ($10+) and click "Copy for Trust Wallet" button below.</p>
+              </div>
+              <div class="bg-black/40 border border-white/5 rounded-xl p-3 flex flex-col gap-1">
+                <span class="text-white font-bold flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">2</span> Send from Trust Wallet</span>
+                <p class="text-[11px] text-neutral-400">Open Trust Wallet -> Select USDT (BEP20 or TRC20) -> Tap "Send" -> Paste Address -> Enter Amount -> Confirm.</p>
+              </div>
+              <div class="bg-black/40 border border-white/5 rounded-xl p-3 flex flex-col gap-1">
+                <span class="text-white font-bold flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">3</span> Mark as Completed</span>
+                <p class="text-[11px] text-neutral-400">Click "Mark Paid", optionally paste the Transaction Hash (TXID) from Trust Wallet, and confirm.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Payouts Summary -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+            <div class="bg-black/30 border border-white/5 rounded-xl p-3.5">
+              <span class="text-[10px] uppercase font-bold text-neutral-400">Pending Requests</span>
+              <p id="payoutsStatPendingCount" class="text-xl font-bold font-mono text-amber-400 mt-1">0</p>
+            </div>
+            <div class="bg-black/30 border border-white/5 rounded-xl p-3.5">
+              <span class="text-[10px] uppercase font-bold text-neutral-400">Total USDT Paid Out</span>
+              <p id="payoutsStatTotalPaid" class="text-xl font-bold font-mono text-emerald-400 mt-1">$0.00</p>
+            </div>
+            <div class="bg-black/30 border border-white/5 rounded-xl p-3.5 col-span-2 sm:col-span-1">
+              <span class="text-[10px] uppercase font-bold text-neutral-400">Supported Networks</span>
+              <p class="text-xs font-bold text-white mt-1.5 flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">BEP20</span>
+                <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/30">TRC20</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Withdrawals List Container -->
+          <div id="adminWithdrawalsContainer" class="space-y-4">
+            <div class="p-8 text-center text-neutral-400 text-sm">
+              <i class="fa-solid fa-spinner fa-spin text-lg mb-2"></i>
+              <p>Loading withdrawal requests...</p>
             </div>
           </div>
         </div>
@@ -1238,6 +1315,8 @@
         loadPendingVideos();
       } else if (tabId === 'monetization-review') {
         loadMonetizationApplications();
+      } else if (tabId === 'payouts') {
+        loadAdminWithdrawals();
       } else if (tabId === 'overview') {
         loadAdminStats();
       } else if (tabId === 'settings') {
@@ -1345,6 +1424,11 @@
           if (sMonBadge) {
             sMonBadge.textContent = stats.pendingMonetizationCount || 0;
             sMonBadge.classList.toggle('hidden', !stats.pendingMonetizationCount);
+          }
+          const sPayoutBadge = document.getElementById('sidebarPayoutsBadge');
+          if (sPayoutBadge) {
+            sPayoutBadge.textContent = stats.pendingWithdrawalsCount || 0;
+            sPayoutBadge.classList.toggle('hidden', !stats.pendingWithdrawalsCount);
           }
 
           if (settings.cdnStreamUrl) {
@@ -1920,6 +2004,170 @@
       } catch (err) {
         showToast('Settings error: ' + err.message, 'error');
       }
+    }
+
+    // =========================================================================
+    // USDT PAYOUTS & TRUST WALLET TRANSFER MANAGER JAVASCRIPT
+    // =========================================================================
+    async function loadAdminWithdrawals() {
+      const container = document.getElementById('adminWithdrawalsContainer');
+      const badge = document.getElementById('payoutsQueueCountBadge');
+      const sBadge = document.getElementById('sidebarPayoutsBadge');
+      const statPending = document.getElementById('payoutsStatPendingCount');
+      const statTotalPaid = document.getElementById('payoutsStatTotalPaid');
+
+      container.innerHTML = `<div class="p-8 text-center text-neutral-400 text-sm"><i class="fa-solid fa-spinner fa-spin text-lg mb-2"></i><p>Loading withdrawal requests...</p></div>`;
+
+      try {
+        const res = await adminFetch('/admin/withdrawals');
+        if (res.success && res.data) {
+          const list = res.data.withdrawals || [];
+          const pendingCount = res.data.pendingCount || 0;
+          const totalPaid = res.data.totalPaid || 0;
+
+          if (badge) badge.textContent = `${pendingCount} Pending`;
+          if (sBadge) {
+            sBadge.textContent = pendingCount;
+            sBadge.classList.toggle('hidden', pendingCount === 0);
+          }
+          if (statPending) statPending.textContent = pendingCount;
+          if (statTotalPaid) statTotalPaid.textContent = `$${parseFloat(totalPaid).toFixed(2)}`;
+
+          if (list.length === 0) {
+            container.innerHTML = `
+              <div class="p-12 text-center bg-black/30 border border-white/5 rounded-2xl">
+                <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+                  <i class="fa-solid fa-check text-xl"></i>
+                </div>
+                <h4 class="text-sm font-bold text-white">No Withdrawal Requests!</h4>
+                <p class="text-xs text-neutral-400 mt-1">Users have not submitted any withdrawal requests yet.</p>
+              </div>
+            `;
+            return;
+          }
+
+          container.innerHTML = list.map(w => {
+            const isPending = (w.status === 'QUEUED' || w.status === 'PENDING');
+            const isCompleted = (w.status === 'COMPLETED');
+            const statusClass = isCompleted 
+              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+              : (isPending 
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse' 
+                : 'bg-rose-500/20 text-rose-300 border border-rose-500/40');
+
+            return `
+              <div class="p-4 sm:p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-white/20 transition flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-start gap-4 min-w-0 flex-1">
+                  <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-600/20">
+                    <i class="fa-brands fa-bitcoin text-xl"></i>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span class="text-base font-black text-white font-mono">$${parseFloat(w.amount).toFixed(2)} USDT</span>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusClass}">
+                        ${w.status}
+                      </span>
+                      <span class="text-[10px] text-neutral-400 font-mono">#ID ${w.id}</span>
+                      <span class="text-[10px] text-neutral-500 ml-auto sm:ml-0">${w.created_at || ''}</span>
+                    </div>
+
+                    <div class="flex items-center gap-2 mb-2 flex-wrap text-xs text-neutral-400">
+                      <span class="text-neutral-200 font-medium"><i class="fa-solid fa-user text-neutral-400 text-[10px]"></i> ${w.user_name || 'User #' + w.user_id}</span>
+                      <span class="text-neutral-400"><i class="fa-solid fa-envelope text-neutral-500 text-[10px]"></i> ${w.user_gmail || 'N/A'}</span>
+                    </div>
+
+                    <!-- Wallet Address with 1-Click Copy for Trust Wallet -->
+                    <div class="bg-black/60 border border-white/10 rounded-xl p-2.5 flex items-center justify-between gap-3 max-w-xl">
+                      <div class="min-w-0 font-mono text-xs text-emerald-300 break-all select-all">
+                        ${w.wallet_address}
+                      </div>
+                      <button onclick="copyToClipboard('${w.wallet_address}', 'Wallet Address copied for Trust Wallet!')" class="shrink-0 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copy for Trust Wallet</span>
+                      </button>
+                    </div>
+
+                    ${w.tx_hash ? `<div class="mt-2 text-[11px] font-mono text-neutral-400 break-all"><span class="text-neutral-500">TXID:</span> ${w.tx_hash}</div>` : ''}
+                    ${w.admin_notes ? `<div class="mt-1 text-[11px] text-neutral-400"><span class="text-neutral-500">Note:</span> ${w.admin_notes}</div>` : ''}
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-white/5">
+                  ${isPending ? `
+                    <button onclick="completeWithdrawalPrompt(${w.id}, '${w.wallet_address}', ${w.amount})" class="bg-gradient-to-r from-emerald-600 to-green-600 hover:brightness-110 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/30 flex items-center gap-1.5">
+                      <i class="fa-solid fa-check-double"></i>
+                      <span>Mark as Paid (Trust Wallet)</span>
+                    </button>
+                    <button onclick="rejectWithdrawalPrompt(${w.id}, ${w.amount})" class="bg-white/10 hover:bg-rose-600/30 text-neutral-300 hover:text-rose-300 font-bold text-xs px-3.5 py-2.5 rounded-xl border border-white/10 hover:border-rose-500/40 transition flex items-center gap-1.5">
+                      <i class="fa-solid fa-xmark"></i>
+                      <span>Reject & Refund</span>
+                    </button>
+                  ` : `
+                    <span class="text-xs text-neutral-500 italic"><i class="fa-solid fa-lock text-[10px]"></i> Processed</span>
+                  `}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        container.innerHTML = `<div class="p-8 text-center text-rose-400 text-sm">Failed to load withdrawals: ${err.message}</div>`;
+      }
+    }
+
+    async function completeWithdrawalPrompt(id, wallet, amount) {
+      const txHash = prompt(`Sending $${amount} USDT to:\n${wallet}\n\nHave you transferred the USDT from your Trust Wallet?\n(Optional) Enter Transaction Hash (TXID) from Trust Wallet, or leave blank:`, '');
+      if (txHash === null) return; // user cancelled
+
+      try {
+        const res = await adminFetch(`/admin/withdrawals/${id}/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ txHash, notes: 'Paid via Trust Wallet' })
+        });
+        if (res.success) {
+          showToast(`✓ Withdrawal #${id} marked as COMPLETED!`, 'success');
+          loadAdminWithdrawals();
+          loadAdminStats();
+        }
+      } catch (err) {
+        showToast(`❌ Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function rejectWithdrawalPrompt(id, amount) {
+      const reason = prompt(`Reject Withdrawal #${id} and refund $${amount} USDT back to user balance?\nEnter rejection reason:`, 'Invalid USDT address or suspicious activity');
+      if (reason === null) return; // user cancelled
+
+      try {
+        const res = await adminFetch(`/admin/withdrawals/${id}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        if (res.success) {
+          showToast(`✓ Withdrawal #${id} rejected and $${amount} USDT refunded to user!`, 'success');
+          loadAdminWithdrawals();
+          loadAdminStats();
+        }
+      } catch (err) {
+        showToast(`❌ Error: ${err.message}`, 'error');
+      }
+    }
+
+    function copyToClipboard(text, msg = 'Copied to clipboard!') {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(msg, 'success');
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast(msg, 'success');
+      });
     }
 
     // Initialize

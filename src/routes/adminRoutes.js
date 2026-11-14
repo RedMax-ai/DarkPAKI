@@ -28,6 +28,11 @@ router.get('/monetization-applications', requireAdmin, adminController.getMoneti
 router.post('/monetization-applications/:id/review', requireAdmin, adminController.reviewMonetizationApplication);
 router.post('/creator-monetization/toggle', requireAdmin, adminController.toggleCreatorMonetization);
 
+// USDT Payouts & Trust Wallet Management
+router.get('/withdrawals', requireAdmin, adminController.getAdminWithdrawals);
+router.post('/withdrawals/:id/complete', requireAdmin, adminController.completeWithdrawal);
+router.post('/withdrawals/:id/reject', requireAdmin, adminController.rejectWithdrawal);
+
 // CDN Stream Integration
 router.post('/cdn-convert', requireAdmin, adminController.cdnConvertTelegramLink);
 router.post('/upload-direct', requireAdmin, adminController.cdnDirectUpload);

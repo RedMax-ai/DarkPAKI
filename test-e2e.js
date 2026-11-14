@@ -253,6 +253,17 @@ async function runTests() {
   }, { Authorization: `Bearer ${adminToken}` });
   assert(updateSettingsRes.status === 200, 'Admin updated Telegram URL and instant skip rules in SQLite');
 
+  // 18b. Admin USDT Payouts (Trust Wallet Review & Complete)
+  const adminWithdrawalsRes = await request('GET', '/admin/withdrawals', null, { Authorization: `Bearer ${adminToken}` });
+  assert(adminWithdrawalsRes.status === 200 && adminWithdrawalsRes.body.data.withdrawals.length >= 1, 'Admin retrieves USDT withdrawal queue from SQLite');
+
+  const targetWithdrawalId = adminWithdrawalsRes.body.data.withdrawals[0].id;
+  const completeWithdrawalRes = await request('POST', `/admin/withdrawals/${targetWithdrawalId}/complete`, {
+    txHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    notes: 'Paid via Trust Wallet BEP20 USDT'
+  }, { Authorization: `Bearer ${adminToken}` });
+  assert(completeWithdrawalRes.status === 200, 'Admin marked USDT withdrawal as COMPLETED with Trust Wallet TXID');
+
   // 19. AI Image Generation
   const aiGenRes = await request('POST', '/ai/generate', {
     prompt: 'Cyberpunk neon model in late night lounge',
