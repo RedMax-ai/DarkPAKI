@@ -733,11 +733,11 @@
 
             <!-- Title & Value Proposition -->
             <div class="text-center">
-                <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">
-                    Welcome to DarkPAKI
+                <h2 id="authCardTitle" class="text-xl sm:text-2xl font-black text-white tracking-tight">
+                    Log In to DarkPAKI
                 </h2>
-                <p class="text-xs text-neutral-400 mt-0.5 leading-relaxed">
-                    Sign in to stream HD videos, follow creators, and manage your vault
+                <p id="authCardSubtitle" class="text-xs text-neutral-400 mt-0.5 leading-relaxed">
+                    Sign in with your registered Gmail to access your vault & wallet
                 </p>
             </div>
 
@@ -745,6 +745,18 @@
             <div id="loginErrorAlert" class="hidden bg-rose-500/15 border border-rose-500/50 text-rose-300 text-xs p-3 rounded-2xl font-medium leading-relaxed flex items-start gap-2.5">
                 <i class="fa-solid fa-triangle-exclamation text-rose-400 mt-0.5 shrink-0"></i>
                 <span id="loginErrorAlertText">Error message</span>
+            </div>
+
+            <!-- AUTH MODE TABS: LOG IN vs SIGN UP -->
+            <div class="grid grid-cols-2 p-1 bg-black/60 border border-white/10 rounded-2xl">
+                <button type="button" id="tabBtnLogin" onclick="switchAuthMode('login')" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg shadow-rose-600/30">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Log In (लॉग इन)</span>
+                </button>
+                <button type="button" id="tabBtnRegister" onclick="switchAuthMode('register')" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold text-neutral-400 hover:text-white transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Sign Up (रजिस्टर)</span>
+                </button>
             </div>
 
             <!-- 1-CLICK GOOGLE SIGN-IN -->
@@ -765,31 +777,36 @@
 
                 <div class="flex items-center gap-3 my-1">
                     <div class="flex-1 h-px bg-white/10"></div>
-                    <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">or sign in with email</span>
+                    <span id="authOrDividerText" class="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">or sign in with email</span>
                     <div class="flex-1 h-px bg-white/10"></div>
                 </div>
             </div>
 
-            <!-- REGISTRATION FORM -->
+            <!-- AUTH FORM -->
             <form id="realLoginForm" onsubmit="handleSecureUserLogin(event)" class="flex flex-col gap-3">
-                <div>
-                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Full Name</label>
+                <!-- Full Name (Register Mode Only) -->
+                <div id="registerOnlyNameField" class="hidden">
+                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Full Legal Name *</label>
                     <div class="relative">
                         <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
-                        <input id="loginFullName" type="text" required minlength="3" placeholder="Enter your full name" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white outline-none transition">
+                        <input id="loginFullName" type="text" minlength="2" placeholder="Enter your full name" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white outline-none transition">
                     </div>
                 </div>
 
+                <!-- Gmail Address -->
                 <div>
-                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Gmail Address</label>
+                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Gmail Address *</label>
                     <div class="relative">
                         <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
                         <input id="loginGmailInput" type="email" required placeholder="yourname@gmail.com" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white outline-none transition">
                     </div>
                 </div>
 
+                <!-- Password -->
                 <div>
-                    <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Account Password (पासवर्ड)</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider">Account Password (पासवर्ड) *</label>
+                    </div>
                     <div class="relative">
                         <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
                         <input id="loginPasswordInput" type="password" required minlength="4" placeholder="Enter your account password" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-10 py-2.5 text-xs sm:text-sm text-white outline-none transition">
@@ -799,7 +816,8 @@
                     </div>
                 </div>
 
-                <div>
+                <!-- Referral Code (Register Mode Only) -->
+                <div id="registerOnlyRefField" class="hidden">
                     <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Referral Code (Optional)</label>
                     <div class="relative">
                         <i class="fa-solid fa-ticket absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
@@ -815,7 +833,7 @@
                     </span>
                 </div>
 
-                <!-- COMPACT 18+ AGREEMENT (Placed directly above the Submit/Verify button) -->
+                <!-- COMPACT 18+ AGREEMENT (Placed directly above the Submit button) -->
                 <div id="termsAgreementCard" class="flex items-center justify-between gap-2.5 p-3 rounded-xl bg-black/50 border border-white/10 hover:border-rose-500/40 transition">
                     <label for="humanConfirmCheckbox" class="flex items-center gap-2.5 cursor-pointer text-xs text-neutral-300 select-none">
                         <input id="humanConfirmCheckbox" type="checkbox" onchange="onTermsCheckboxChange()" class="w-4 h-4 accent-rose-500 rounded cursor-pointer shrink-0">
@@ -826,11 +844,19 @@
                     </button>
                 </div>
 
-                <!-- Low-Connection Resilient Submit Button -->
+                <!-- Submit Button -->
                 <button type="submit" id="submitLoginBtn" class="mt-1 bg-gradient-to-r from-rose-600 via-rose-500 to-red-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-sm py-3.5 rounded-2xl shadow-xl shadow-rose-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i id="submitBtnIcon" class="fa-solid fa-key"></i>
-                    <span id="submitBtnText">Verify & Get 6-Digit OTP (ओटीपी)</span>
+                    <i id="submitBtnIcon" class="fa-solid fa-right-to-bracket"></i>
+                    <span id="submitBtnText">Log In to Account (लॉग इन)</span>
                 </button>
+
+                <!-- Mode Switcher Footer -->
+                <div class="text-center pt-2 text-xs text-neutral-400">
+                    <span id="authSwitchPromptText">Don't have an account?</span>
+                    <button type="button" id="authSwitchActionBtn" onclick="toggleAuthModeSwitch()" class="ml-1 text-rose-400 font-bold underline hover:text-rose-300 transition">
+                        Create New Account (साइन अप)
+                    </button>
+                </div>
             </form>
         </div>
     </section>
@@ -848,13 +874,13 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h2 id="earnUserName" class="text-base sm:text-lg font-black text-white">Verified VIP User</h2>
+                        <h2 id="earnUserName" class="text-base sm:text-lg font-black text-white">VIP Member</h2>
                         <span class="bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-black px-2 py-0.5 rounded-full">
                             18+ VIP Bound ✓
                         </span>
                     </div>
-                    <p id="earnUserGmail" class="text-xs text-neutral-400 mt-0.5">user@gmail.com</p>
-                    <p id="earnUserDeviceLock" class="text-[10px] font-mono text-amber-400 mt-0.5">Device Lock: DPK-XXXX</p>
+                    <p id="earnUserGmail" class="text-xs text-neutral-400 mt-0.5">Sign in to access your wallet</p>
+                    <p id="earnUserDeviceLock" class="text-[10px] font-mono text-amber-400 mt-0.5">Device Lock: Not Bound</p>
                 </div>
             </div>
 
@@ -875,7 +901,7 @@
                 <span class="text-[10px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1">
                     <i class="fa-solid fa-coins text-amber-400"></i> My Coins
                 </span>
-                <p id="userCoinsBalance" class="text-2xl sm:text-3xl font-black text-amber-400 mt-1 font-mono">50</p>
+                <p id="userCoinsBalance" class="text-2xl sm:text-3xl font-black text-amber-400 mt-1 font-mono">0</p>
                 <span class="text-[10px] text-amber-300/80 font-medium">100 Coins = $0.011</span>
             </div>
 
@@ -884,7 +910,7 @@
                 <span class="text-[10px] font-black uppercase text-emerald-400 tracking-wider flex items-center gap-1">
                     <i class="fa-solid fa-wallet text-emerald-400"></i> Balance $
                 </span>
-                <p id="userWalletBalance" class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 font-mono">$0.28</p>
+                <p id="userWalletBalance" class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 font-mono">$0.00</p>
                 <span class="text-[10px] text-emerald-300/80 font-medium">Instant Crypto USDT Ready</span>
             </div>
 

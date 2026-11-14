@@ -107,6 +107,40 @@ async function runTests() {
   assert(registerRes.status === 200 && registerRes.body.token && registerRes.body.data.balance === 0.275, 'User registered: Received JWT token, 1-Device Bound, and $0.275 welcome bonus');
   const userToken = registerRes.body.token;
 
+  // 5b. Existing User Direct Login (No Name Required)
+  const directLoginRes = await request('POST', '/auth/login', {
+    mode: 'login',
+    gmail: testGmail,
+    password: 'userPass123',
+    deviceId: testDeviceId,
+    turnstileToken: 'CLOUDFLARE_PASS',
+    termsAccepted: true
+  });
+  assert(directLoginRes.status === 200 && directLoginRes.body.token && directLoginRes.body.data.gmail === testGmail, 'Existing user direct login: Authenticates and returns JWT without requiring name');
+
+  // 5c. Non-existent User Login Mode Check (Returns 404 with prompt to switch to Register)
+  const notFoundLogin = await request('POST', '/auth/login', {
+    mode: 'login',
+    gmail: 'nonexistent.user.' + Date.now() + '@gmail.com',
+    password: 'userPass123',
+    deviceId: testDeviceId,
+    turnstileToken: 'CLOUDFLARE_PASS',
+    termsAccepted: true
+  });
+  assert(notFoundLogin.status === 404 && notFoundLogin.body.message.includes('Account not found'), 'Non-existent user in login mode receives 404 with switch to register');
+
+  // 5d. Duplicate Registration Check (Returns 409 with prompt to switch to Login)
+  const duplicateReg = await request('POST', '/auth/login', {
+    mode: 'register',
+    name: 'Hamza Khan',
+    gmail: testGmail,
+    password: 'userPass123',
+    deviceId: testDeviceId,
+    turnstileToken: 'CLOUDFLARE_PASS',
+    termsAccepted: true
+  });
+  assert(duplicateReg.status === 409 && duplicateReg.body.message.includes('already exists'), 'Duplicate registration receives 409 with prompt to log in');
+
   // 6. Multi-Account Fraud Shield (1 Device = 1 Gmail)
   const fakeCaptcha = await request('GET', '/auth/captcha');
   const decodedFake = jwt.verify(fakeCaptcha.body.data.challengeToken, serverConfig.jwtSecret);

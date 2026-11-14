@@ -1233,6 +1233,63 @@ async function handleVerifyOtpSubmit(e) {
   }
 }
 
+let AUTH_MODE = 'login'; // 'login' or 'register'
+
+function switchAuthMode(mode) {
+  AUTH_MODE = mode;
+  const tabLogin = document.getElementById('tabBtnLogin');
+  const tabReg = document.getElementById('tabBtnRegister');
+  const nameField = document.getElementById('registerOnlyNameField');
+  const refField = document.getElementById('registerOnlyRefField');
+  const fullNameInput = document.getElementById('loginFullName');
+  const cardTitle = document.getElementById('authCardTitle');
+  const cardSub = document.getElementById('authCardSubtitle');
+  const submitText = document.getElementById('submitBtnText');
+  const submitIcon = document.getElementById('submitBtnIcon');
+  const promptText = document.getElementById('authSwitchPromptText');
+  const actionBtn = document.getElementById('authSwitchActionBtn');
+  const errBox = document.getElementById('loginErrorAlert');
+  if (errBox) errBox.classList.add('hidden');
+
+  if (mode === 'login') {
+    if (tabLogin) {
+      tabLogin.className = "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg shadow-rose-600/30";
+    }
+    if (tabReg) {
+      tabReg.className = "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold text-neutral-400 hover:text-white transition flex items-center justify-center gap-1.5";
+    }
+    if (nameField) nameField.classList.add('hidden');
+    if (refField) refField.classList.add('hidden');
+    if (fullNameInput) fullNameInput.required = false;
+    if (cardTitle) cardTitle.textContent = "Log In to DarkPAKI";
+    if (cardSub) cardSub.textContent = "Sign in with your registered Gmail & password to access your vault";
+    if (submitIcon) submitIcon.className = "fa-solid fa-right-to-bracket";
+    if (submitText) submitText.textContent = "Log In to Account (लॉग इन)";
+    if (promptText) promptText.textContent = "Don't have an account?";
+    if (actionBtn) actionBtn.textContent = "Create New Account (साइन अप)";
+  } else {
+    if (tabReg) {
+      tabReg.className = "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg shadow-rose-600/30";
+    }
+    if (tabLogin) {
+      tabLogin.className = "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold text-neutral-400 hover:text-white transition flex items-center justify-center gap-1.5";
+    }
+    if (nameField) nameField.classList.remove('hidden');
+    if (refField) refField.classList.remove('hidden');
+    if (fullNameInput) fullNameInput.required = true;
+    if (cardTitle) cardTitle.textContent = "Create DarkPAKI Account";
+    if (cardSub) cardSub.textContent = "Sign up to stream uncut 4K videos, earn coins & get $0.275 welcome bonus";
+    if (submitIcon) submitIcon.className = "fa-solid fa-user-plus";
+    if (submitText) submitText.textContent = "Create Account & Get Bonus (रजिस्टर)";
+    if (promptText) promptText.textContent = "Already have an account?";
+    if (actionBtn) actionBtn.textContent = "Log In (लॉग इन करें)";
+  }
+}
+
+function toggleAuthModeSwitch() {
+  switchAuthMode(AUTH_MODE === 'login' ? 'register' : 'login');
+}
+
 async function handleSecureUserLogin(e) {
   e.preventDefault();
   const errBox = document.getElementById('loginErrorAlert');
@@ -1251,10 +1308,22 @@ async function handleSecureUserLogin(e) {
     return;
   }
 
-  const fullName = document.getElementById('loginFullName').value.trim();
   const gmail = document.getElementById('loginGmailInput').value.trim().toLowerCase();
   const password = document.getElementById('loginPasswordInput')?.value?.trim() || '';
+  const fullName = document.getElementById('loginFullName')?.value?.trim() || '';
   const referralCode = document.getElementById('loginReferralInput')?.value?.trim() || '';
+
+  if (AUTH_MODE === 'register') {
+    if (!fullName || fullName.length < 2) {
+      if (errBox) {
+        const errText = document.getElementById('loginErrorAlertText');
+        if (errText) errText.textContent = 'Please enter your full legal name.';
+        errBox.classList.remove('hidden');
+      }
+      showToast('Please enter your full legal name!', 'error');
+      return;
+    }
+  }
 
   if (!password || password.length < 4) {
     if (errBox) {
@@ -1272,21 +1341,26 @@ async function handleSecureUserLogin(e) {
   const submitBtnIcon = document.getElementById('submitBtnIcon');
 
   if (submitBtn) submitBtn.disabled = true;
-  if (submitBtnText) submitBtnText.textContent = 'Verifying Password & Generating 6-Digit OTP...';
+  if (submitBtnText) submitBtnText.textContent = AUTH_MODE === 'login' ? 'Logging in...' : 'Creating account & generating OTP...';
   if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-spinner fa-spin';
 
   try {
+    const payload = {
+      mode: AUTH_MODE,
+      gmail,
+      password,
+      deviceId: DEVICE_FINGERPRINT,
+      turnstileToken: CF_TURNSTILE_TOKEN || 'CLOUDFLARE_PASS',
+      termsAccepted: true
+    };
+    if (AUTH_MODE === 'register') {
+      payload.name = fullName;
+      payload.referralCode = referralCode;
+    }
+
     const res = await apiFetch('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({
-        name: fullName,
-        gmail,
-        password,
-        deviceId: DEVICE_FINGERPRINT,
-        turnstileToken: CF_TURNSTILE_TOKEN || 'CLOUDFLARE_PASS',
-        termsAccepted: true,
-        referralCode
-      })
+      body: JSON.stringify(payload)
     });
 
     if (res.requireOtp) {
@@ -1314,12 +1388,12 @@ async function handleSecureUserLogin(e) {
 
       refreshEarningDashboardUI();
       switchView('earning');
-      showToast(`Verified 18+ VIP Human! Welcome ${CURRENT_USER.name}`, 'success');
+      showToast(`Welcome back ${CURRENT_USER.name}!`, 'success');
     }
   } catch (err) {
     if (errBox) {
       const errText = document.getElementById('loginErrorAlertText');
-      if (errText) errText.textContent = err.message || 'Login failed';
+      if (errText) errText.textContent = err.message || 'Authentication failed';
       errBox.classList.remove('hidden');
     }
     // Reset Turnstile on error so user can re-verify if needed
@@ -1328,8 +1402,12 @@ async function handleSecureUserLogin(e) {
     }
   } finally {
     if (submitBtn) submitBtn.disabled = false;
-    if (submitBtnText) submitBtnText.textContent = 'Verify & Get 6-Digit OTP (ओटीपी)';
-    if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-key';
+    if (submitBtnText) {
+      submitBtnText.textContent = AUTH_MODE === 'login' ? 'Log In to Account (लॉग इन)' : 'Create Account & Get Bonus (रजिस्टर)';
+    }
+    if (submitBtnIcon) {
+      submitBtnIcon.className = AUTH_MODE === 'login' ? 'fa-solid fa-right-to-bracket' : 'fa-solid fa-user-plus';
+    }
   }
 }
 
@@ -1337,7 +1415,22 @@ function refreshEarningDashboardUI() {
   const headerTxt = document.getElementById('headerWalletText');
   if (!CURRENT_USER) {
     if (headerTxt) headerTxt.textContent = "Login & Earn";
+    const nameEl = document.getElementById('earnUserName');
+    if (nameEl) nameEl.textContent = 'VIP Member';
+    const gmEl = document.getElementById('earnUserGmail');
+    if (gmEl) gmEl.textContent = 'Sign in to access your wallet';
+    const devEl = document.getElementById('earnUserDeviceLock');
+    if (devEl) devEl.textContent = `Device Lock: ${DEVICE_FINGERPRINT || 'Not Bound'}`;
+    const coinsEl = document.getElementById('userCoinsBalance');
+    if (coinsEl) coinsEl.textContent = '0';
+    const balEl = document.getElementById('userWalletBalance');
+    if (balEl) balEl.textContent = '$0.00';
+    const refEl = document.getElementById('userReferralCount');
+    if (refEl) refEl.textContent = '0';
+    const adEl = document.getElementById('userAdsWatchedCount');
+    if (adEl) adEl.textContent = '0 Videos';
     return;
+  }
   }
 
   const userCoins = CURRENT_USER.coins !== undefined ? CURRENT_USER.coins : 50;
