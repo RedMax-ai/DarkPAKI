@@ -279,19 +279,19 @@ async function loginOrRegister(req, res, next) {
         const cleanRef = sanitizeString(referralCode).toUpperCase();
         const referrer = db.prepare('SELECT id, balance, referrals FROM users WHERE ref_code = ?').get(cleanRef);
         if (referrer) {
-          // Credit referrer +₹15
+          // Credit referrer +$15
           db.prepare('UPDATE users SET balance = balance + 15, referrals = referrals + 1 WHERE id = ?').run(referrer.id);
           refBonusGiven = true;
           db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
             'REFERRAL_REWARD_CREDITED',
-            `Referrer ID ${referrer.id} earned ₹15 from new user ${cleanGmail}`,
+            `Referrer ID ${referrer.id} earned $15 from new user ${cleanGmail}`,
             req.ip,
             cleanDeviceId
           );
         }
       }
 
-      // Welcome bonus: ₹25.0 and 50 Welcome Coins
+      // Welcome bonus: $25.0 and 50 Welcome Coins
       const insertUser = db.prepare(`
         INSERT INTO users (name, gmail, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role)
         VALUES (?, ?, ?, ?, 25.0, 50, 0, 0, ?, 'user')
@@ -309,7 +309,7 @@ async function loginOrRegister(req, res, next) {
 
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'NEW_USER_REGISTERED',
-        `New verified user ${cleanGmail} registered on device ${cleanDeviceId}. Welcome ₹25 and 50 Coins added.${refBonusGiven ? ' Referral reward applied.' : ''}`,
+        `New verified user ${cleanGmail} registered on device ${cleanDeviceId}. Welcome $25 and 50 Coins added.${refBonusGiven ? ' Referral reward applied.' : ''}`,
         req.ip,
         cleanDeviceId
       );
@@ -436,7 +436,7 @@ async function verifyEmailOtp(req, res, next) {
           refBonusGiven = true;
           db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
             'REFERRAL_REWARD_CREDITED',
-            `Referrer ID ${referrer.id} earned ₹15 from new user ${cleanGmail}`,
+            `Referrer ID ${referrer.id} earned $15 from new user ${cleanGmail}`,
             req.ip,
             cleanDeviceId
           );
@@ -459,7 +459,7 @@ async function verifyEmailOtp(req, res, next) {
 
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'NEW_USER_REGISTERED_OTP',
-        `New verified user ${cleanGmail} registered on device ${cleanDeviceId}. Welcome ₹25 and 50 Coins added.${refBonusGiven ? ' Referral reward applied.' : ''}`,
+        `New verified user ${cleanGmail} registered on device ${cleanDeviceId}. Welcome $25 and 50 Coins added.${refBonusGiven ? ' Referral reward applied.' : ''}`,
         req.ip,
         cleanDeviceId
       );
@@ -705,7 +705,7 @@ async function googleLogin(req, res, next) {
           refBonusGiven = true;
           db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
             'REFERRAL_REWARD_CREDITED',
-            `Referrer ID ${referrer.id} earned ₹15 from new Google user ${cleanGmail}`,
+            `Referrer ID ${referrer.id} earned $15 from new Google user ${cleanGmail}`,
             req.ip,
             cleanDeviceId
           );
@@ -736,7 +736,7 @@ async function googleLogin(req, res, next) {
 
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'GOOGLE_USER_REGISTERED',
-        `New Google verified user ${cleanGmail} registered. Welcome ₹25 and 50 Coins added.${refBonusGiven ? ' Referral reward applied.' : ''}`,
+        `New Google verified user ${cleanGmail} registered. Welcome $25 and 50 Coins added.${refBonusGiven ? ' Referral reward applied.' : ''}`,
         req.ip,
         cleanDeviceId
       );

@@ -104,7 +104,7 @@ async function runTests() {
   };
 
   const registerRes = await request('POST', '/auth/login', registerPayload);
-  assert(registerRes.status === 200 && registerRes.body.token && registerRes.body.data.balance === 25.0, 'User registered: Received JWT token, 1-Device Bound, and ₹25 welcome bonus');
+  assert(registerRes.status === 200 && registerRes.body.token && registerRes.body.data.balance === 25.0, 'User registered: Received JWT token, 1-Device Bound, and $25 welcome bonus');
   const userToken = registerRes.body.token;
 
   // 6. Multi-Account Fraud Shield (1 Device = 1 Gmail)
@@ -130,12 +130,12 @@ async function runTests() {
   const watchBonusRes = await request('POST', '/earning/watch-bonus', { type: 'ad_bonus' }, { Authorization: `Bearer ${userToken}` });
   assert(watchBonusRes.status === 200 && watchBonusRes.body.data.coins === 60 && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits +10 Coins (60 coins) in SQLite');
 
-  // 9. Referral Bonus (+100 Coins & +₹15.0 per referral)
+  // 9. Referral Bonus (+100 Coins & +$15.0 per referral)
   await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
   const ref2Res = await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
   assert(ref2Res.status === 200 && ref2Res.body.data.coins === 260 && ref2Res.body.data.referrals === 2, 'Referral credits persist: referrals count 2 and 260 coins');
 
-  // 9b. Convert Coins to Money (Coverate): 100 Coins = ₹1.00 Cash
+  // 9b. Convert Coins to Money (Coverate): 100 Coins = $1.00 Cash
   const convertRes = await request('POST', '/earning/convert-coins', { coins: 100 }, { Authorization: `Bearer ${userToken}` });
   assert(convertRes.status === 200 && convertRes.body.data.coins === 160, 'Converted 100 coins to cash: remaining coins 160');
 

@@ -2,9 +2,9 @@ const db = require('../db/database');
 const { sanitizeString } = require('../middleware/validator');
 
 // Credit Watch Bonus
-// Normal Video Watch: 1 to 9 Coins randomly (= ₹0.01 to ₹0.09)
-// Dedicated 30s "Watch & Earn" Ad: Exactly 10 Coins (= ₹0.10)
-// Conversion Rate: 100 Coins = ₹1.00 INR
+// Normal Video Watch: 1 to 9 Coins randomly (= $0.01 to $0.09)
+// Dedicated 30s "Watch & Earn" Ad: Exactly 10 Coins (= $0.10)
+// Conversion Rate: 100 Coins = $1.00 USD
 function creditWatchBonus(req, res, next) {
   try {
     const userId = req.user.id;
@@ -18,12 +18,12 @@ function creditWatchBonus(req, res, next) {
       // Dedicated 30s Watch to Earn Ad: Exactly 10 Coins
       coinsEarned = 10;
       cashEarned = 0.10;
-      msg = '+10 Coins (₹0.10) Watch to Earn Bonus credited!';
+      msg = '+10 Coins ($0.10) Watch to Earn Bonus credited!';
     } else {
       // Normal Video Watch: Random 1 to 9 Coins
       coinsEarned = Math.floor(Math.random() * 9) + 1;
       cashEarned = +(coinsEarned / 100.0).toFixed(2);
-      msg = `+${coinsEarned} Coins (₹${cashEarned.toFixed(2)}) Video Watch Bonus credited!`;
+      msg = `+${coinsEarned} Coins ($${cashEarned.toFixed(2)}) Video Watch Bonus credited!`;
     }
 
     // Atomic update
@@ -34,7 +34,7 @@ function creditWatchBonus(req, res, next) {
 
     db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
       'WATCH_BONUS_CREDITED',
-      `User ID ${userId} credited +${coinsEarned} Coins and ₹${cashEarned.toFixed(2)} (${type})`,
+      `User ID ${userId} credited +${coinsEarned} Coins and $${cashEarned.toFixed(2)} (${type})`,
       req.ip,
       req.user.device_id
     );
@@ -59,21 +59,21 @@ function simulateReferral(req, res, next) {
   try {
     const userId = req.user.id;
 
-    // +₹15.00 to balance, +100 coins (100 coins = ₹1), +1 to referrals
+    // +$15.00 to balance, +100 coins (100 coins = $1.00), +1 to referrals
     db.prepare('UPDATE users SET balance = balance + 15.0, coins = coins + 100, referrals = referrals + 1 WHERE id = ?').run(userId);
 
     const updatedUser = db.prepare('SELECT balance, coins, referrals FROM users WHERE id = ?').get(userId);
 
     db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
       'TEST_REFERRAL_CREDITED',
-      `User ID ${userId} tested referral: +100 Coins & +₹15.00 credited`,
+      `User ID ${userId} tested referral: +100 Coins & +$15.00 credited`,
       req.ip,
       req.user.device_id
     );
 
     res.json({
       success: true,
-      message: '+100 Coins & +₹15.00 Referral Bonus credited for 1 verified friend!',
+      message: '+100 Coins & +$15.00 Referral Bonus credited for 1 verified friend!',
       data: {
         balance: updatedUser.balance,
         coins: updatedUser.coins,
@@ -85,7 +85,7 @@ function simulateReferral(req, res, next) {
   }
 }
 
-// Convert Coins: Exactly 100 Coins = ₹1.00 INR
+// Convert Coins: Exactly 100 Coins = $1.00 USD
 function convertCoins(req, res, next) {
   try {
     const userId = req.user.id;
@@ -102,7 +102,7 @@ function convertCoins(req, res, next) {
     if (isNaN(coinsToConvert) || coinsToConvert < 100) {
       return res.status(400).json({
         success: false,
-        message: 'Minimum 100 coins required for conversion (100 Coins = ₹1.00 Cash).'
+        message: 'Minimum 100 coins required for conversion (100 Coins = $1.00 USD Cash).'
       });
     }
 
@@ -113,7 +113,7 @@ function convertCoins(req, res, next) {
       });
     }
 
-    // Convert in multiples of 100: 100 coins = ₹1.00
+    // Convert in multiples of 100: 100 coins = $1.00 USD
     const coinsDeducted = Math.floor(coinsToConvert / 100) * 100;
     const cashGained = +(coinsDeducted / 100.0).toFixed(2);
 
@@ -127,14 +127,14 @@ function convertCoins(req, res, next) {
 
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'COINS_CONVERTED_TO_CASH',
-        `User ID ${userId} converted ${coinsDeducted} coins to ₹${cashGained.toFixed(2)} cash (100 Coins = ₹1)`,
+        `User ID ${userId} converted ${coinsDeducted} coins to $${cashGained.toFixed(2)} cash (100 Coins = $1.00)`,
         req.ip,
         user.device_id
       );
 
       res.json({
         success: true,
-        message: `Successfully converted ${coinsDeducted} Coins to ₹${cashGained.toFixed(2)} Cash!`,
+        message: `Successfully converted ${coinsDeducted} Coins to $${cashGained.toFixed(2)} USD Cash!`,
         data: {
           coinsDeducted,
           cashGained,
@@ -163,7 +163,7 @@ function submitWithdrawal(req, res, next) {
 
     const withdrawAmount = parseFloat(amount);
     if (isNaN(withdrawAmount) || withdrawAmount < 50) {
-      return res.status(400).json({ success: false, message: 'Minimum withdrawal amount is ₹50.' });
+      return res.status(400).json({ success: false, message: 'Minimum withdrawal amount is $50.' });
     }
 
     // Check balance in database
@@ -171,7 +171,7 @@ function submitWithdrawal(req, res, next) {
     if (!user || user.balance < withdrawAmount) {
       return res.status(400).json({
         success: false,
-        message: `Insufficient balance! Your current balance is ₹${user ? user.balance.toFixed(2) : 0}.`
+        message: `Insufficient balance! Your current balance is $${user ? user.balance.toFixed(2) : 0}.`
       });
     }
 
@@ -190,14 +190,14 @@ function submitWithdrawal(req, res, next) {
 
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'WITHDRAWAL_REQUESTED',
-        `User ID ${userId} requested withdrawal of ₹${withdrawAmount} to ${cleanUpi}`,
+        `User ID ${userId} requested withdrawal of $${withdrawAmount} to ${cleanUpi}`,
         req.ip,
         user.device_id
       );
 
       res.json({
         success: true,
-        message: `Withdrawal request of ₹${withdrawAmount} to "${cleanUpi}" submitted successfully!`,
+        message: `Withdrawal request of $${withdrawAmount} to "${cleanUpi}" submitted successfully!`,
         data: {
           withdrawalId: result.lastInsertRowid,
           newBalance: updatedUser.balance,
