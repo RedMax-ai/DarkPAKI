@@ -792,7 +792,7 @@
                     <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider mb-1 block">Account Password (पासवर्ड)</label>
                     <div class="relative">
                         <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
-                        <input id="loginPasswordInput" type="password" required minlength="4" placeholder="Enter your password" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-10 py-2.5 text-xs sm:text-sm text-white outline-none transition">
+                        <input id="loginPasswordInput" type="password" required minlength="4" placeholder="Enter your account password" class="w-full bg-black/60 border border-neutral-700 focus:border-rose-500 rounded-xl pl-9 pr-10 py-2.5 text-xs sm:text-sm text-white outline-none transition">
                         <button type="button" onclick="toggleWebsitePasswordVisibility()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition">
                             <i id="websitePassEyeIcon" class="fa-solid fa-eye text-xs"></i>
                         </button>
@@ -1512,6 +1512,7 @@
                     <div class="text-[11px] leading-tight">
                         <span class="text-neutral-300">Generated OTP: </span>
                         <strong id="otpDisplayCode" class="text-amber-300 font-mono text-sm tracking-widest font-black">123456</strong>
+                        <div class="text-[10px] text-neutral-400">Enter this code below to verify</div>
                     </div>
                 </div>
                 <button type="button" onclick="autoFillDevOtp()" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-amber-500/40 shrink-0 transition">

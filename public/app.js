@@ -1002,7 +1002,7 @@ function triggerGoogleSignIn() {
       if (overlay) overlay.classList.add('hidden');
     }
   } else {
-    showToast('Google Sign-In is unavailable. Please use Email + Password below!', 'info');
+    showToast('Google Sign-In is blocked or loading. You can use Email + Password below!', 'info');
     const passInput = document.getElementById('loginPasswordInput');
     if (passInput) passInput.focus();
   }
@@ -1178,7 +1178,7 @@ async function handleVerifyOtpSubmit(e) {
 
   if (!otp || otp.length < 4) {
     if (errAlert && errText) {
-      errText.textContent = 'Please enter a valid 6-digit OTP code';
+      errText.textContent = 'Please enter a valid 6-digit OTP code.';
       errAlert.classList.remove('hidden');
     }
     return;
@@ -1259,7 +1259,7 @@ async function handleSecureUserLogin(e) {
   if (!password || password.length < 4) {
     if (errBox) {
       const errText = document.getElementById('loginErrorAlertText');
-      if (errText) errText.textContent = 'Password must be at least 4 characters long';
+      if (errText) errText.textContent = 'Password must be at least 4 characters long.';
       errBox.classList.remove('hidden');
     }
     showToast('Password must be at least 4 characters long!', 'error');

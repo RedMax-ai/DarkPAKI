@@ -210,7 +210,7 @@ async function loginOrRegister(req, res, next) {
           if (!isMatch) {
             return res.status(401).json({
               success: false,
-              message: '❌ Invalid Password! Please check your password and try again.'
+              message: '❌ Invalid Password! Please enter the correct password.'
             });
           }
         }
@@ -398,7 +398,7 @@ async function verifyEmailOtp(req, res, next) {
     if (!isOtpValid) {
       return res.status(400).json({
         success: false,
-        message: '❌ Invalid or expired OTP code! Please check the 6-digit code sent to your email.'
+        message: '❌ Invalid or expired OTP code! Please check the 6-digit code.'
       });
     }
 
