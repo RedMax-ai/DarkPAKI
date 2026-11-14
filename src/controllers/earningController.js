@@ -86,7 +86,7 @@ function simulateReferral(req, res, next) {
   }
 }
 
-// Convert Coins: Exactly 100 Coins = $0.011 USD
+// Convert Coins: Minimum 1,000 Coins (1,000 Coins = $0.11 USD)
 function convertCoins(req, res, next) {
   try {
     const userId = req.user.id;
@@ -100,17 +100,17 @@ function convertCoins(req, res, next) {
     const availableCoins = user.coins || 0;
     let coinsToConvert = (coins === 'all') ? availableCoins : parseInt(coins, 10);
 
-    if (isNaN(coinsToConvert) || coinsToConvert < 100) {
+    if (isNaN(coinsToConvert) || coinsToConvert < 1000) {
       return res.status(400).json({
         success: false,
-        message: 'Minimum 100 coins required for conversion (100 Coins = $0.011 USD Cash).'
+        message: 'Minimum 1,000 coins required for conversion (1,000 Coins = $0.11 USD Cash).'
       });
     }
 
     if (availableCoins < coinsToConvert) {
       return res.status(400).json({
         success: false,
-        message: `Insufficient coins! You currently have ${availableCoins} coins.`
+        message: `Insufficient coins! You currently have ${availableCoins} coins (Minimum 1,000 required).`
       });
     }
 
@@ -128,7 +128,7 @@ function convertCoins(req, res, next) {
 
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'COINS_CONVERTED_TO_CASH',
-        `User ID ${userId} converted ${coinsDeducted} coins to $${cashGained.toFixed(4)} cash (100 Coins = $0.011 USD)`,
+        `User ID ${userId} converted ${coinsDeducted} coins to $${cashGained.toFixed(4)} cash (1,000 Coins = $0.11 USD)`,
         req.ip,
         user.device_id
       );

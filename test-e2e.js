@@ -169,9 +169,16 @@ async function runTests() {
   const ref2Res = await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
   assert(ref2Res.status === 200 && ref2Res.body.data.coins === 270 && ref2Res.body.data.referrals === 2, 'Referral credits persist: referrals count 2 and 270 coins');
 
-  // 9b. Convert Coins to Money (Coverate): 100 Coins = $0.011 USD Cash
-  const convertRes = await request('POST', '/earning/convert-coins', { coins: 100 }, { Authorization: `Bearer ${userToken}` });
-  assert(convertRes.status === 200 && convertRes.body.data.coins === 170, 'Converted 100 coins to cash (100 Coins = $0.011 USD): remaining coins 170');
+  // 9b. Convert Coins to Money: Minimum 1,000 Coins Required
+  const minCoinCheck = await request('POST', '/earning/convert-coins', { coins: 100 }, { Authorization: `Bearer ${userToken}` });
+  assert(minCoinCheck.status === 400 && minCoinCheck.body.message.includes('Minimum 1,000 coins required'), 'Conversion of < 1,000 coins rejected with minimum threshold error');
+
+  // Top up coins to 1,500 to test successful conversion of 1,000 coins (➔ $0.11 USD)
+  const dbModule = require('./src/db/database');
+  dbModule.prepare('UPDATE users SET coins = 1500 WHERE id = ?').run(registerRes.body.data.id);
+
+  const convertRes = await request('POST', '/earning/convert-coins', { coins: 1000 }, { Authorization: `Bearer ${userToken}` });
+  assert(convertRes.status === 200 && convertRes.body.data.coins === 500 && convertRes.body.data.coinsDeducted === 1000, 'Converted 1,000 coins to cash (1,000 Coins = $0.11 USD): remaining coins 500');
 
   // 10. Withdrawal with $10 USDT Minimum Rule & Atomic Deductions
   const minWithdrawCheck = await request('POST', '/earning/withdraw', {
@@ -181,7 +188,6 @@ async function runTests() {
   assert(minWithdrawCheck.status === 400 && minWithdrawCheck.body.message.includes('Minimum withdrawal amount is $10 USDT'), 'Withdrawal < $10 rejected with minimum threshold error');
 
   // Top up user balance to $20 to test valid USDT payout
-  const dbModule = require('./src/db/database');
   dbModule.prepare('UPDATE users SET balance = 20.0 WHERE id = ?').run(registerRes.body.data.id);
 
   const withdrawAmount = 10;

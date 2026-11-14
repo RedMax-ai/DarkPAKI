@@ -1578,8 +1578,8 @@ async function handleConvertCoins(amount) {
 function handleConvertCustomCoins() {
   const input = document.getElementById('customConvertCoinsInput');
   const val = parseInt(input?.value, 10);
-  if (isNaN(val) || val < 100) {
-    showToast("Please enter at least 100 coins (100 Coins = $0.011 USD)");
+  if (isNaN(val) || val < 1000) {
+    showToast("Please enter at least 1,000 coins (1,000 Coins = $0.11 USD)");
     return;
   }
   handleConvertCoins(val);
