@@ -1530,7 +1530,7 @@ function shareReferralTelegram() {
 function watchAdForCoins() {
   switchView('watch');
   startAdExperience(true); // 30s Full Sponsor Ad
-  showToast("🪙 Watch short sponsor ad to claim 20 - 25 - 30 Coins & Instant Cash!");
+  showToast("🪙 Watch short sponsor ad to claim Coins & Instant Cash!");
 }
 
 async function creditWatchEarningBonus() {
