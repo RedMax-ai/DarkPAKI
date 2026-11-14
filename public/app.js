@@ -1507,20 +1507,20 @@ function copyReferralLink() {
   if (!input) return;
   input.select();
   navigator.clipboard.writeText(input.value).catch(() => document.execCommand('copy'));
-  showToast("Referral link copied! Share to earn +100 Coins & +$0.165 USD per 18+ verified friend.");
+  showToast("Referral link copied! Share to earn +1,100 Coins per 18+ verified friend.");
 }
 
 function shareReferralWhatsApp() {
   const refCode = CURRENT_USER ? (CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786') : 'DPK786';
   const url = `${window.location.origin}/?ref=${refCode}`;
-  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Watch uncut 4K videos, earn coins & $ USD cash straight to your crypto wallet. Register here: ${url}`);
+  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Watch uncut 4K videos, earn 1,100 Coins per referral straight to your crypto wallet. Register here: ${url}`);
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
 function shareReferralTelegram() {
   const refCode = CURRENT_USER ? (CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786') : 'DPK786';
   const url = `${window.location.origin}/?ref=${refCode}`;
-  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Earn coins & $ USD cash with instant USDT crypto withdrawal.`);
+  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Earn 1,100 Coins per referral with instant USDT crypto withdrawal.`);
   window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
 }
 
@@ -1599,7 +1599,7 @@ async function simulateVerifiedReferral() {
       CURRENT_USER.coins = res.data.coins;
       CURRENT_USER.referrals = res.data.referrals;
       refreshEarningDashboardUI();
-      showToast("🎉 +100 Coins & +$0.165 USD Referral Bonus credited to database!");
+      showToast("🎉 +1,100 Coins Referral Bonus credited to database!");
     }
   } catch (err) {
     showToast(err.message);

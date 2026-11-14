@@ -164,10 +164,10 @@ async function runTests() {
   const watchBonusRes = await request('POST', '/earning/watch-bonus', { type: 'ad_bonus' }, { Authorization: `Bearer ${userToken}` });
   assert(watchBonusRes.status === 200 && [20, 25, 30].includes(watchBonusRes.body.data.coinsEarned) && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits random 20, 25, or 30 Coins in SQLite');
 
-  // 9. Referral Bonus (+100 Coins & +$0.165 per referral)
+  // 9. Referral Bonus (+1,100 Coins per referral)
   await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
   const ref2Res = await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
-  const expectedTotalCoins = 50 + watchBonusRes.body.data.coinsEarned + 200;
+  const expectedTotalCoins = 50 + watchBonusRes.body.data.coinsEarned + (1100 * 2);
   assert(ref2Res.status === 200 && ref2Res.body.data.coins === expectedTotalCoins && ref2Res.body.data.referrals === 2, `Referral credits persist: referrals count 2 and ${expectedTotalCoins} coins`);
 
   // 9b. Convert Coins to Money: Minimum 1,000 Coins Required
