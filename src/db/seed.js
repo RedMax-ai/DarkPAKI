@@ -9,7 +9,7 @@ function seedDatabase() {
   `);
 
   const hashedAdminPin = bcrypt.hashSync(config.adminPin, 10);
-  insertSetting.run('admin_pin_hash', hashedAdminPin);
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_pin_hash', ?)").run(hashedAdminPin);
   insertSetting.run('telegram_url', 'https://t.me/darkpaki_official');
   insertSetting.run('ad_video_url', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4');
   insertSetting.run('allow_instant_skip', 'false');
