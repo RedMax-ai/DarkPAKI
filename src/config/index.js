@@ -9,6 +9,7 @@ module.exports = {
   dbPath: path.resolve(__dirname, '../../', process.env.DB_PATH || 'data/darkpaki.db'),
   corsOrigin: process.env.CORS_ORIGIN || '*',
   cdnStreamUrl: process.env.CDN_STREAM_URL || 'https://darkpaki-stream.onrender.com',
-  cdnApiKey: process.env.CDN_API_KEY || 'DarkPakiAdminSecret2026'
+  cdnApiKey: process.env.CDN_API_KEY || 'DarkPakiAdminSecret2026',
+  adminAccessKey: process.env.ADMIN_ACCESS_KEY || 'naved_master_786'
 };
 

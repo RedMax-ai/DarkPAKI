@@ -233,11 +233,16 @@ async function runTests() {
   const likeRes = await request('POST', `/demands/comments/${newCommentRes.body.data.commentId}/like`, { deviceId: 'DPK-DEV-OTHER' });
   assert(likeRes.status === 200 && likeRes.body.data.liked === true, 'Comment like toggled and updated in database');
 
-  // 15. Admin Master PIN Authentication
+  // 15. Stealth Gateway & Admin Authentication
+  // 15a. Unauthorized request without stealth key is blocked with 404 Not Found
+  const blockedScanRes = await request('POST', '/admin/login', { pin: '7860', deviceId: 'HACKER-BOT' });
+  assert(blockedScanRes.status === 404, 'Stealth Gateway blocks unauthorized admin probe with 404 Not Found');
+
+  // 15b. Authorized request with Stealth Access Key succeeds and returns JWT
   const adminLoginRes = await request('POST', '/admin/login', {
     pin: '7860',
     deviceId: testDeviceId
-  });
+  }, { 'X-Admin-Key': serverConfig.adminAccessKey || 'naved_master_786' });
   assert(adminLoginRes.status === 200 && adminLoginRes.body.token, 'Owner Master PIN verified with bcrypt hash, returns Admin JWT');
   const adminToken = adminLoginRes.body.token;
 

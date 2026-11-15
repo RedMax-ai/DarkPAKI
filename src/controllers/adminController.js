@@ -439,6 +439,7 @@ function getSettings(req, res, next) {
     const googleClientId = db.prepare("SELECT value FROM settings WHERE key = 'google_client_id'").get()?.value || '';
     const turnstileSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_site_key'").get()?.value || '';
     const turnstileSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_secret_key'").get()?.value || '';
+    const adminAccessKey = db.prepare("SELECT value FROM settings WHERE key = 'admin_access_key'").get()?.value || config.adminAccessKey || 'naved_master_786';
 
     res.json({
       success: true,
@@ -454,6 +455,7 @@ function getSettings(req, res, next) {
         googleClientId,
         turnstileSiteKey,
         turnstileSecretKey,
+        adminAccessKey,
         cdnApiKey: config.cdnApiKey
       }
     });
@@ -464,7 +466,17 @@ function getSettings(req, res, next) {
 
 function updateSettings(req, res, next) {
   try {
-    const { telegramUrl, allowInstantSkip, adVideoUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin } = req.body;
+    const { telegramUrl, allowInstantSkip, adVideoUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin, adminAccessKey } = req.body;
+
+    if (adminAccessKey && adminAccessKey.toString().trim()) {
+      const cleanKey = sanitizeString(adminAccessKey).trim();
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_access_key', ?)").run(cleanKey);
+      db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+        'ADMIN_ACCESS_KEY_CHANGED',
+        `Owner updated stealth access key`,
+        req.ip
+      );
+    }
 
     if (googleClientId !== undefined) {
       const cleanGId = sanitizeString(googleClientId);

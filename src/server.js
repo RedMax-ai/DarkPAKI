@@ -50,6 +50,11 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 // 4. Rate Limiter on API Routes
 app.use('/api', apiLimiter);
 
+// 4b. Stealth Admin Gateway Shield (Zero Public Attack Surface)
+// Renders standard 404 to all unauthorized visitors / scanners
+const { stealthAdminGateway } = require('./middleware/stealthAdmin');
+app.use(stealthAdminGateway);
+
 // 5. API Routes & 24/7 Keep-Alive Uptime Healthcheck
 app.get(['/health', '/api/health'], (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
