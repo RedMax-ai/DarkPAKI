@@ -1053,9 +1053,27 @@
               <span class="text-[10px] text-neutral-400 mt-1 block">When you add your domain in Monetag, paste the verification meta tag here. It automatically injects into the website head so Monetag verifies in 10 seconds!</span>
             </div>
 
+            <div class="p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/30">
+              <label class="block text-xs font-bold text-emerald-400 mb-1.5 flex items-center justify-between">
+                <span>🛡️ Google reCAPTCHA v2 (I'm not a robot Checkbox)</span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono">dark.anizon.watch Registered</span>
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                <div>
+                  <label class="block text-[10px] text-neutral-400 mb-1">reCAPTCHA Site Key</label>
+                  <input type="text" id="settingRecaptchaSiteKey" placeholder="e.g. 6LeYcCAuAAAA..." class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-400 transition">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-neutral-400 mb-1">reCAPTCHA Secret Key</label>
+                  <input type="password" id="settingRecaptchaSecretKey" placeholder="e.g. 6LeYcCAuAAAA..." class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-400 transition">
+                </div>
+              </div>
+              <span class="text-[10px] text-neutral-400 mt-2 block">Official Google reCAPTCHA v2 keys registered for <code>dark.anizon.watch</code>. Secures Signup and Login with zero bots!</span>
+            </div>
+
             <div class="p-4 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent border border-orange-500/25">
               <label class="block text-xs font-bold text-orange-400 mb-1.5 flex items-center justify-between">
-                <span>Cloudflare Turnstile Bot Protection (100% Free & Smart Captcha)</span>
+                <span>Cloudflare Turnstile Bot Protection (Fallback)</span>
                 <span class="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full font-mono">Cloudflare Dashboard</span>
               </label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
@@ -2042,6 +2060,8 @@
           document.getElementById('settingSafeMode').checked = Boolean(res.data.safeModeEnabled);
           document.getElementById('settingTelegramUrl').value = res.data.telegramUrl || '';
           document.getElementById('settingAllowSkip').checked = Boolean(res.data.allowInstantSkip);
+          document.getElementById('settingRecaptchaSiteKey').value = res.data.recaptchaSiteKey || '';
+          document.getElementById('settingRecaptchaSecretKey').value = res.data.recaptchaSecretKey || '';
           document.getElementById('settingTurnstileSiteKey').value = res.data.turnstileSiteKey || '';
           document.getElementById('settingTurnstileSecretKey').value = res.data.turnstileSecretKey || '';
           const gIdEl = document.getElementById('settingGoogleClientId');
@@ -2064,6 +2084,8 @@
       const safeModeEnabled = document.getElementById('settingSafeMode').checked;
       const telegramUrl = document.getElementById('settingTelegramUrl').value.trim();
       const allowInstantSkip = document.getElementById('settingAllowSkip').checked;
+      const recaptchaSiteKey = document.getElementById('settingRecaptchaSiteKey')?.value?.trim() || '';
+      const recaptchaSecretKey = document.getElementById('settingRecaptchaSecretKey')?.value?.trim() || '';
       const turnstileSiteKey = document.getElementById('settingTurnstileSiteKey').value.trim();
       const turnstileSecretKey = document.getElementById('settingTurnstileSecretKey').value.trim();
       const googleClientId = document.getElementById('settingGoogleClientId')?.value?.trim() || '';
@@ -2074,7 +2096,7 @@
         const res = await adminFetch('/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin, adminAccessKey })
+          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, recaptchaSiteKey, recaptchaSecretKey, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin, adminAccessKey })
         });
         if (res.success) {
           showToast('Settings saved successfully!', 'success');

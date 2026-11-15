@@ -5,8 +5,9 @@ const { authLimiter } = require('../middleware/rateLimiter');
 const { requireAuth } = require('../middleware/auth');
 
 router.get('/captcha', authController.generateCaptcha);
-router.get('/config', authController.getTurnstileConfig);
-router.get('/turnstile-config', authController.getTurnstileConfig);
+router.get('/config', authController.getRecaptchaConfig);
+router.get('/recaptcha-config', authController.getRecaptchaConfig);
+router.get('/turnstile-config', authController.getRecaptchaConfig);
 router.post('/login', authLimiter, authController.loginOrRegister);
 router.post('/verify-otp', authLimiter, authController.verifyEmailOtp);
 router.post('/resend-otp', authLimiter, authController.resendEmailOtp);

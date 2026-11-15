@@ -95,6 +95,8 @@ function getStats(req, res, next) {
     const monetagMetaTag = db.prepare("SELECT value FROM settings WHERE key = 'monetag_meta_tag'").get()?.value || '';
     const safeModeEnabled = db.prepare("SELECT value FROM settings WHERE key = 'safe_mode_enabled'").get()?.value !== 'false';
     const googleClientId = db.prepare("SELECT value FROM settings WHERE key = 'google_client_id'").get()?.value || '';
+    const recaptchaSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_site_key'").get()?.value || config.recaptchaSiteKey || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK';
+    const recaptchaSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_secret_key'").get()?.value || config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZ0p6_tqzZ85t';
 
     res.json({
       success: true,
@@ -123,6 +125,8 @@ function getStats(req, res, next) {
           monetagMetaTag,
           safeModeEnabled,
           googleClientId,
+          recaptchaSiteKey,
+          recaptchaSecretKey,
           cdnApiKey: config.cdnApiKey
         }
       }
@@ -439,6 +443,8 @@ function getSettings(req, res, next) {
     const googleClientId = db.prepare("SELECT value FROM settings WHERE key = 'google_client_id'").get()?.value || '';
     const turnstileSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_site_key'").get()?.value || '';
     const turnstileSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_secret_key'").get()?.value || '';
+    const recaptchaSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_site_key'").get()?.value || config.recaptchaSiteKey || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK';
+    const recaptchaSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_secret_key'").get()?.value || config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZ0p6_tqzZ85t';
     const adminAccessKey = db.prepare("SELECT value FROM settings WHERE key = 'admin_access_key'").get()?.value || config.adminAccessKey || 'naved_master_786';
 
     res.json({
@@ -455,6 +461,8 @@ function getSettings(req, res, next) {
         googleClientId,
         turnstileSiteKey,
         turnstileSecretKey,
+        recaptchaSiteKey,
+        recaptchaSecretKey,
         adminAccessKey,
         cdnApiKey: config.cdnApiKey
       }
@@ -466,7 +474,7 @@ function getSettings(req, res, next) {
 
 function updateSettings(req, res, next) {
   try {
-    const { telegramUrl, allowInstantSkip, adVideoUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin, adminAccessKey } = req.body;
+    const { telegramUrl, allowInstantSkip, adVideoUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, recaptchaSiteKey, recaptchaSecretKey, googleClientId, newPin, adminAccessKey } = req.body;
 
     if (adminAccessKey && adminAccessKey.toString().trim()) {
       const cleanKey = sanitizeString(adminAccessKey).trim();
@@ -476,6 +484,16 @@ function updateSettings(req, res, next) {
         `Owner updated stealth access key`,
         req.ip
       );
+    }
+
+    if (recaptchaSiteKey !== undefined) {
+      const cleanKey = sanitizeString(recaptchaSiteKey);
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('recaptcha_site_key', ?)").run(cleanKey);
+    }
+
+    if (recaptchaSecretKey !== undefined) {
+      const cleanSecret = sanitizeString(recaptchaSecretKey);
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('recaptcha_secret_key', ?)").run(cleanSecret);
     }
 
     if (googleClientId !== undefined) {

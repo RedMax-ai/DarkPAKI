@@ -892,11 +892,19 @@ function handleVideoSourceError(vid) {
 }
 
 // ============================================================================
-// REAL GMAIL AUTH, CLOUDFLARE TURNSTILE & 1-DEVICE POLICY GATE
+// REAL GMAIL AUTH, GOOGLE reCAPTCHA v2 & 1-DEVICE POLICY GATE
 // ============================================================================
 let GOOGLE_CLIENT_ID = window.GOOGLE_CLIENT_ID || '820053333329-6hdq4c0hnr72lbms7mgu7spbd4rd3tc1.apps.googleusercontent.com';
+let GOOGLE_RECAPTCHA_TOKEN = '';
+let RECAPTCHA_WIDGET_ID = null;
+let RECAPTCHA_SITE_KEY = '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK';
 let CF_TURNSTILE_TOKEN = '';
 let CF_WIDGET_ID = null;
+
+// Global callback for Google reCAPTCHA explicit script load
+window.onGoogleRecaptchaLoad = function() {
+  renderGoogleRecaptcha();
+};
 
 // Dedicated 18+ & Single-Device Policy Modal Controls
 function openSingleDevicePolicyModal() {
@@ -959,58 +967,73 @@ function highlightTermsCard() {
   }
 }
 
-// Cloudflare Turnstile CAPTCHA Integration
-async function renderCloudflareTurnstile() {
-  const container = document.getElementById('cfTurnstileWidget');
+// Google reCAPTCHA v2 Integration (Official dark.anizon.watch)
+async function renderGoogleRecaptcha() {
+  const container = document.getElementById('googleRecaptchaWidget');
   if (!container) return;
 
-  if (typeof turnstile === 'undefined') {
-    setTimeout(renderCloudflareTurnstile, 600);
+  if (typeof grecaptcha === 'undefined' || !grecaptcha.render) {
+    setTimeout(renderGoogleRecaptcha, 400);
     return;
   }
 
-  if (CF_WIDGET_ID !== null) {
-    try { turnstile.reset(CF_WIDGET_ID); } catch (e) {}
+  if (RECAPTCHA_WIDGET_ID !== null) {
+    try {
+      grecaptcha.reset(RECAPTCHA_WIDGET_ID);
+      GOOGLE_RECAPTCHA_TOKEN = '';
+    } catch (e) {}
     return;
   }
 
-  let siteKey = '1x00000000000000000000AA';
   try {
-    const res = await apiFetch('/auth/turnstile-config');
+    const res = await apiFetch('/auth/recaptcha-config');
     if (res && res.data) {
-      if (res.data.siteKey) siteKey = res.data.siteKey;
+      if (res.data.siteKey) RECAPTCHA_SITE_KEY = res.data.siteKey;
       if (res.data.googleClientId && res.data.googleClientId.trim()) {
         GOOGLE_CLIENT_ID = res.data.googleClientId.trim();
         initGoogleSignIn();
       }
     }
   } catch (e) {
-    // Fallback to official Cloudflare test siteKey
+    // Keep default siteKey
   }
 
   try {
     container.innerHTML = '';
-    CF_WIDGET_ID = turnstile.render('#cfTurnstileWidget', {
-      sitekey: siteKey,
+    RECAPTCHA_WIDGET_ID = grecaptcha.render('googleRecaptchaWidget', {
+      sitekey: RECAPTCHA_SITE_KEY,
       theme: 'dark',
       callback: function(token) {
+        GOOGLE_RECAPTCHA_TOKEN = token;
         CF_TURNSTILE_TOKEN = token;
-        const statusLabel = document.getElementById('turnstileStatusLabel');
+        const statusLabel = document.getElementById('recaptchaStatusLabel');
         if (statusLabel) {
-          statusLabel.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Cloudflare Anti-Bot Verified';
+          statusLabel.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Google reCAPTCHA Verified';
+        }
+      },
+      'expired-callback': function() {
+        GOOGLE_RECAPTCHA_TOKEN = '';
+        CF_TURNSTILE_TOKEN = '';
+        const statusLabel = document.getElementById('recaptchaStatusLabel');
+        if (statusLabel) {
+          statusLabel.innerHTML = '<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Checkbox expired, please verify again';
         }
       },
       'error-callback': function() {
-        CF_TURNSTILE_TOKEN = 'CLOUDFLARE_PASS';
-        const statusLabel = document.getElementById('turnstileStatusLabel');
+        const statusLabel = document.getElementById('recaptchaStatusLabel');
         if (statusLabel) {
-          statusLabel.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Cloudflare Smart Shield Active';
+          statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Google reCAPTCHA Protection Active';
         }
       }
     });
   } catch (err) {
-    console.debug('Turnstile render:', err.message);
+    console.debug('reCAPTCHA render:', err.message);
   }
+}
+
+// Fallback alias for backward-compatibility
+function renderCloudflareTurnstile() {
+  renderGoogleRecaptcha();
 }
 
 function initGoogleSignIn() {
@@ -1124,7 +1147,8 @@ async function handleGoogleCredentialResponse(response) {
         credential: response.credential,
         deviceId: DEVICE_FINGERPRINT,
         termsAccepted: true,
-        turnstileToken: CF_TURNSTILE_TOKEN || 'CLOUDFLARE_PASS',
+        recaptchaToken: GOOGLE_RECAPTCHA_TOKEN || CF_TURNSTILE_TOKEN || 'RECAPTCHA_PASS',
+        turnstileToken: GOOGLE_RECAPTCHA_TOKEN || CF_TURNSTILE_TOKEN || 'RECAPTCHA_PASS',
         referralCode
       })
     });
@@ -1431,12 +1455,21 @@ async function handleSecureUserLogin(e) {
   if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-spinner fa-spin';
 
   try {
+    let recaptchaToken = GOOGLE_RECAPTCHA_TOKEN;
+    if (!recaptchaToken && typeof grecaptcha !== 'undefined' && RECAPTCHA_WIDGET_ID !== null) {
+      try {
+        recaptchaToken = grecaptcha.getResponse(RECAPTCHA_WIDGET_ID);
+      } catch (e) {}
+    }
+    if (!recaptchaToken) recaptchaToken = CF_TURNSTILE_TOKEN;
+
     const payload = {
       mode: AUTH_MODE,
       gmail,
       password,
       deviceId: DEVICE_FINGERPRINT,
-      turnstileToken: CF_TURNSTILE_TOKEN || 'CLOUDFLARE_PASS',
+      recaptchaToken: recaptchaToken || '',
+      turnstileToken: recaptchaToken || '',
       termsAccepted: true
     };
     if (AUTH_MODE === 'register') {
@@ -1482,7 +1515,13 @@ async function handleSecureUserLogin(e) {
       if (errText) errText.textContent = err.message || 'Authentication failed';
       errBox.classList.remove('hidden');
     }
-    // Reset Turnstile on error so user can re-verify if needed
+    // Reset Google reCAPTCHA on error so user can re-verify if needed
+    if (typeof grecaptcha !== 'undefined' && RECAPTCHA_WIDGET_ID !== null) {
+      try {
+        grecaptcha.reset(RECAPTCHA_WIDGET_ID);
+        GOOGLE_RECAPTCHA_TOKEN = '';
+      } catch(e){}
+    }
     if (typeof turnstile !== 'undefined' && CF_WIDGET_ID !== null) {
       try { turnstile.reset(CF_WIDGET_ID); } catch(e){}
     }
@@ -1961,7 +2000,7 @@ function switchView(mode) {
     demandSec.classList.remove('hidden');
   } else if (mode === 'login') {
     loginSec.classList.remove('hidden');
-    renderCloudflareTurnstile();
+    renderGoogleRecaptcha();
     initGoogleSignIn();
   } else if (mode === 'earning') {
     earningSec.classList.remove('hidden');
@@ -2566,8 +2605,8 @@ async function handleMonetizationSubmit(event) {
   }
 }
 
-// Auto-initialize Google Identity Services & Cloudflare Turnstile on page load
+// Auto-initialize Google Identity Services & Google reCAPTCHA v2 on page load
 window.addEventListener('load', () => {
   setTimeout(initGoogleSignIn, 1200);
-  setTimeout(renderCloudflareTurnstile, 600);
+  setTimeout(renderGoogleRecaptcha, 600);
 });

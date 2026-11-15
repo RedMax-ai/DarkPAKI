@@ -10,6 +10,8 @@ module.exports = {
   corsOrigin: process.env.CORS_ORIGIN || '*',
   cdnStreamUrl: process.env.CDN_STREAM_URL || 'https://darkpaki-stream.onrender.com',
   cdnApiKey: process.env.CDN_API_KEY || 'DarkPakiAdminSecret2026',
-  adminAccessKey: process.env.ADMIN_ACCESS_KEY || 'naved_master_786'
+  adminAccessKey: process.env.ADMIN_ACCESS_KEY || 'naved_master_786',
+  recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK',
+  recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY || '6LeYcCAuAAAAANftpMAN79ldhJuXZ0p6_tqzZ85t'
 };
 

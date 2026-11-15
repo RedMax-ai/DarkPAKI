@@ -10,6 +10,8 @@ function seedDatabase() {
 
   const hashedAdminPin = bcrypt.hashSync(config.adminPin, 10);
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_pin_hash', ?)").run(hashedAdminPin);
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('recaptcha_site_key', ?)").run(config.recaptchaSiteKey || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK');
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('recaptcha_secret_key', ?)").run(config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZ0p6_tqzZ85t');
   insertSetting.run('telegram_url', 'https://t.me/darkpaki_official');
   insertSetting.run('ad_video_url', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4');
   insertSetting.run('allow_instant_skip', 'false');

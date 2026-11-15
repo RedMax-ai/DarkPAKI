@@ -52,8 +52,8 @@
     </script>
     <!-- Google Identity Services (Sign in with Google - 100% Free & Secure) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!-- Cloudflare Turnstile Smart Anti-Bot Captcha (100% Privacy & Fast) -->
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+    <!-- Google reCAPTCHA v2 (Official dark.anizon.watch Registered) -->
+    <script src="https://www.google.com/recaptcha/api.js?onload=onGoogleRecaptchaLoad&render=explicit" async defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -787,11 +787,11 @@
                     </div>
                 </div>
 
-                <!-- CLOUDFLARE TURNSTILE CAPTCHA CONTAINER -->
-                <div class="bg-black/60 border border-neutral-700/80 rounded-2xl p-2.5 flex flex-col items-center justify-center gap-1 transition overflow-hidden">
-                    <div id="cfTurnstileWidget" class="my-0.5 flex justify-center"></div>
-                    <span id="turnstileStatusLabel" class="text-[10px] text-neutral-400 flex items-center gap-1.5 font-mono">
-                        <i class="fa-solid fa-shield-halved text-emerald-400"></i> Cloudflare Anti-Bot Protection
+                <!-- GOOGLE reCAPTCHA v2 CONTAINER -->
+                <div class="bg-black/60 border border-neutral-700/80 rounded-2xl p-2.5 flex flex-col items-center justify-center gap-1.5 transition overflow-hidden">
+                    <div id="googleRecaptchaWidget" class="my-0.5 flex justify-center"></div>
+                    <span id="recaptchaStatusLabel" class="text-[10px] text-neutral-400 flex items-center gap-1.5 font-mono">
+                        <i class="fa-solid fa-shield-halved text-emerald-400"></i> Google reCAPTCHA v2 Protected
                     </span>
                 </div>
 
@@ -1206,7 +1206,7 @@
     <script>
       window.GOOGLE_CLIENT_ID = "820053333329-6hdq4c0hnr72lbms7mgu7spbd4rd3tc1.apps.googleusercontent.com";
     </script>
-    <script src="public/app.js?v=20261115_2330"></script>
+    <script src="public/app.js?v=20261116_0045"></script>
 
     <!-- ============================================================================
          MODAL: USER VIDEO & SHORT UPLOADER (YOUTUBE SHORTS STYLE WITH ADMIN REVIEW)

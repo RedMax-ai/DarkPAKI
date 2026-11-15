@@ -83,6 +83,10 @@ async function runTests() {
   const ageVerifyRes = await request('POST', '/auth/verify-age', { deviceId: 'DPK-TEST-DEV-8899', confirmed: true });
   assert(ageVerifyRes.status === 200 && ageVerifyRes.body.success === true, '18+ legal age compliance verified and logged');
 
+  // 4c. Google reCAPTCHA v2 Configuration Check
+  const recaptchaConfigRes = await request('GET', '/auth/recaptcha-config');
+  assert(recaptchaConfigRes.status === 200 && recaptchaConfigRes.body.data.siteKey === '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK', 'Google reCAPTCHA v2 site key loaded correctly from SQLite configuration');
+
   const jwt = require('jsonwebtoken');
   const serverConfig = require('./src/config');
   const decodedCaptcha = jwt.verify(captchaRes.body.data.challengeToken, serverConfig.jwtSecret);
@@ -140,6 +144,18 @@ async function runTests() {
     termsAccepted: true
   });
   assert(duplicateReg.status === 409 && duplicateReg.body.message.includes('already exists'), 'Duplicate registration receives 409 with prompt to log in');
+
+  // 5e. Bot Protection: Missing or Invalid Google reCAPTCHA Rejected
+  const botRecaptchaFail = await request('POST', '/auth/login', {
+    mode: 'login',
+    gmail: testGmail,
+    password: 'userPass123',
+    deviceId: 'BOT-DEV-' + Date.now(),
+    recaptchaToken: '',
+    turnstileToken: '',
+    termsAccepted: true
+  });
+  assert(botRecaptchaFail.status === 400 && botRecaptchaFail.body.message.includes('reCAPTCHA'), 'Google reCAPTCHA blocks request with missing/invalid bot verification token');
 
   // 6. Multi-Account Fraud Shield (1 Device = 1 Gmail)
   const fakeCaptcha = await request('GET', '/auth/captcha');
@@ -259,7 +275,10 @@ async function runTests() {
   }, { Authorization: `Bearer ${adminToken}` });
   assert(uploadVidRes.status === 200 && uploadVidRes.body.data.id, 'Admin published new video directly into SQLite catalog');
 
-  // 18. Admin Settings Update
+  // 18. Admin Settings Update & reCAPTCHA Keys Verification
+  const adminSettingsRes = await request('GET', '/admin/settings', null, { Authorization: `Bearer ${adminToken}` });
+  assert(adminSettingsRes.status === 200 && adminSettingsRes.body.data.recaptchaSiteKey === '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK', 'Admin settings exposes verified Google reCAPTCHA keys');
+
   const updateSettingsRes = await request('PUT', '/admin/settings', {
     telegramUrl: 'https://t.me/darkpaki_vip',
     allowInstantSkip: true
