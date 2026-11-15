@@ -317,47 +317,9 @@
             </button>
         </form>
 
-        <!-- #1 Trending Featured Spotlight Banner -->
-        <div onclick="launchFeaturedFromHome(0)" class="relative w-full rounded-3xl overflow-hidden border border-rose-500/40 group cursor-pointer shadow-2xl shadow-rose-950/40">
-            <div class="aspect-[16/8] sm:aspect-[21/8] w-full bg-neutral-900 relative overflow-hidden">
-                <img 
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=80" 
-                    alt="Featured 18+ Video" 
-                    class="w-full h-full object-cover group-hover:scale-105 transition duration-700 opacity-75"
-                >
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
-
-                <!-- Top Badges -->
-                <div class="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
-                    <span class="bg-gradient-to-r from-rose-600 to-red-600 text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg">
-                        <i class="fa-solid fa-bolt"></i> #1 18+ TRENDING
-                    </span>
-                    <span class="bg-black/80 backdrop-blur-md text-amber-400 border border-amber-400/30 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        4K 60FPS • Uncut
-                    </span>
-                    <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        +20–30 Coins Bonus
-                    </span>
-                </div>
-
-                <!-- Center Floating Play Icon with Radiant Pulse -->
-                <div class="absolute right-4 bottom-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-rose-600 to-red-600 text-white flex items-center justify-center shadow-xl shadow-rose-600/60 group-hover:scale-110 transition pulse-btn">
-                    <i class="fa-solid fa-play text-base sm:text-xl ml-0.5"></i>
-                </div>
-
-                <!-- Bottom Title Info -->
-                <div class="absolute bottom-3 left-3.5 right-20">
-                    <span class="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-rose-400">MOST DEMANDED 18+ STREAM</span>
-                    <h2 class="text-sm sm:text-xl font-black text-white leading-tight line-clamp-1 mt-0.5">
-                        Cute Midnight Lounge Live Session (Uncut 4K)
-                    </h2>
-                    <p class="text-[10px] sm:text-[11px] text-neutral-300 mt-1 flex items-center gap-3">
-                        <span><i class="fa-solid fa-eye text-rose-400 mr-1"></i>842K Views</span>
-                        <span><i class="fa-solid fa-heart text-rose-500 mr-1"></i>99% Liked</span>
-                        <span class="hidden sm:inline text-amber-300">• 1 Short Ad → Full Video</span>
-                    </p>
-                </div>
-            </div>
+        <!-- #1 Trending Featured Spotlight Banner Container (Dynamic) -->
+        <div id="featuredSpotlightContainer" class="w-full">
+            <!-- Dynamically populated by renderFeaturedSpotlight() based on database videos -->
         </div>
 
         <!-- 1000x Category Filter Pills -->
@@ -408,14 +370,14 @@
         <!-- Video Title & Category -->
         <div class="flex flex-col items-start gap-2">
             <h1 id="videoTitle" class="text-lg sm:text-2xl font-black text-white leading-snug">
-                Cute Midnight Lounge Live Session
+                DarkPAKI 4K VIP Cinema Player
             </h1>
             <div class="flex flex-wrap items-center gap-2">
                 <span id="videoCategoryPill" class="bg-rose-600 text-white text-xs font-bold px-3.5 py-0.5 rounded-full shadow">
-                    18+ TRENDING
+                    VIP 4K STREAM
                 </span>
                 <span id="videoDemandTag" class="text-xs text-amber-400 font-semibold">
-                    🔥 Demanded by 840+ users
+                    🎬 Ultra HD Cinema Quality
                 </span>
                 <span class="text-xs text-emerald-400 font-mono font-bold bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">
                     4K Ultra HD
@@ -430,7 +392,7 @@
 
             <!-- STATE 1: Pre-Play Overlay with Circular Pulse Ring -->
             <div id="initialOverlay" onclick="startAdExperience()" class="absolute inset-0 bg-[#09090e]/85 flex flex-col justify-between p-4 cursor-pointer group">
-                <img id="playerPosterImg" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&q=80" alt="Poster" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition duration-700">
+                <img id="playerPosterImg" src="https://placehold.co/900x500/09090e/f43f5e?text=DarkPAKI+VIP+Cinema" alt="Poster" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition duration-700">
                 
                 <div class="relative z-10 flex items-center justify-between">
                     <span class="bg-black/80 border border-white/15 text-[10px] font-bold text-amber-400 px-3 py-1 rounded-full backdrop-blur-md">
@@ -565,7 +527,7 @@
                 <p class="text-xs text-neutral-400 mt-1">Vote for your favorite creators or submit custom high-demand requests below.</p>
             </div>
             <span class="bg-gradient-to-r from-rose-600 to-red-600 text-white text-xs font-black px-4 py-2 rounded-2xl shadow-lg">
-                Active Demands: <span id="demandCounterBadge">4</span>
+                Active Demands: <span id="demandCounterBadge">0</span>
             </span>
         </div>
 
@@ -576,9 +538,9 @@
         <form onsubmit="submitUserDemand(event)" class="bg-[#0c0c12] border border-white/15 rounded-3xl p-5 sm:p-6 flex flex-col gap-3.5 shadow-xl">
             <h3 class="text-sm sm:text-base font-black text-white">Submit Your Next Video Request</h3>
             <div class="flex flex-wrap gap-1.5">
-                <button type="button" onclick="selectQuickCreator('Desi Night Studio')" class="text-[11px] bg-black hover:bg-rose-500/20 border border-neutral-700 text-neutral-300 px-3 py-1 rounded-full transition">+ Desi Night Studio</button>
-                <button type="button" onclick="selectQuickCreator('Paki Bhabhi Live')" class="text-[11px] bg-black hover:bg-rose-500/20 border border-neutral-700 text-neutral-300 px-3 py-1 rounded-full transition">+ Paki Bhabhi Live</button>
-                <button type="button" onclick="selectQuickCreator('Midnight Calls HD')" class="text-[11px] bg-black hover:bg-rose-500/20 border border-neutral-700 text-neutral-300 px-3 py-1 rounded-full transition">+ Midnight Calls HD</button>
+                <button type="button" onclick="selectQuickCreator('VIP Streamer')" class="text-[11px] bg-black hover:bg-rose-500/20 border border-neutral-700 text-neutral-300 px-3 py-1 rounded-full transition">+ VIP Streamer</button>
+                <button type="button" onclick="selectQuickCreator('4K Creator')" class="text-[11px] bg-black hover:bg-rose-500/20 border border-neutral-700 text-neutral-300 px-3 py-1 rounded-full transition">+ 4K Creator</button>
+                <button type="button" onclick="selectQuickCreator('Studio Special')" class="text-[11px] bg-black hover:bg-rose-500/20 border border-neutral-700 text-neutral-300 px-3 py-1 rounded-full transition">+ Studio Special</button>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <input id="demandUserName" type="text" required placeholder="Your Name" class="bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none">
@@ -598,7 +560,7 @@
         <!-- Comments Feed -->
         <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
-                <h3 class="text-sm font-black text-white">Live User Demands (<span id="commentTotalCount">4</span>)</h3>
+                <h3 class="text-sm font-black text-white">Live User Demands (<span id="commentTotalCount">0</span>)</h3>
                 <div class="flex gap-1.5 text-xs">
                     <button onclick="filterComments('ALL', this)" class="comment-filter-btn bg-rose-600 text-white px-3.5 py-1 rounded-xl font-bold">All</button>
                     <button onclick="filterComments('DEMAND', this)" class="comment-filter-btn bg-slate-900 text-slate-400 px-3.5 py-1 rounded-xl font-bold">Demands Only</button>
@@ -1244,7 +1206,7 @@
     <script>
       window.GOOGLE_CLIENT_ID = "820053333329-6hdq4c0hnr72lbms7mgu7spbd4rd3tc1.apps.googleusercontent.com";
     </script>
-    <script src="public/app.js?v=20261115_0205"></script>
+    <script src="public/app.js?v=20261115_2330"></script>
 
     <!-- ============================================================================
          MODAL: USER VIDEO & SHORT UPLOADER (YOUTUBE SHORTS STYLE WITH ADMIN REVIEW)

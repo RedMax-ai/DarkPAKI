@@ -344,6 +344,7 @@ async function loadVideos(searchQuery = '') {
         requestedBy: v.requested_by,
         isFeatured: v.is_featured
       }));
+      renderFeaturedSpotlight();
       renderHomeVideoGrid(searchQuery);
       renderUpNextQueue();
     }
@@ -410,8 +411,93 @@ async function generateHumanChallenge() {
 }
 
 // ============================================================================
-// 1000X RENDERING FUNCTIONS (HOME GRID & PLAYER QUEUE)
+// 1000X RENDERING FUNCTIONS (FEATURED SPOTLIGHT, HOME GRID & PLAYER QUEUE)
 // ============================================================================
+function renderFeaturedSpotlight() {
+  const container = document.getElementById('featuredSpotlightContainer');
+  if (!container) return;
+
+  if (!MEDIA_SOURCES.mainVideos || MEDIA_SOURCES.mainVideos.length === 0) {
+    container.innerHTML = `
+      <div class="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#13131c] via-[#0c0c14] to-[#07070b] p-6 sm:p-10 shadow-2xl text-center">
+        <div class="max-w-xl mx-auto flex flex-col items-center">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-rose-600 to-red-600 text-white flex items-center justify-center shadow-xl shadow-rose-600/30 mb-3.5">
+            <i class="fa-solid fa-film text-xl sm:text-2xl"></i>
+          </div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[10px] sm:text-xs font-bold mb-2.5 uppercase tracking-wider">
+            <i class="fa-solid fa-crown"></i> DarkPAKI VIP Cinema & Stream Hub
+          </div>
+          <h2 class="text-base sm:text-2xl font-black text-white leading-tight">
+            VIP 4K Video Catalog Ready
+          </h2>
+          <p class="text-xs sm:text-sm text-neutral-400 mt-1.5 max-w-md">
+            Sabhi fake posts aur test items clean ho chuke hain. Admin panel se direct 4K video stream publish karein ya creator submission approve karein.
+          </p>
+          <div class="flex items-center gap-3 mt-4 flex-wrap justify-center">
+            <a href="/admin" class="bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs sm:text-sm font-bold px-5 sm:px-6 py-2.5 rounded-xl shadow-lg shadow-rose-600/30 transition flex items-center gap-2">
+              <i class="fa-solid fa-lock"></i> Open Admin Panel
+            </a>
+            <button onclick="switchView('upload')" class="bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold px-4 sm:px-5 py-2.5 rounded-xl border border-white/10 transition flex items-center gap-2">
+              <i class="fa-solid fa-cloud-arrow-up"></i> + Upload Video
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const featIndex = MEDIA_SOURCES.mainVideos.findIndex(v => v.isFeatured) >= 0 
+    ? MEDIA_SOURCES.mainVideos.findIndex(v => v.isFeatured) 
+    : 0;
+  const video = MEDIA_SOURCES.mainVideos[featIndex];
+
+  container.innerHTML = `
+    <div onclick="launchFeaturedFromHome(${featIndex})" class="relative w-full rounded-3xl overflow-hidden border border-rose-500/40 group cursor-pointer shadow-2xl shadow-rose-950/40">
+      <div class="aspect-[16/8] sm:aspect-[21/8] w-full bg-neutral-900 relative overflow-hidden">
+        <img 
+          src="${video.thumbImg || 'https://placehold.co/1000x500/121218/f43f5e?text=4K+VIP+Stream'}" 
+          alt="${video.title}" 
+          onerror="this.src='https://placehold.co/1000x500/121218/f43f5e?text=4K+VIP+Stream'"
+          class="w-full h-full object-cover group-hover:scale-105 transition duration-700 opacity-75"
+        >
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+
+        <!-- Top Badges -->
+        <div class="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
+          <span class="bg-gradient-to-r from-rose-600 to-red-600 text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg">
+            <i class="fa-solid fa-bolt"></i> #1 18+ TRENDING
+          </span>
+          <span class="bg-black/80 backdrop-blur-md text-amber-400 border border-amber-400/30 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
+            4K 60FPS • Uncut
+          </span>
+          <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
+            +20–30 Coins Bonus
+          </span>
+        </div>
+
+        <!-- Center Floating Play Icon with Radiant Pulse -->
+        <div class="absolute right-4 bottom-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-rose-600 to-red-600 text-white flex items-center justify-center shadow-xl shadow-rose-600/60 group-hover:scale-110 transition pulse-btn">
+          <i class="fa-solid fa-play text-base sm:text-xl ml-0.5"></i>
+        </div>
+
+        <!-- Bottom Title Info -->
+        <div class="absolute bottom-3 left-3.5 right-20">
+          <span class="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-rose-400">${video.tag || 'VIP STREAM'}</span>
+          <h2 class="text-sm sm:text-xl font-black text-white leading-tight line-clamp-1 mt-0.5">
+            ${video.title}
+          </h2>
+          <p class="text-[10px] sm:text-[11px] text-neutral-300 mt-1 flex items-center gap-3">
+            <span><i class="fa-solid fa-eye text-rose-400 mr-1"></i>${video.views}</span>
+            <span><i class="fa-solid fa-user text-rose-500 mr-1"></i>${video.creator}</span>
+            <span class="hidden sm:inline text-amber-300">• 1 Short Ad → Full Video</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderHomeVideoGrid(searchQuery = '') {
   const grid = document.getElementById('homeVideoGrid');
   if (!grid) return;
@@ -1653,6 +1739,19 @@ function renderDemandPoll() {
   const countBadge = document.getElementById('demandCounterBadge');
   if (countBadge) countBadge.textContent = `${sorted.length}`;
 
+  if (sorted.length === 0) {
+    list.innerHTML = `
+      <div class="col-span-full p-8 text-center bg-[#0a0a0f] border border-white/10 rounded-2xl">
+        <div class="w-10 h-10 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto mb-2">
+          <i class="fa-solid fa-fire text-lg"></i>
+        </div>
+        <p class="text-xs text-neutral-300 font-bold">No Demands Yet</p>
+        <p class="text-[11px] text-neutral-500 mt-1">Sabhi test demands purge ho chuke hain. Apni pasandida video demand submit karein!</p>
+      </div>
+    `;
+    return;
+  }
+
   sorted.forEach((item, idx) => {
     const pct = Math.min(100, Math.round((item.votes / maxVotes) * 100));
     const card = document.createElement('div');
@@ -1719,6 +1818,15 @@ function renderCommentsFeed() {
   const visible = COMMENTS_FEED;
   const countBadge = document.getElementById('commentTotalCount');
   if (countBadge) countBadge.textContent = visible.length;
+
+  if (visible.length === 0) {
+    container.innerHTML = `
+      <div class="p-8 text-center bg-[#0b0b10] border border-white/10 rounded-2xl">
+        <p class="text-xs text-neutral-400 font-medium">No community comments yet. Leave the first demand comment above!</p>
+      </div>
+    `;
+    return;
+  }
 
   visible.forEach(item => {
     const initials = (item.user || 'VIP').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();

@@ -69,7 +69,7 @@ async function runTests() {
 
   // 2. Videos Catalog
   const videosRes = await request('GET', '/videos');
-  assert(videosRes.status === 200 && Array.isArray(videosRes.body.data) && videosRes.body.data.length >= 6, 'Videos catalog returned from SQLite (>= 6 videos)');
+  assert(videosRes.status === 200 && Array.isArray(videosRes.body.data), 'Videos catalog returned from SQLite (clean zero-mock array)');
 
   // 3. Ad & Telegram Config
   const configRes = await request('GET', '/videos/config');
@@ -213,13 +213,7 @@ async function runTests() {
   }, { Authorization: `Bearer ${userToken}` });
   assert(overdrawRes.status === 400 && overdrawRes.body.message.includes('Insufficient balance'), 'Overdraw correctly rejected when balance < amount');
 
-  // 12. Community Demand Poll Voting
-  const allDemandsRes = await request('GET', '/demands/poll');
-  const targetDemandId = (allDemandsRes.body?.data && allDemandsRes.body.data[0]) ? allDemandsRes.body.data[0].id : 1;
-  const pollVoteRes = await request('POST', `/demands/poll/${targetDemandId}/vote`, { deviceId: testDeviceId });
-  assert(pollVoteRes.status === 200 && pollVoteRes.body.data.voted === true, 'Upvoted demand topic in SQLite database');
-
-  // 13. Submit New Demand & Comment
+  // 12. Submit New Demand & Comment
   const newCommentRes = await request('POST', '/demands/comments', {
     userName: 'Hamza Khan',
     creatorTarget: 'Desi Night Studio',
@@ -228,6 +222,12 @@ async function runTests() {
     deviceId: testDeviceId
   });
   assert(newCommentRes.status === 200 && newCommentRes.body.data.commentId, 'New community demand and comment persisted in database');
+
+  // 13. Community Demand Poll Voting
+  const allDemandsRes = await request('GET', '/demands/poll');
+  const targetDemandId = (allDemandsRes.body?.data && allDemandsRes.body.data[0]) ? allDemandsRes.body.data[0].id : 1;
+  const pollVoteRes = await request('POST', `/demands/poll/${targetDemandId}/vote`, { deviceId: 'DPK-DEV-VOTER-2' });
+  assert(pollVoteRes.status === 200 && pollVoteRes.body.data.voted === true, 'Upvoted demand topic in SQLite database');
 
   // 14. Like Comment Toggle
   const likeRes = await request('POST', `/demands/comments/${newCommentRes.body.data.commentId}/like`, { deviceId: 'DPK-DEV-OTHER' });
@@ -321,7 +321,7 @@ async function runTests() {
   if (testDeviceId) {
     db.prepare('DELETE FROM users WHERE device_id = ?').run(testDeviceId);
     db.prepare('DELETE FROM users WHERE gmail LIKE \'otp.test%\'').run();
-    db.prepare('DELETE FROM demand_votes WHERE device_id = ?').run(testDeviceId);
+    db.prepare("DELETE FROM demand_votes WHERE device_id IN (?, 'DPK-DEV-VOTER-2')").run(testDeviceId);
     db.prepare('DELETE FROM withdrawals WHERE user_id NOT IN (SELECT id FROM users)').run();
   }
   if (aiGenRes?.body?.data?.id) {

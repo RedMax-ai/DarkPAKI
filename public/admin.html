@@ -12,7 +12,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
     // =========================================================================
     // USER SUBMISSIONS REVIEW QUEUE JAVASCRIPT
     // =========================================================================
@@ -1239,6 +1240,11 @@
       <div>
         <h3 class="text-xl font-black text-white uppercase tracking-wider">Owner Console</h3>
         <p class="text-xs text-neutral-400 mt-1">Enter Master PIN to unlock admin capabilities</p>
+        <div class="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono">
+          <i class="fa-solid fa-signal text-emerald-400 animate-pulse"></i>
+          <span>Live Backend:</span>
+          <strong id="adminTargetUrlText" class="text-white">dark.anizon.watch</strong>
+        </div>
       </div>
 
       <form onsubmit="handleAdminLogin(event)" class="space-y-4">
@@ -1264,12 +1270,24 @@
   <!-- JAVASCRIPT LOGIC -->
   <!-- ========================================================================= -->
   <script>
-    const API_BASE = '/api';
+    const API_BASE = (localStorage.getItem('darkpaki_target_api') || '/api').replace(/\/+$/, '');
     let ADMIN_TOKEN = localStorage.getItem('darkpaki_admin_token') || null;
     let currentAdminVideos = [];
     let currentVideoPage = 1;
     let currentSearchQuery = '';
     let searchDebounceTimer = null;
+
+    // Display target server hostname in login modal
+    try {
+      const targetDisplay = document.getElementById('adminTargetUrlText');
+      if (targetDisplay) {
+        if (API_BASE.startsWith('http')) {
+          targetDisplay.textContent = new URL(API_BASE).hostname;
+        } else {
+          targetDisplay.textContent = window.location.hostname || 'dark.anizon.watch';
+        }
+      }
+    } catch (e) {}
 
     // Toast Notification
     function showToast(message, type = 'info') {
