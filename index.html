@@ -253,23 +253,34 @@
 
 
 
-        <!-- Right User Wallet / Login -->
-        <div class="flex items-center gap-2">
-            <button onclick="openUserUploadModal()" class="flex items-center gap-1.5 bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-lg shadow-rose-600/25">
-                <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+        <!-- Right User Actions (Upload, Profile, Coin/Wallet with New Theme) -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <button onclick="openUserUploadModal()" class="flex items-center gap-1.5 bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shadow-lg shadow-[#7C3AED]/25">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
                 <span class="hidden sm:inline">Upload Video</span>
                 <span class="sm:hidden">Upload</span>
             </button>
-            <button id="headerProfileBtn" onclick="openProfileOrLogin()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#121217] to-[#171318] hover:border-rose-500/60 border border-white/15 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-lg">
-                <div id="headerAvatarWrap" class="w-4 h-4 rounded-full overflow-hidden bg-[#18202d] flex items-center justify-center shrink-0">
+            <button id="headerProfileBtn" onclick="openProfileOrLogin()" class="flex items-center gap-1.5 bg-[#131822] hover:bg-[#18202d] border border-white/[0.08] hover:border-[#7C3AED]/50 text-[#F8FAFC] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition shadow">
+                <div id="headerAvatarWrap" class="w-4 h-4 rounded-full overflow-hidden bg-[#0B0E14] flex items-center justify-center shrink-0 border border-white/10">
                     <img id="headerAvatarImg" class="w-full h-full object-cover hidden" alt="Avatar" />
-                    <i id="headerAvatarDefaultIcon" class="fa-solid fa-user text-[10px] text-neutral-400"></i>
+                    <svg id="headerAvatarDefaultIcon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="text-[#94A3B8]">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
                 </div>
                 <span id="headerProfileText">Profile</span>
             </button>
-            <button onclick="openEarningOrLogin()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#121217] to-[#171318] hover:border-rose-500/60 border border-white/15 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-lg">
-                <i class="fa-solid fa-coins text-amber-400 text-xs"></i>
-                <span id="headerWalletText" class="text-emerald-400 font-mono font-bold">Earn</span>
+            <button onclick="openEarningOrLogin()" class="flex items-center gap-1.5 bg-[#131822] hover:bg-[#18202d] border border-white/[0.08] hover:border-[#7C3AED]/50 text-[#F8FAFC] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition shadow cursor-pointer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="text-amber-400">
+                    <circle cx="12" cy="12" r="8"/>
+                    <path d="M12 6v12"/>
+                    <path d="M15 9.5a3 3 0 0 0-6 0c0 3 6 2 6 5a3 3 0 0 1-6 0"/>
+                </svg>
+                <span id="headerWalletText" class="text-emerald-400 font-mono font-bold text-xs">50 Coins</span>
             </button>
         </div>
     </header>
@@ -279,46 +290,55 @@
          ============================================================================ -->
     <section id="homeGuiSection" class="relative z-10 max-w-4xl w-full mx-auto px-3 sm:px-6 pt-3.5 pb-8 flex flex-col gap-4">
         
-        <!-- Quick Banner: Watch Ads for Coins + Refer & Convert to Cash -->
+        <!-- Quick Banner: Watch Ads for Coins + Monetization (New Sleek Theme) -->
         <div class="grid grid-cols-2 gap-2 sm:gap-3">
             <!-- 1. Watch Ads -> Earn Coins -->
-            <div onclick="watchAdForCoins()" class="bg-gradient-to-r from-[#191307] to-[#140e06] border border-amber-500/40 hover:border-amber-400 rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 cursor-pointer transition shadow-lg group">
-                <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
-                    <i class="fa-solid fa-coins text-sm"></i>
+            <div onclick="watchAdForCoins()" class="bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/50 rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 cursor-pointer transition shadow-lg group">
+                <div class="w-9 h-9 rounded-xl bg-[#7C3AED]/15 text-[#7C3AED] group-hover:scale-105 flex items-center justify-center shrink-0 transition">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <polygon points="23 7 16 12 23 17 23 7"/>
+                        <rect width="14" height="14" x="1" y="5" rx="2" ry="2"/>
+                    </svg>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-[10px] text-amber-400 font-black uppercase tracking-wider">Watch Ads</p>
-                    <p class="text-xs sm:text-sm font-bold text-white truncate">Earn Coins</p>
+                    <p class="text-[10px] text-[#7C3AED] font-bold uppercase tracking-wider">Watch Ads</p>
+                    <p class="text-xs sm:text-sm font-semibold text-[#F8FAFC] truncate">Earn Coins</p>
                 </div>
             </div>
 
             <!-- 2. Refer to Earn & Convert Coins to Cash -->
-            <div onclick="openEarningOrLogin()" class="bg-gradient-to-r from-[#0b1713] to-[#07130f] border border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 cursor-pointer transition shadow-lg group">
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 flex items-center justify-center shrink-0 transition">
-                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
+            <div onclick="openEarningOrLogin()" class="bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/50 rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 cursor-pointer transition shadow-lg group">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 group-hover:scale-105 flex items-center justify-center shrink-0 transition">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+                        <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+                    </svg>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-[10px] text-emerald-400 font-black uppercase tracking-wider">Refer & Convert</p>
-                    <p class="text-xs sm:text-sm font-bold text-white truncate">Coins ➔ $ USD Cash</p>
+                    <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Monetization</p>
+                    <p class="text-xs sm:text-sm font-semibold text-[#F8FAFC] truncate">Coins ➔ Cash Out</p>
                 </div>
             </div>
         </div>
 
-        <!-- Search Bar with Neon Accent -->
+        <!-- Search Bar with Electric Violet Accent -->
         <form onsubmit="handleSearchSubmit(event)" class="flex items-center gap-2 w-full">
             <div class="relative flex-1">
-                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-xs sm:text-sm"></i>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
                 <input 
                     id="globalSearchInput" 
                     oninput="filterHomeCatalog(this.value)" 
                     type="text" 
                     placeholder="Search 18+ DarkPAKI videos, creators or demands..." 
-                    class="w-full bg-[#0c0c12] text-white placeholder:text-neutral-500 border border-white/20 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/25 rounded-2xl pl-9 pr-3 py-2.5 sm:py-3 text-xs sm:text-sm outline-none transition shadow-inner"
+                    class="w-full bg-[#131822] text-[#F8FAFC] placeholder:text-[#94A3B8] border border-white/[0.08] focus:border-[#7C3AED] rounded-2xl pl-10 pr-3.5 py-2.5 sm:py-3 text-xs sm:text-sm outline-none transition shadow-inner"
                 >
             </div>
             <button 
                 type="submit" 
-                class="bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 active:scale-95 text-white font-bold text-xs sm:text-sm px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl border border-white/20 transition shrink-0 shadow-lg shadow-rose-600/30"
+                class="bg-[#7C3AED] hover:bg-[#6D28D9] active:scale-95 text-[#F8FAFC] font-semibold text-xs sm:text-sm px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl transition shrink-0 shadow-lg shadow-[#7C3AED]/25"
             >
                 Search
             </button>
@@ -329,20 +349,29 @@
             <!-- Dynamically populated by renderFeaturedSpotlight() based on database videos -->
         </div>
 
-        <!-- 1000x Category Filter Pills -->
+        <!-- Category Filter Pills (New Theme) -->
         <div class="flex items-center justify-between gap-2">
             <div id="categoryPills" class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 no-scrollbar">
-                <button onclick="filterByCategory('ALL', this)" class="cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-rose-600 text-white shadow-lg shadow-rose-600/30 transition shrink-0">
+                <button onclick="filterByCategory('ALL', this)" class="cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#7C3AED] text-[#F8FAFC] shadow-lg shadow-[#7C3AED]/25 transition shrink-0">
                     ALL VIDEOS
                 </button>
-                <button onclick="filterByCategory('TRENDING VIDEOS', this)" class="cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-[#111118] hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition shrink-0">
-                    🔥 18+ TRENDING
+                <button onclick="filterByCategory('TRENDING VIDEOS', this)" class="cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#131822] hover:bg-[#18202d] text-[#94A3B8] hover:text-[#F8FAFC] border border-white/[0.08] transition shrink-0 flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    <span>18+ TRENDING</span>
                 </button>
-                <button onclick="filterByCategory('CREATOR SPECIAL', this)" class="cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-[#111118] hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition shrink-0">
-                    ⭐ CREATOR SPECIAL
+                <button onclick="filterByCategory('CREATOR SPECIAL', this)" class="cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#131822] hover:bg-[#18202d] text-[#94A3B8] hover:text-[#F8FAFC] border border-white/[0.08] transition shrink-0 flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                    <span>CREATOR SPECIAL</span>
                 </button>
-                <button onclick="filterByCategory('PUBLIC DEMAND', this)" class="cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-[#111118] hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition shrink-0">
-                    🗳️ PUBLIC DEMAND
+                <button onclick="filterByCategory('PUBLIC DEMAND', this)" class="cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#131822] hover:bg-[#18202d] text-[#94A3B8] hover:text-[#F8FAFC] border border-white/[0.08] transition shrink-0 flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>PUBLIC DEMAND</span>
                 </button>
             </div>
         </div>
@@ -1856,7 +1885,7 @@
         window._pendingProfileTab = t;
       };
     </script>
-    <script src="public/app.js?v=20261116_2345"></script>
+    <script src="public/app.js?v=20261117_0045"></script>
 
     <!-- ============================================================================
          MODAL: USER VIDEO & SHORT UPLOADER (YOUTUBE SHORTS STYLE WITH ADMIN REVIEW)

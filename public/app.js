@@ -430,37 +430,7 @@ function renderFeaturedSpotlight() {
   if (!container) return;
 
   if (!MEDIA_SOURCES.mainVideos || MEDIA_SOURCES.mainVideos.length === 0) {
-    container.innerHTML = `
-      <div class="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#131822] via-[#0B0E14] to-[#07070b] p-6 sm:p-10 shadow-2xl text-center">
-        <div class="max-w-xl mx-auto flex flex-col items-center">
-          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#7C3AED]/20 border border-[#7C3AED]/40 text-[#7C3AED] flex items-center justify-center shadow-xl shadow-[#7C3AED]/20 mb-3.5">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-              <polygon points="23 7 16 12 23 17 23 7"/>
-              <rect width="14" height="14" x="1" y="5" rx="2" ry="2"/>
-            </svg>
-          </div>
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#7C3AED] text-[10px] sm:text-xs font-bold mb-2.5 uppercase tracking-wider">
-            DarkPAKI Creator Cinema & Stream Hub
-          </div>
-          <h2 class="text-base sm:text-2xl font-black text-white leading-tight">
-            VIP 4K Video Catalog Ready
-          </h2>
-          <p class="text-xs sm:text-sm text-[#94A3B8] mt-1.5 max-w-md">
-            Sabhi fake posts aur test items clean ho chuke hain. Direct 4K video stream upload karein ya creator submissions explore karein.
-          </p>
-          <div class="flex items-center gap-3 mt-4 flex-wrap justify-center">
-            <button onclick="openUserUploadModal()" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] text-xs sm:text-sm font-semibold px-5 sm:px-6 py-2.5 rounded-xl shadow-lg shadow-[#7C3AED]/25 transition flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              <span>+ Upload Video</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
+    container.innerHTML = '';
     return;
   }
 
@@ -470,43 +440,54 @@ function renderFeaturedSpotlight() {
   const video = MEDIA_SOURCES.mainVideos[featIndex];
 
   container.innerHTML = `
-    <div onclick="launchFeaturedFromHome(${featIndex})" class="relative w-full rounded-3xl overflow-hidden border border-rose-500/40 group cursor-pointer shadow-2xl shadow-rose-950/40">
-      <div class="aspect-[16/8] sm:aspect-[21/8] w-full bg-neutral-900 relative overflow-hidden">
+    <div onclick="launchFeaturedFromHome(${featIndex})" class="relative w-full rounded-2xl overflow-hidden border border-white/[0.08] hover:border-[#7C3AED]/50 group cursor-pointer shadow-2xl transition duration-300">
+      <div class="aspect-[16/8] sm:aspect-[21/8] w-full bg-[#0B0E14] relative overflow-hidden">
         <img 
-          src="${video.thumbImg || 'https://placehold.co/1000x500/121218/f43f5e?text=4K+VIP+Stream'}" 
-          alt="${video.title}" 
-          onerror="this.src='https://placehold.co/1000x500/121218/f43f5e?text=4K+VIP+Stream'"
-          class="w-full h-full object-cover group-hover:scale-105 transition duration-700 opacity-75"
+          src="${video.thumbImg || '/public/darkpaki-logo.png'}" 
+          alt="${escapeHtml(video.title)}" 
+          onerror="this.src='/public/darkpaki-logo.png'"
+          class="w-full h-full object-cover group-hover:scale-105 transition duration-700 opacity-80"
         >
-        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/40 to-transparent"></div>
 
         <!-- Top Badges -->
         <div class="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
-          <span class="bg-gradient-to-r from-rose-600 to-red-600 text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg">
-            <i class="fa-solid fa-bolt"></i> #1 18+ TRENDING
+          <span class="bg-[#7C3AED] text-white text-[9px] sm:text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg shadow-[#7C3AED]/30">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span>#1 TRENDING</span>
           </span>
-          <span class="bg-black/80 backdrop-blur-md text-amber-400 border border-amber-400/30 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span class="bg-[#0B0E14]/80 backdrop-blur-md text-[#F8FAFC] border border-white/10 text-[9px] sm:text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full">
             4K 60FPS • Uncut
           </span>
-          <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span class="bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[9px] sm:text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full">
             +20–30 Coins Bonus
           </span>
         </div>
 
-        <!-- Center Floating Play Icon with Radiant Pulse -->
-        <div class="absolute right-4 bottom-4 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-rose-600 to-red-600 text-white flex items-center justify-center shadow-xl shadow-rose-600/60 group-hover:scale-110 transition pulse-btn">
-          <i class="fa-solid fa-play text-base sm:text-xl ml-0.5"></i>
+        <!-- Center Floating Play Icon -->
+        <div class="absolute right-4 bottom-4 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#7C3AED] text-white flex items-center justify-center shadow-xl shadow-[#7C3AED]/50 group-hover:scale-110 transition">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
         </div>
 
         <!-- Bottom Title Info -->
         <div class="absolute bottom-3 left-3.5 right-20">
-          <span class="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-rose-400">${video.tag || 'VIP STREAM'}</span>
-          <h2 class="text-sm sm:text-xl font-black text-white leading-tight line-clamp-1 mt-0.5">
-            ${video.title}
+          <span class="text-[9px] sm:text-[10px] font-mono font-semibold uppercase tracking-wider text-[#7C3AED]">${escapeHtml(video.tag || 'VIDEO')}</span>
+          <h2 class="text-sm sm:text-xl font-bold text-[#F8FAFC] leading-tight line-clamp-1 mt-0.5">
+            ${escapeHtml(video.title)}
           </h2>
-          <p class="text-[10px] sm:text-[11px] text-neutral-300 mt-1 flex items-center gap-3">
-            <span><i class="fa-solid fa-eye text-rose-400 mr-1"></i>${video.views}</span>
-            <span><i class="fa-solid fa-user text-rose-500 mr-1"></i>${video.creator}</span>
+          <p class="text-[10px] sm:text-[11px] text-[#94A3B8] mt-1 flex items-center gap-3">
+            <span class="flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              ${(video.views_count || video.views || 0).toLocaleString()}
+            </span>
+            <span class="font-mono">@${escapeHtml(video.creator || 'creator')}</span>
             <span class="hidden sm:inline text-amber-300">• 1 Short Ad → Full Video</span>
           </p>
         </div>
@@ -535,72 +516,75 @@ function renderHomeVideoGrid(searchQuery = '') {
 
   MEDIA_SOURCES.mainVideos.forEach((video, index) => {
     const card = document.createElement('div');
-    card.className = "neon-card group flex flex-col rounded-3xl p-2.5 border border-white/10 hover:border-rose-500/60 cursor-pointer select-none transition-all duration-300 shadow-xl";
+    card.className = "bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/50 rounded-2xl p-2.5 group flex flex-col cursor-pointer select-none transition-all duration-300 shadow-xl";
     card.onclick = () => launchFeaturedFromHome(index);
 
     card.innerHTML = `
-      <div class="relative w-full aspect-[16/10] bg-neutral-900 rounded-2xl overflow-hidden mb-2.5">
+      <div class="relative w-full aspect-video bg-[#0B0E14] rounded-xl overflow-hidden mb-2.5">
         <img 
-          src="${video.thumbImg}" 
-          alt="${video.title}" 
-          onerror="this.src='https://placehold.co/600x400/121218/f43f5e?text=18%2B+Video'"
-          class="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+          src="${video.thumbImg || '/public/darkpaki-logo.png'}" 
+          alt="${escapeHtml(video.title)}" 
+          onerror="this.src='/public/darkpaki-logo.png'"
+          class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ease-out"
         >
-        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0E14]/90 via-transparent to-transparent"></div>
         
-        <!-- Top 18+ and 4K Badges -->
+        <!-- Top Badges -->
         <div class="absolute top-2 left-2 flex items-center gap-1">
-          <span class="bg-gradient-to-r from-rose-600 to-red-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md shadow-md">
+          <span class="bg-[#7C3AED] text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-md shadow-md">
             18+
           </span>
-          <span class="bg-black/80 text-amber-300 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border border-amber-400/30">
+          <span class="bg-[#0B0E14]/80 text-amber-300 text-[9px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded-md border border-white/10">
             4K
           </span>
         </div>
 
-        <span class="absolute top-2 right-2 bg-black/85 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-md border border-white/10">
-          ${video.duration}
+        <span class="absolute top-2 right-2 bg-[#0B0E14]/80 backdrop-blur-md text-white text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border border-white/10">
+          ${video.duration || '4K'}
         </span>
 
-        <!-- Hover Center Radiant Play Icon -->
-        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 bg-black/40">
-          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-rose-600 to-red-600 text-white flex items-center justify-center shadow-xl shadow-rose-600/50 transform scale-90 group-hover:scale-100 transition">
-            <i class="fa-solid fa-play text-sm ml-0.5"></i>
+        <!-- Hover Center Electric Violet Play Icon -->
+        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 bg-[#0B0E14]/40">
+          <div class="w-11 h-11 rounded-xl bg-[#7C3AED] text-white flex items-center justify-center shadow-xl shadow-[#7C3AED]/50 transform scale-90 group-hover:scale-100 transition">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
           </div>
         </div>
 
-        <!-- Bottom Views & Rating -->
-        <div class="absolute bottom-1.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-neutral-200 font-medium">
-          <span class="flex items-center gap-1"><i class="fa-solid fa-eye text-rose-400"></i> ${video.views}</span>
-          <span class="text-rose-400 font-bold flex items-center gap-1"><i class="fa-solid fa-heart"></i> 99%</span>
+        <!-- Bottom Views -->
+        <div class="absolute bottom-1.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-[#94A3B8]">
+          <span class="flex items-center gap-1 font-mono">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            ${(video.views_count || video.views || 0).toLocaleString()}
+          </span>
+          <span class="text-emerald-400 font-mono text-[9px]">+20-30 Coins</span>
         </div>
       </div>
 
-      <div class="px-1 pb-1 flex flex-col flex-1 justify-between">
+      <div class="px-1 pb-1 flex flex-col flex-1 justify-between gap-2">
         <div>
-          <div class="flex items-center justify-between gap-1 mb-0.5">
-            <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-rose-400 block truncate">
-              ${video.is_short ? '#Shorts • ' : ''}${video.tag}
-            </span>
-          </div>
-          <h4 class="text-xs sm:text-sm font-bold text-white group-hover:text-rose-400 transition leading-snug mt-0.5 line-clamp-2">
-            ${video.title}
+          <span class="text-[9px] font-mono uppercase font-semibold text-[#7C3AED] block mb-0.5">${escapeHtml(video.tag || 'VIDEO')}</span>
+          <h4 class="text-xs sm:text-sm font-semibold text-[#F8FAFC] group-hover:text-[#7C3AED] transition leading-snug line-clamp-2">
+            ${escapeHtml(video.title)}
           </h4>
         </div>
-        <div class="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+        <div class="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2 text-xs">
           <div class="flex items-center gap-1.5 min-w-0">
-            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-600 to-purple-600 text-white font-bold text-[9px] flex items-center justify-center shrink-0">
+            <div class="w-5 h-5 rounded-md bg-[#7C3AED]/20 text-[#7C3AED] font-bold text-[9px] flex items-center justify-center shrink-0 border border-[#7C3AED]/30">
               ${(video.creator || 'D')[0].toUpperCase()}
             </div>
             <div class="truncate">
-              <p class="text-[11px] font-bold text-neutral-200 truncate flex items-center gap-1">
-                <span>${video.creator || 'DarkPAKI VIP'}</span>
-                ${video.is_monetized ? '<i class="fa-solid fa-circle-check text-amber-400 text-[10px]" title="Monetized Verified Creator"></i>' : ''}
+              <p class="text-[11px] font-semibold text-[#F8FAFC] truncate flex items-center gap-1">
+                <span>@${escapeHtml(video.creator || 'creator')}</span>
+                ${video.is_monetized ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-400 shrink-0"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' : ''}
               </p>
-              <p class="text-[9px] text-neutral-400">${video.followers_count || 0} followers</p>
             </div>
           </div>
-          <button onclick="toggleFollowCreator('${video.creator || 'DarkPAKI VIP'}', event)" data-creator-follow="${video.creator || 'DarkPAKI VIP'}" class="shrink-0 bg-white/10 hover:bg-rose-600 hover:text-white text-neutral-300 px-2 py-0.5 rounded-lg text-[10px] font-bold transition">
+          <button onclick="toggleFollowCreator('${escapeHtml(video.creator || 'creator')}', event)" data-creator-follow="${escapeHtml(video.creator || 'creator')}" class="shrink-0 bg-[#0B0E14] hover:bg-[#7C3AED] hover:text-[#F8FAFC] text-[#94A3B8] border border-white/[0.08] px-2.5 py-1 rounded-lg text-[10px] font-semibold transition">
             + Follow
           </button>
         </div>
@@ -2060,10 +2044,10 @@ function switchView(mode) {
 function filterByCategory(category, btnEl) {
   currentCategoryFilter = category;
   document.querySelectorAll('.cat-pill').forEach(btn => {
-    btn.className = "cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-[#111118] hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition shrink-0";
+    btn.className = "cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#131822] hover:bg-[#18202d] text-[#94A3B8] hover:text-[#F8FAFC] border border-white/[0.08] transition shrink-0 flex items-center gap-1";
   });
   if (btnEl) {
-    btnEl.className = "cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-rose-600 text-white shadow-lg shadow-rose-600/30 transition shrink-0";
+    btnEl.className = "cat-pill px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#7C3AED] text-[#F8FAFC] shadow-lg shadow-[#7C3AED]/25 transition shrink-0 flex items-center gap-1";
   }
   loadVideos(document.getElementById('globalSearchInput')?.value || '');
 }
