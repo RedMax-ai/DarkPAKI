@@ -425,6 +425,31 @@ async function runTests() {
     assert(unfollowRes.status === 200 && unfollowRes.body.following === false, 'User unfollow toggle deactivated in SQLite user_follows');
   }
 
+  // 22j. Creator Studio: Analytics Backend Verification
+  const analyticsRes = await request('GET', '/profile/analytics', null, { Authorization: `Bearer ${userToken}` });
+  assert(analyticsRes.status === 200 && analyticsRes.body.success === true, 'Creator analytics retrieved successfully from SQLite backend');
+  assert(typeof analyticsRes.body.data.summary.total_views === 'number', 'Analytics summary provides authentic total_views');
+  assert(Array.isArray(analyticsRes.body.data.daily_views), 'Analytics returns 7-day daily performance timeline');
+  assert(Array.isArray(analyticsRes.body.data.top_videos), 'Analytics provides top performing videos array');
+
+  // 22k. Creator Studio: Settings Backend Verification
+  const settingsRes = await request('GET', '/profile/settings', null, { Authorization: `Bearer ${userToken}` });
+  assert(settingsRes.status === 200 && settingsRes.body.success === true, 'Creator settings retrieved from SQLite backend');
+  assert(settingsRes.body.data.payout && settingsRes.body.data.preferences, 'Settings exposes payout and channel preferences');
+
+  const updatePayoutRes = await request('PUT', '/profile/settings/payout', {
+    payout_type: 'USDT_BEP20',
+    payout_address: '0x1234567890abcdef1234567890abcdef12345678'
+  }, { Authorization: `Bearer ${userToken}` });
+  assert(updatePayoutRes.status === 200 && updatePayoutRes.body.data.default_type === 'USDT_BEP20', 'Default payout wallet updated and persisted in SQLite');
+
+  const updatePrefRes = await request('PUT', '/profile/settings/preferences', {
+    allow_comments: true,
+    show_watermark: true,
+    email_notifications: false
+  }, { Authorization: `Bearer ${userToken}` });
+  assert(updatePrefRes.status === 200 && updatePrefRes.body.success === true, 'Channel preferences saved to SQLite successfully');
+
   // Automatic Cleanup of Temporary Test Artifacts (Preserves Clean Database)
   const db = require('./src/db/database');
   if (uploadVidRes?.body?.data?.id) db.prepare('DELETE FROM videos WHERE id = ?').run(uploadVidRes.body.data.id);

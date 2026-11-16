@@ -1620,7 +1620,7 @@ function refreshEarningDashboardUI() {
 function openEarningOrLogin() {
   if (CURRENT_USER) {
     switchView('profile');
-    switchCreatorStudioTab('earnings');
+    switchCreatorStudioTab('monetization');
     refreshEarningDashboardUI();
   } else {
     generateHumanChallenge();
@@ -2019,7 +2019,7 @@ function switchView(mode) {
     if (profileSec) {
       profileSec.classList.remove('hidden');
       loadInstagramUserProfile().then(() => {
-        switchCreatorStudioTab('earnings');
+        switchCreatorStudioTab('monetization');
       });
     }
   } else if (mode === 'profile') {
@@ -2718,31 +2718,239 @@ async function loadInstagramUserProfile() {
 }
 
 let CURRENT_STUDIO_TAB = 'overview';
+let CREATOR_SETTINGS_CACHE = null;
 
 function switchCreatorStudioTab(tab) {
+  if (tab === 'earnings') tab = 'monetization';
   CURRENT_STUDIO_TAB = tab;
 
-  const tabs = ['overview', 'earnings', 'analytics', 'settings'];
+  const tabs = ['overview', 'monetization', 'analytics', 'settings'];
   tabs.forEach(t => {
-    const btn = document.getElementById(`studioTab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
-    const view = document.getElementById(`studioView${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    const btn = document.getElementById(`studioTab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`) ||
+                (t === 'monetization' ? document.getElementById('studioTabEarningsBtn') : null);
+    const view = document.getElementById(`studioView${t.charAt(0).toUpperCase() + t.slice(1)}`) ||
+                 (t === 'monetization' ? document.getElementById('studioViewEarnings') : null);
     if (t === tab) {
       if (btn) {
-        btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-[#F8FAFC] bg-[#7C3AED] transition flex items-center gap-1.5";
+        btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-[#F8FAFC] bg-[#7C3AED] transition flex items-center gap-1.5 shrink-0";
       }
       if (view) view.classList.remove('hidden');
     } else {
       if (btn) {
-        btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-[#94A3B8] hover:text-[#F8FAFC] transition flex items-center gap-1.5";
+        btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-[#94A3B8] hover:text-[#F8FAFC] transition flex items-center gap-1.5 shrink-0";
       }
       if (view) view.classList.add('hidden');
     }
   });
 
-  if (tab === 'earnings') {
+  if (tab === 'monetization') {
     refreshEarningDashboardUI();
+  } else if (tab === 'analytics') {
+    loadCreatorAnalytics();
+  } else if (tab === 'settings') {
+    loadCreatorSettings();
   }
 }
+
+// Global window registration
+window._switchCreatorStudioTab = switchCreatorStudioTab;
+window.switchCreatorStudioTab = switchCreatorStudioTab;
+
+// ----------------------------------------------------------------------------
+// FULL-STACK CREATOR ANALYTICS (SQLite Backend Connection)
+// ----------------------------------------------------------------------------
+async function loadCreatorAnalytics() {
+  const vViews = document.getElementById('analyticsTotalViews');
+  const vReach = document.getElementById('analyticsProfileReach');
+  const vUploads = document.getElementById('analyticsUploadsCount');
+  const vFollowers = document.getElementById('analyticsFollowersCount');
+  const vRate = document.getElementById('analyticsEngagementRate');
+  const vLikes = document.getElementById('analyticsTotalLikes');
+  const vComments = document.getElementById('analyticsTotalComments');
+  const chartContainer = document.getElementById('analyticsDailyChart');
+  const topVideosContainer = document.getElementById('analyticsTopVideosList');
+
+  try {
+    const res = await apiFetch('/profile/analytics');
+    if (!res.success || !res.data) return;
+
+    const { summary, top_videos, daily_views, traffic_sources } = res.data;
+
+    if (vViews) vViews.textContent = (summary.total_views || 0).toLocaleString();
+    if (vReach) vReach.textContent = (summary.profile_reach || 0).toLocaleString();
+    if (vUploads) vUploads.textContent = (summary.total_uploads || 0).toLocaleString();
+    if (vFollowers) vFollowers.textContent = (summary.followers_count || 0).toLocaleString();
+    if (vRate) vRate.textContent = summary.engagement_rate || '0.0%';
+    if (vLikes) vLikes.textContent = (summary.total_likes || 0).toLocaleString();
+    if (vComments) vComments.textContent = (summary.total_comments || 0).toLocaleString();
+
+    // Render 7-day SVG performance chart
+    if (chartContainer && Array.isArray(daily_views)) {
+      const maxVal = Math.max(...daily_views.map(d => d.views), 10);
+      chartContainer.innerHTML = `
+        <div class="flex items-end justify-between gap-2 h-32 pt-4 px-2">
+          ${daily_views.map(d => {
+            const pct = Math.max(8, Math.round((d.views / maxVal) * 100));
+            return `
+              <div class="flex-1 flex flex-col items-center gap-2 group">
+                <div class="text-[10px] font-mono text-[#94A3B8] group-hover:text-[#7C3AED] transition">${d.views > 0 ? d.views.toLocaleString() : '0'}</div>
+                <div class="w-full bg-[#18202d] rounded-t-lg h-24 flex items-end overflow-hidden p-1">
+                  <div class="w-full bg-[#7C3AED] hover:bg-[#6D28D9] rounded-t-md transition-all duration-500 shadow-lg shadow-[#7C3AED]/20" style="height: ${pct}%;"></div>
+                </div>
+                <span class="text-[11px] font-semibold text-[#94A3B8] font-mono">${d.day}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    // Render top performing videos
+    if (topVideosContainer) {
+      if (!top_videos || top_videos.length === 0) {
+        topVideosContainer.innerHTML = `
+          <div class="py-8 text-center text-xs text-[#94A3B8]">
+            No uploaded videos yet. Upload content to see top video metrics.
+          </div>
+        `;
+      } else {
+        topVideosContainer.innerHTML = top_videos.map((vid, idx) => `
+          <div class="flex items-center justify-between p-3 rounded-xl bg-[#0B0E14] border border-white/[0.06] hover:border-[#7C3AED]/30 transition gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="text-xs font-mono font-bold text-[#7C3AED] w-4">#${idx + 1}</span>
+              <div class="w-14 h-9 rounded-lg bg-[#131822] overflow-hidden shrink-0 relative">
+                <img src="${vid.thumb_img || '/public/darkpaki-logo.png'}" alt="thumb" class="w-full h-full object-cover">
+              </div>
+              <div class="min-w-0">
+                <h5 class="text-xs font-semibold text-[#F8FAFC] truncate">${escapeHtml(vid.title || 'Untitled')}</h5>
+                <span class="text-[10px] text-[#94A3B8] font-mono">${vid.duration || '4K'}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 text-xs font-mono shrink-0">
+              <span class="text-[#F8FAFC] flex items-center gap-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="text-[#7C3AED]">
+                  <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                ${(vid.views_count || 0).toLocaleString()}
+              </span>
+              <span class="text-[#94A3B8] flex items-center gap-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="text-rose-400">
+                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                </svg>
+                ${(vid.likes_count || 0).toLocaleString()}
+              </span>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load analytics:', err);
+  }
+}
+window.loadCreatorAnalytics = loadCreatorAnalytics;
+
+// ----------------------------------------------------------------------------
+// FULL-STACK CREATOR SETTINGS (SQLite Backend Connection)
+// ----------------------------------------------------------------------------
+async function loadCreatorSettings() {
+  try {
+    const res = await apiFetch('/profile/settings');
+    if (!res.success || !res.data) return;
+
+    CREATOR_SETTINGS_CACHE = res.data;
+    const d = res.data;
+
+    const emailEl = document.getElementById('settingsUserEmail');
+    if (emailEl) emailEl.textContent = d.gmail || 'user@gmail.com';
+
+    const phoneEl = document.getElementById('settingsUserPhone');
+    if (phoneEl) phoneEl.textContent = d.phone || 'Protected';
+
+    const handleEl = document.getElementById('settingsUserHandle');
+    if (handleEl) handleEl.textContent = '@' + (d.username || 'user');
+
+    const deviceEl = document.getElementById('settingsUserDevice');
+    if (deviceEl) deviceEl.textContent = d.device_id || 'DPK-DEVICE';
+
+    // Payout settings
+    const pTypeEl = document.getElementById('settingsPayoutTypeSelect');
+    if (pTypeEl && d.payout?.default_type) pTypeEl.value = d.payout.default_type;
+
+    const pAddrEl = document.getElementById('settingsPayoutAddressInput');
+    if (pAddrEl && d.payout?.default_address) pAddrEl.value = d.payout.default_address;
+
+    // Preferences checkboxes
+    const cmtEl = document.getElementById('prefAllowComments');
+    if (cmtEl) cmtEl.checked = d.preferences?.allow_comments !== false;
+
+    const wmkEl = document.getElementById('prefShowWatermark');
+    if (wmkEl) wmkEl.checked = d.preferences?.show_watermark !== false;
+
+    const notifEl = document.getElementById('prefEmailNotifications');
+    if (notifEl) notifEl.checked = d.preferences?.email_notifications !== false;
+
+    // Auto-populate withdrawal input in Monetization if empty
+    const withdrawAddr = document.getElementById('withdrawUpiInput');
+    if (withdrawAddr && !withdrawAddr.value && d.payout?.default_address) {
+      withdrawAddr.value = d.payout.default_address;
+    }
+  } catch (err) {
+    console.error('Failed to load settings:', err);
+  }
+}
+window.loadCreatorSettings = loadCreatorSettings;
+
+async function savePayoutSettings(e) {
+  if (e) e.preventDefault();
+  const pType = document.getElementById('settingsPayoutTypeSelect')?.value || 'BINANCE_PAY';
+  const pAddr = document.getElementById('settingsPayoutAddressInput')?.value || '';
+
+  if (!pAddr.trim()) {
+    showToast('Please enter your Binance Pay ID or USDT wallet address');
+    return;
+  }
+
+  try {
+    const res = await apiFetch('/profile/settings/payout', {
+      method: 'PUT',
+      body: JSON.stringify({ payout_type: pType, payout_address: pAddr.trim() })
+    });
+    if (res.success) {
+      showToast('Default payout wallet saved successfully!');
+      const withdrawAddr = document.getElementById('withdrawUpiInput');
+      if (withdrawAddr) withdrawAddr.value = pAddr.trim();
+    }
+  } catch (err) {
+    showToast(err.message || 'Failed to save payout settings');
+  }
+}
+window.savePayoutSettings = savePayoutSettings;
+
+async function saveCreatorPreferences(e) {
+  if (e) e.preventDefault();
+  const allowComments = document.getElementById('prefAllowComments')?.checked ?? true;
+  const showWatermark = document.getElementById('prefShowWatermark')?.checked ?? true;
+  const emailNotifications = document.getElementById('prefEmailNotifications')?.checked ?? true;
+
+  try {
+    const res = await apiFetch('/profile/settings/preferences', {
+      method: 'PUT',
+      body: JSON.stringify({
+        allow_comments: allowComments,
+        show_watermark: showWatermark,
+        email_notifications: emailNotifications
+      })
+    });
+    if (res.success) {
+      showToast('Creator preferences saved successfully!');
+    }
+  } catch (err) {
+    showToast(err.message || 'Failed to save preferences');
+  }
+}
+window.saveCreatorPreferences = saveCreatorPreferences;
 
 function renderProfileHeaderUI(data) {
   // Top Username
@@ -3623,4 +3831,10 @@ function handleLogoutUser() {
   refreshEarningDashboardUI();
   switchView('home');
   showToast("Logged out successfully");
+}
+
+if (window._pendingStudioTab) {
+  const pending = window._pendingStudioTab;
+  delete window._pendingStudioTab;
+  switchCreatorStudioTab(pending);
 }

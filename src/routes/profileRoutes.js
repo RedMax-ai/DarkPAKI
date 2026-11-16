@@ -32,4 +32,10 @@ router.get('/followers', requireAuth, profileController.getFollowers);
 router.get('/following', requireAuth, profileController.getFollowing);
 router.post('/follow/:targetUserId', requireAuth, profileController.toggleFollow);
 
+// Creator Studio Hub: Analytics & Settings
+router.get('/analytics', requireAuth, profileController.getCreatorAnalytics);
+router.get('/settings', requireAuth, profileController.getCreatorSettings);
+router.put('/settings/payout', requireAuth, profileController.updatePayoutSettings);
+router.put('/settings/preferences', requireAuth, profileController.updateCreatorPreferences);
+
 module.exports = router;

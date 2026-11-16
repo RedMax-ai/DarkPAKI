@@ -338,6 +338,13 @@ function initializeSchema() {
   runMigration("ALTER TABLE withdrawals ADD COLUMN admin_notes TEXT DEFAULT '';");
   runMigration('ALTER TABLE withdrawals ADD COLUMN processed_at DATETIME;');
 
+  // Creator Settings Migrations (Payout wallet & channel preferences)
+  runMigration("ALTER TABLE users ADD COLUMN default_payout_type TEXT DEFAULT 'BINANCE_PAY';");
+  runMigration("ALTER TABLE users ADD COLUMN default_payout_address TEXT DEFAULT '';");
+  runMigration("ALTER TABLE users ADD COLUMN allow_comments INTEGER NOT NULL DEFAULT 1;");
+  runMigration("ALTER TABLE users ADD COLUMN show_watermark INTEGER NOT NULL DEFAULT 1;");
+  runMigration("ALTER TABLE users ADD COLUMN email_notifications INTEGER NOT NULL DEFAULT 1;");
+
   // Sync existing videos' views_count from views string if 0
   try {
     const existingVideos = db.prepare('SELECT id, views, views_count FROM videos').all();
