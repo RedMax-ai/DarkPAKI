@@ -1540,10 +1540,13 @@ async function handleSecureUserLogin(e) {
 
 function refreshEarningDashboardUI() {
   const headerTxt = document.getElementById('headerWalletText');
+  const overBal = document.getElementById('overviewWalletBalance');
+  const overCoins = document.getElementById('overviewCoinsBalance');
+
   if (!CURRENT_USER) {
     if (headerTxt) headerTxt.textContent = "Login & Earn";
     const nameEl = document.getElementById('earnUserName');
-    if (nameEl) nameEl.textContent = 'VIP Member';
+    if (nameEl) nameEl.textContent = 'Creator';
     const gmEl = document.getElementById('earnUserGmail');
     if (gmEl) gmEl.textContent = 'Sign in to access your wallet';
     const devEl = document.getElementById('earnUserDeviceLock');
@@ -1552,6 +1555,8 @@ function refreshEarningDashboardUI() {
     if (coinsEl) coinsEl.textContent = '0';
     const balEl = document.getElementById('userWalletBalance');
     if (balEl) balEl.textContent = '$0.00';
+    if (overBal) overBal.textContent = '$0.00';
+    if (overCoins) overCoins.textContent = '0';
     const refEl = document.getElementById('userReferralCount');
     if (refEl) refEl.textContent = '0';
     const adEl = document.getElementById('userAdsWatchedCount');
@@ -1560,18 +1565,21 @@ function refreshEarningDashboardUI() {
   }
 
   const userCoins = CURRENT_USER.coins !== undefined ? CURRENT_USER.coins : 50;
-  if (headerTxt) headerTxt.textContent = `🪙 ${userCoins} • $${CURRENT_USER.balance.toFixed(2)}`;
+  if (headerTxt) headerTxt.textContent = `${userCoins} Coins • ${CURRENT_USER.balance.toFixed(2)}`;
   const nameEl = document.getElementById('earnUserName');
   if (nameEl) nameEl.textContent = CURRENT_USER.name;
   const gmEl = document.getElementById('earnUserGmail');
-  if (gmEl) gmEl.textContent = `${CURRENT_USER.gmail} • 📱 ${CURRENT_USER.phone}`;
+  if (gmEl) gmEl.textContent = `${CURRENT_USER.gmail} • ${CURRENT_USER.phone}`;
   const devEl = document.getElementById('earnUserDeviceLock');
   if (devEl) devEl.textContent = `1-Device Hardware Lock: ${CURRENT_USER.deviceId || CURRENT_USER.device_id || DEVICE_FINGERPRINT}`;
   
   const coinsEl = document.getElementById('userCoinsBalance');
   if (coinsEl) coinsEl.textContent = `${userCoins}`;
   const balEl = document.getElementById('userWalletBalance');
-  if (balEl) balEl.textContent = `$${CURRENT_USER.balance.toFixed(CURRENT_USER.balance < 1 ? 3 : 2)}`;
+  if (balEl) balEl.textContent = `${CURRENT_USER.balance.toFixed(CURRENT_USER.balance < 1 ? 3 : 2)}`;
+  if (overBal) overBal.textContent = `${CURRENT_USER.balance.toFixed(CURRENT_USER.balance < 1 ? 3 : 2)}`;
+  if (overCoins) overCoins.textContent = `${userCoins}`;
+
   const refEl = document.getElementById('userReferralCount');
   if (refEl) refEl.textContent = `${CURRENT_USER.referrals}`;
   const adEl = document.getElementById('userAdsWatchedCount');
@@ -1611,8 +1619,9 @@ function refreshEarningDashboardUI() {
 
 function openEarningOrLogin() {
   if (CURRENT_USER) {
+    switchView('profile');
+    switchCreatorStudioTab('earnings');
     refreshEarningDashboardUI();
-    switchView('earning');
   } else {
     generateHumanChallenge();
     switchView('login');
@@ -1975,10 +1984,9 @@ function switchView(mode) {
   const watchSec = document.getElementById('watchPlayerSection');
   const demandSec = document.getElementById('demandAndCommentHub');
   const loginSec = document.getElementById('authLoginSection');
-  const earningSec = document.getElementById('earningPageSection');
   const profileSec = document.getElementById('userProfileSection');
 
-  [homeSec, watchSec, demandSec, loginSec, earningSec, profileSec].forEach(sec => {
+  [homeSec, watchSec, demandSec, loginSec, profileSec].forEach(sec => {
     if (sec) sec.classList.add('hidden');
   });
 
@@ -1987,40 +1995,45 @@ function switchView(mode) {
     updatePlayPauseIcons();
   }
 
-  // Bottom Navigation Highlight
-  const botActive = "text-rose-500 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl bg-rose-500/15 transition";
-  const botInactive = "text-neutral-400 hover:text-rose-400 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition";
+  // Bottom Navigation Highlight (Strict 3-Color Palette: #7C3AED Accent, #94A3B8 Muted)
+  const botActive = "text-[#7C3AED] flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition";
+  const botInactive = "text-[#94A3B8] hover:text-[#F8FAFC] flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition";
   const bHome = document.getElementById('bottomNavHome');
   const bTrend = document.getElementById('bottomNavTrending');
-  const bEarn = document.getElementById('bottomNavEarning');
   const bProfile = document.getElementById('bottomNavProfile');
   if (bHome) bHome.className = mode === 'home' ? botActive : botInactive;
   if (bTrend) bTrend.className = mode === 'trending' ? botActive : botInactive;
-  if (bEarn) bEarn.className = (mode === 'earning' || mode === 'login') ? botActive : "text-amber-400 hover:text-amber-300 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition";
-  if (bProfile) bProfile.className = mode === 'profile' ? botActive : "text-neutral-400 hover:text-white flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition";
+  if (bProfile) bProfile.className = (mode === 'profile' || mode === 'earning') ? botActive : botInactive;
 
   if (mode === 'watch') {
-    watchSec.classList.remove('hidden');
+    if (watchSec) watchSec.classList.remove('hidden');
   } else if (mode === 'demand') {
-    demandSec.classList.remove('hidden');
+    if (demandSec) demandSec.classList.remove('hidden');
   } else if (mode === 'login') {
-    loginSec.classList.remove('hidden');
-    renderGoogleRecaptcha();
-    initGoogleSignIn();
+    if (loginSec) {
+      loginSec.classList.remove('hidden');
+      renderGoogleRecaptcha();
+      initGoogleSignIn();
+    }
   } else if (mode === 'earning') {
-    earningSec.classList.remove('hidden');
+    if (profileSec) {
+      profileSec.classList.remove('hidden');
+      loadInstagramUserProfile().then(() => {
+        switchCreatorStudioTab('earnings');
+      });
+    }
   } else if (mode === 'profile') {
     if (profileSec) {
       profileSec.classList.remove('hidden');
       loadInstagramUserProfile();
     }
   } else if (mode === 'trending') {
-    homeSec.classList.remove('hidden');
+    if (homeSec) homeSec.classList.remove('hidden');
     currentCategoryFilter = 'TRENDING VIDEOS';
     loadVideos();
-    showToast("🔥 Showing 18+ Trending Videos");
+    showToast("Showing 18+ Trending Videos");
   } else {
-    homeSec.classList.remove('hidden');
+    if (homeSec) homeSec.classList.remove('hidden');
     currentCategoryFilter = 'ALL';
     loadVideos();
   }
@@ -2704,6 +2717,33 @@ async function loadInstagramUserProfile() {
   }
 }
 
+let CURRENT_STUDIO_TAB = 'overview';
+
+function switchCreatorStudioTab(tab) {
+  CURRENT_STUDIO_TAB = tab;
+
+  const tabs = ['overview', 'earnings', 'analytics', 'settings'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`studioTab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
+    const view = document.getElementById(`studioView${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    if (t === tab) {
+      if (btn) {
+        btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-[#F8FAFC] bg-[#7C3AED] transition flex items-center gap-1.5";
+      }
+      if (view) view.classList.remove('hidden');
+    } else {
+      if (btn) {
+        btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-[#94A3B8] hover:text-[#F8FAFC] transition flex items-center gap-1.5";
+      }
+      if (view) view.classList.add('hidden');
+    }
+  });
+
+  if (tab === 'earnings') {
+    refreshEarningDashboardUI();
+  }
+}
+
 function renderProfileHeaderUI(data) {
   // Top Username
   const topUsername = document.getElementById('profileTopUsername');
@@ -2723,7 +2763,7 @@ function renderProfileHeaderUI(data) {
     }
   }
 
-  // Circular Avatar
+  // Rounded Avatar
   const avatarImg = document.getElementById('profileAvatarImg');
   const avatarPlaceholder = document.getElementById('profileAvatarPlaceholder');
   if (data.avatar_url && data.avatar_url.trim()) {
@@ -2737,40 +2777,17 @@ function renderProfileHeaderUI(data) {
     if (avatarPlaceholder) avatarPlaceholder.classList.remove('hidden');
   }
 
-  // 3-Column Stats Row (Strict Real Zero-Mock Data)
+  // 4 Creator Stats Bar: Posts, Followers, Following, Total Views
   const postsCountEl = document.getElementById('profileStatPosts');
   const followersCountEl = document.getElementById('profileStatFollowers');
   const followingCountEl = document.getElementById('profileStatFollowing');
+  const viewsCountEl = document.getElementById('profileStatViews');
   if (postsCountEl) postsCountEl.textContent = data.posts_count || 0;
   if (followersCountEl) followersCountEl.textContent = data.followers_count || 0;
   if (followingCountEl) followingCountEl.textContent = data.following_count || 0;
+  if (viewsCountEl) viewsCountEl.textContent = (data.dashboard?.views || 0).toLocaleString();
 
-  // Banner Strip
-  const bannerStrip = document.getElementById('profileBannerStrip');
-  const bannerIcon = document.getElementById('profileBannerIcon');
-  const bannerText = document.getElementById('profileBannerText');
-  if (bannerStrip) {
-    if (data.banner_style === 'creator') {
-      bannerStrip.classList.remove('hidden');
-      bannerStrip.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-transparent border border-amber-500/40 text-xs";
-      if (bannerIcon) bannerIcon.className = "fa-solid fa-crown text-amber-400 text-xs";
-      if (bannerText) bannerText.textContent = "Creator Spotlight";
-    } else if (data.banner_style === 'verified') {
-      bannerStrip.classList.remove('hidden');
-      bannerStrip.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-500/20 via-indigo-500/20 to-transparent border border-sky-500/40 text-xs";
-      if (bannerIcon) bannerIcon.className = "fa-solid fa-star text-sky-400 text-xs";
-      if (bannerText) bannerText.textContent = "Verified Streamer";
-    } else if (data.banner_style === 'vip') {
-      bannerStrip.classList.remove('hidden');
-      bannerStrip.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/20 via-purple-500/20 to-transparent border border-rose-500/40 text-xs";
-      if (bannerIcon) bannerIcon.className = "fa-solid fa-fire text-rose-400 text-xs";
-      if (bannerText) bannerText.textContent = "VIP Gold Member";
-    } else {
-      bannerStrip.classList.add('hidden');
-    }
-  }
-
-  // Multi-line Bio Rendering (Preserve line breaks & emojis)
+  // Multi-line Bio Rendering (Preserve line breaks)
   const bioContainer = document.getElementById('profileBioContainer');
   const bioText = document.getElementById('profileBioText');
   const emptyBioPrompt = document.getElementById('profileEmptyBioPrompt');
@@ -2783,7 +2800,7 @@ function renderProfileHeaderUI(data) {
     if (emptyBioPrompt) emptyBioPrompt.classList.remove('hidden');
   }
 
-  // Clickable External Links Section
+  // Clickable External Links Section (Pill style with SVG Link icon)
   const linksContainer = document.getElementById('profileLinksContainer');
   if (linksContainer) {
     if (Array.isArray(data.links) && data.links.length > 0) {
@@ -2794,8 +2811,11 @@ function renderProfileHeaderUI(data) {
           cleanUrl = 'https://' + cleanUrl;
         }
         return `
-          <a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-[#0095F6] hover:underline font-semibold truncate max-w-full">
-            <i class="fa-solid fa-link text-[10px] text-[#A8A8A8] shrink-0"></i>
+          <a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-[#7C3AED] hover:underline font-semibold truncate max-w-full bg-[#0B0E14] border border-white/[0.08] px-3 py-1.5 rounded-lg transition">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-[#94A3B8] shrink-0">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
             <span class="truncate">${escapeHtml(link.title || link.url)}</span>
           </a>
         `;
@@ -2806,27 +2826,43 @@ function renderProfileHeaderUI(data) {
     }
   }
 
-  // Creator Dashboard Analytics Card
-  const dashboardReach = document.getElementById('profileDashboardReach');
-  if (dashboardReach && data.dashboard) {
-    const reached = data.dashboard.accounts_reached || 0;
-    const views = data.dashboard.views || 0;
-    dashboardReach.textContent = `${reached.toLocaleString()} accounts reached • ${views.toLocaleString()} total views`;
-  }
+  // Creator Studio: Overview Sub-View
+  const overBal = document.getElementById('overviewWalletBalance');
+  if (overBal && CURRENT_USER) overBal.textContent = `$${CURRENT_USER.balance.toFixed(CURRENT_USER.balance < 1 ? 3 : 2)}`;
+  const overCoins = document.getElementById('overviewCoinsBalance');
+  if (overCoins && CURRENT_USER) overCoins.textContent = (CURRENT_USER.coins !== undefined ? CURRENT_USER.coins : 50).toLocaleString();
+  const overViews = document.getElementById('overviewViewsCount');
+  if (overViews) overViews.textContent = (data.dashboard?.views || 0).toLocaleString();
+
+  // Creator Studio: Analytics Sub-View
+  const aViews = document.getElementById('analyticsTotalViews');
+  if (aViews) aViews.textContent = (data.dashboard?.views || 0).toLocaleString();
+  const aReach = document.getElementById('analyticsProfileReach');
+  if (aReach) aReach.textContent = (data.dashboard?.accounts_reached || 0).toLocaleString();
+  const aUploads = document.getElementById('analyticsUploadsCount');
+  if (aUploads) aUploads.textContent = (data.posts_count || 0).toLocaleString();
+  const aFollowers = document.getElementById('analyticsFollowersCount');
+  if (aFollowers) aFollowers.textContent = (data.followers_count || 0).toLocaleString();
+
+  // Creator Studio: Settings Sub-View
+  const setEmail = document.getElementById('settingsUserEmail');
+  if (setEmail) setEmail.textContent = data.gmail || (CURRENT_USER ? CURRENT_USER.gmail : 'user@gmail.com');
+  const setDevice = document.getElementById('settingsUserDevice');
+  if (setDevice) setDevice.textContent = data.device_id || (CURRENT_USER ? (CURRENT_USER.deviceId || CURRENT_USER.device_id) : 'DPK-DEVICE');
 }
 
 function switchProfileTab(tab) {
   CURRENT_PROFILE_TAB = tab;
 
+  const btnVideos = document.getElementById('profileTabVideosBtn');
   const btnPosts = document.getElementById('profileTabPostsBtn');
-  const btnReels = document.getElementById('profileTabReelsBtn');
   const btnSaved = document.getElementById('profileTabSavedBtn');
 
-  const activeCls = "flex-1 py-3 border-b-2 border-[#F5F5F5] text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition";
-  const inactiveCls = "flex-1 py-3 border-b-2 border-transparent text-[#A8A8A8] hover:text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition";
+  const activeCls = "pb-3 border-b-2 border-[#7C3AED] text-[#F8FAFC] font-semibold text-sm flex items-center gap-2 transition px-2";
+  const inactiveCls = "pb-3 border-b-2 border-transparent text-[#94A3B8] hover:text-[#F8FAFC] font-semibold text-sm flex items-center gap-2 transition px-2";
 
+  if (btnVideos) btnVideos.className = tab === 'videos' ? activeCls : inactiveCls;
   if (btnPosts) btnPosts.className = tab === 'posts' ? activeCls : inactiveCls;
-  if (btnReels) btnReels.className = tab === 'reels' ? activeCls : inactiveCls;
   if (btnSaved) btnSaved.className = tab === 'saved' ? activeCls : inactiveCls;
 
   loadProfileGridPosts(tab);
@@ -2842,7 +2878,7 @@ async function loadProfileGridPosts(tab) {
 
   if (!grid || !emptyState) return;
 
-  grid.innerHTML = '<div class="col-span-3 py-10 flex items-center justify-center text-neutral-500"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i></div>';
+  grid.innerHTML = '<div class="col-span-full py-12 flex items-center justify-center text-[#94A3B8]"><div class="w-8 h-8 border-2 border-[#7C3AED] border-t-transparent rounded-full animate-spin"></div></div>';
 
   try {
     const res = await apiFetch(`/profile/posts?tab=${encodeURIComponent(tab)}`);
@@ -2854,27 +2890,42 @@ async function loadProfileGridPosts(tab) {
       emptyState.classList.remove('hidden');
 
       if (tab === 'saved') {
-        if (emptyIcon) emptyIcon.className = "fa-regular fa-bookmark text-2xl";
-        if (emptyTitle) emptyTitle.textContent = "Save Photos and Videos";
-        if (emptyDesc) emptyDesc.textContent = "Save photos and videos that you want to see again. No one is notified.";
+        if (emptyTitle) emptyTitle.textContent = "No Saved Videos";
+        if (emptyDesc) emptyDesc.textContent = "Save videos to watch later. Videos you bookmark will appear here.";
         if (emptyActionBtn) {
-          emptyActionBtn.textContent = "Explore Cinema";
+          emptyActionBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Explore Videos</span>
+          `;
           emptyActionBtn.onclick = () => switchView('home');
         }
-      } else if (tab === 'reels') {
-        if (emptyIcon) emptyIcon.className = "fa-solid fa-film text-2xl";
-        if (emptyTitle) emptyTitle.textContent = "No Reels Yet";
-        if (emptyDesc) emptyDesc.textContent = "When you upload vertical short reels, they will appear here.";
+      } else if (tab === 'posts') {
+        if (emptyTitle) emptyTitle.textContent = "No Posts Yet";
+        if (emptyDesc) emptyDesc.textContent = "Publish updates or photo posts to share with your audience.";
         if (emptyActionBtn) {
-          emptyActionBtn.textContent = "Upload a Reel";
+          emptyActionBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Create First Post</span>
+          `;
           emptyActionBtn.onclick = () => openUserUploadModal();
         }
       } else {
-        if (emptyIcon) emptyIcon.className = "fa-solid fa-camera text-2xl";
-        if (emptyTitle) emptyTitle.textContent = "Share Photos & Videos";
-        if (emptyDesc) emptyDesc.textContent = "When you share photos and videos, they will appear on your profile.";
+        if (emptyTitle) emptyTitle.textContent = "No Videos Published Yet";
+        if (emptyDesc) emptyDesc.textContent = "Upload your video to start building your audience and unlocking earnings.";
         if (emptyActionBtn) {
-          emptyActionBtn.textContent = "Share your first video";
+          emptyActionBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Upload First Video</span>
+          `;
           emptyActionBtn.onclick = () => openUserUploadModal();
         }
       }
@@ -2884,27 +2935,55 @@ async function loadProfileGridPosts(tab) {
 
       grid.innerHTML = PROFILE_POSTS_CACHE.map(post => {
         const thumb = post.thumb_img || '/public/darkpaki-logo.png';
-        const viewsCount = post.views_count || post.views || 0;
+        const viewsCount = (post.views_count || post.views || 0).toLocaleString();
+        const duration = post.duration || '4K';
         const pinnedBadge = post.is_pinned ? `
-          <div class="absolute top-1.5 left-1.5 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] text-xs z-10">
-            <i class="fa-solid fa-thumbtack text-rose-400"></i>
+          <div class="absolute top-2.5 left-2.5 bg-[#7C3AED] text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-md flex items-center gap-1 z-10">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="17" x2="12" y2="22"/>
+              <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
+            </svg>
+            <span>PINNED</span>
           </div>
         ` : '';
 
         return `
-          <div onclick="openProfileMediaViewer(${post.id})" class="relative aspect-square bg-[#1C1E21] overflow-hidden group cursor-pointer select-none active:opacity-75 transition">
-            <img src="${thumb}" alt="${escapeHtml(post.title || 'Video')}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-            ${pinnedBadge}
-            <div class="absolute top-1.5 right-1.5 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] text-xs">
-              <i class="fa-solid fa-film"></i>
+          <div onclick="openProfileMediaViewer(${post.id})" class="bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/50 rounded-2xl overflow-hidden group cursor-pointer transition duration-300 shadow-lg flex flex-col">
+            <!-- 16:9 Thumbnail Container -->
+            <div class="relative aspect-video w-full bg-[#0B0E14] overflow-hidden">
+              <img src="${thumb}" alt="${escapeHtml(post.title || 'Video')}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ease-out">
+              ${pinnedBadge}
+              
+              <!-- Duration Badge -->
+              <div class="absolute bottom-2 right-2 bg-[#0B0E14]/85 backdrop-blur-md border border-white/10 text-white text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md">
+                ${duration}
+              </div>
+
+              <!-- Play Icon Overlay on Hover -->
+              <div class="absolute inset-0 bg-[#0B0E14]/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <div class="w-11 h-11 rounded-xl bg-[#7C3AED] text-white flex items-center justify-center shadow-lg shadow-[#7C3AED]/40 transform scale-90 group-hover:scale-100 transition">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                </div>
+              </div>
             </div>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-1.5">
-              <span class="text-[10px] text-white font-mono font-bold flex items-center gap-1">
-                <i class="fa-solid fa-eye text-sky-400 text-[9px]"></i> ${viewsCount}
-              </span>
-            </div>
-            <div class="absolute bottom-1 left-1.5 text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] text-[10px] font-mono font-bold flex items-center gap-1 sm:hidden">
-              <i class="fa-solid fa-eye text-[9px] text-sky-400"></i> ${viewsCount}
+
+            <!-- Video Info Footer -->
+            <div class="p-3.5 flex flex-col justify-between flex-1 gap-2">
+              <h4 class="text-xs sm:text-sm font-semibold text-[#F8FAFC] line-clamp-2 group-hover:text-[#7C3AED] transition">
+                ${escapeHtml(post.title || 'Untitled Video')}
+              </h4>
+              <div class="flex items-center justify-between text-[11px] text-[#94A3B8]">
+                <span class="flex items-center gap-1">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <span class="font-mono">${viewsCount}</span>
+                </span>
+                <span class="font-mono text-[10px]">@${escapeHtml(post.creator || CURRENT_PROFILE_DATA?.username || 'user')}</span>
+              </div>
             </div>
           </div>
         `;
@@ -2912,13 +2991,10 @@ async function loadProfileGridPosts(tab) {
     }
   } catch (err) {
     console.error('Failed to load profile posts:', err);
-    grid.innerHTML = '<div class="col-span-3 py-10 text-center text-xs text-rose-400">Failed to load posts.</div>';
+    grid.innerHTML = '<div class="col-span-full py-10 text-center text-xs text-rose-400">Failed to load posts.</div>';
   }
 }
 
-// ----------------------------------------------------------------------------
-// FULL POST / VIDEO VIEWER MODAL
-// ----------------------------------------------------------------------------
 function openProfileMediaViewer(videoId) {
   const post = PROFILE_POSTS_CACHE.find(p => p.id === videoId);
   if (!post) return;

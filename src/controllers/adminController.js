@@ -96,7 +96,7 @@ function getStats(req, res, next) {
     const safeModeEnabled = db.prepare("SELECT value FROM settings WHERE key = 'safe_mode_enabled'").get()?.value !== 'false';
     const googleClientId = db.prepare("SELECT value FROM settings WHERE key = 'google_client_id'").get()?.value || '';
     const recaptchaSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_site_key'").get()?.value || config.recaptchaSiteKey || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK';
-    const recaptchaSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_secret_key'").get()?.value || config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZ0p6_tqzZ85t';
+    const recaptchaSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_secret_key'").get()?.value || config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZOp6_tqzZ85t';
 
     res.json({
       success: true,
@@ -444,7 +444,7 @@ function getSettings(req, res, next) {
     const turnstileSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_site_key'").get()?.value || '';
     const turnstileSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'turnstile_secret_key'").get()?.value || '';
     const recaptchaSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_site_key'").get()?.value || config.recaptchaSiteKey || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK';
-    const recaptchaSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_secret_key'").get()?.value || config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZ0p6_tqzZ85t';
+    const recaptchaSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_secret_key'").get()?.value || config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZOp6_tqzZ85t';
     const adminAccessKey = db.prepare("SELECT value FROM settings WHERE key = 'admin_access_key'").get()?.value || config.adminAccessKey || 'naved_master_786';
 
     res.json({

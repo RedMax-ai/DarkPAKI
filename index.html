@@ -67,15 +67,15 @@
                         mono: ['JetBrains Mono', 'monospace']
                     },
                     colors: {
-                        brand: {
-                            500: '#10b981',
-                            600: '#059669',
+                        obsidian: '#0B0E14',
+                        surface: '#131822',
+                        violet: {
+                            500: '#7C3AED',
+                            600: '#6D28D9',
+                            700: '#5B21B6'
                         },
-                        crimson: {
-                            500: '#f43f5e',
-                            600: '#e11d48',
-                            700: '#be123c',
-                        }
+                        textPrimary: '#F8FAFC',
+                        textMuted: '#94A3B8'
                     }
                 }
             }
@@ -190,13 +190,13 @@
         }
     </style>
 </head>
-<body class="bg-[#050508] text-white font-sans min-h-screen flex flex-col selection:bg-rose-600 selection:text-white overflow-x-hidden pb-24">
+<body class="bg-[#0B0E14] text-[#F8FAFC] font-sans min-h-screen flex flex-col selection:bg-[#7C3AED] selection:text-white overflow-x-hidden pb-28">
 
     <!-- ============================================================================
          1000X AMBIENT BACKGROUND GLOW (Dual Neon Emerald + Crimson Radial Lights)
          ============================================================================ -->
-    <div class="pointer-events-none fixed top-0 left-1/4 -translate-x-1/2 w-[550px] h-[320px] bg-[#10b981]/12 blur-[140px] rounded-full z-0 ambient-light-1"></div>
-    <div class="pointer-events-none fixed top-24 right-1/4 translate-x-1/2 w-[500px] h-[300px] bg-[#f43f5e]/15 blur-[140px] rounded-full z-0 ambient-light-1" style="animation-delay: -4s;"></div>
+    <div class="pointer-events-none fixed top-0 left-1/4 -translate-x-1/2 w-[600px] h-[340px] bg-[#7C3AED]/10 blur-[150px] rounded-full z-0 ambient-light-1"></div>
+    <div class="pointer-events-none fixed top-24 right-1/4 translate-x-1/2 w-[500px] h-[300px] bg-[#6D28D9]/08 blur-[150px] rounded-full z-0 ambient-light-1" style="animation-delay: -4s;"></div>
 
     <!-- ============================================================================
          MODAL: 18+ ADULT CONTENT WARNING & AGE VERIFICATION GATE
@@ -261,7 +261,7 @@
                 <span class="sm:hidden">Upload</span>
             </button>
             <button id="headerProfileBtn" onclick="openProfileOrLogin()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#121217] to-[#171318] hover:border-rose-500/60 border border-white/15 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-lg">
-                <div id="headerAvatarWrap" class="w-4 h-4 rounded-full overflow-hidden bg-[#262626] flex items-center justify-center shrink-0">
+                <div id="headerAvatarWrap" class="w-4 h-4 rounded-full overflow-hidden bg-[#18202d] flex items-center justify-center shrink-0">
                     <img id="headerAvatarImg" class="w-full h-full object-cover hidden" alt="Avatar" />
                     <i id="headerAvatarDefaultIcon" class="fa-solid fa-user text-[10px] text-neutral-400"></i>
                 </div>
@@ -830,383 +830,624 @@
         </div>
     </section>
 
+    <!-- Earning Dashboard is integrated into Creator Studio Hub (#studioViewEarnings) -->
+
     <!-- ============================================================================
-         PAGE 5: VERIFIED USER EARNING & CASH DASHBOARD
+         PAGE: SLEEK CREATOR VIDEO PLATFORM - USER PROFILE & CREATOR STUDIO HUB
          ============================================================================ -->
-    <section id="earningPageSection" class="hidden relative z-10 max-w-3xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-12 flex flex-col gap-4">
+    <section id="userProfileSection" class="hidden relative z-10 max-w-5xl w-full mx-auto px-3 sm:px-6 pt-4 pb-28 min-h-screen text-[#F8FAFC] font-sans">
         
-        <!-- User Profile Banner -->
-        <div class="bg-gradient-to-r from-[#170e14] via-[#100c14] to-[#0c0c12] border border-rose-500/40 rounded-3xl p-5 flex flex-wrap items-center justify-between gap-3 shadow-2xl">
-            <div class="flex items-center gap-3.5">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-red-700 text-white font-black text-xl flex items-center justify-center shadow-lg shadow-rose-600/40">
-                    <i class="fa-solid fa-crown text-amber-300 text-sm"></i>
+        <!-- 1. Modern Profile Header Card (#131822 with border-white/[0.08]) -->
+        <div class="bg-[#131822] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl relative">
+            
+            <!-- Cover Banner Area -->
+            <div class="h-32 sm:h-48 w-full bg-gradient-to-r from-[#1e1b4b] via-[#131822] to-[#0B0E14] relative border-b border-white/[0.06] overflow-hidden">
+                <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#7C3AED_1px,transparent_1px)] [background-size:16px_16px]"></div>
+            </div>
+
+            <!-- Profile Info Row -->
+            <div class="px-4 sm:px-7 pb-6 relative">
+                <!-- Avatar & Action Buttons Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 sm:-mt-16">
+                    <!-- Rounded Avatar with Quick-Update Overlay -->
+                    <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-4 border-[#131822] bg-[#0B0E14] shadow-2xl shrink-0 group">
+                        <img id="profileAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                        <div id="profileAvatarPlaceholder" class="w-full h-full flex items-center justify-center bg-[#0B0E14] text-[#94A3B8]">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <!-- Quick Avatar Edit Badge -->
+                        <button type="button" onclick="triggerQuickAvatarUpload()" title="Change Profile Photo" class="absolute bottom-1 right-1 w-7 h-7 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white flex items-center justify-center shadow-lg transition active:scale-95">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                                <path d="m15 5 4 4"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Action Buttons: Edit Profile (#7C3AED) + Share Profile (#131822 outlined) -->
+                    <div class="flex items-center gap-2.5 flex-wrap sm:mb-1">
+                        <button onclick="openEditProfileModal()" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition shadow-lg shadow-[#7C3AED]/25 flex items-center gap-2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                                <path d="m15 5 4 4"/>
+                            </svg>
+                            <span>Edit Profile</span>
+                        </button>
+                        <button onclick="shareProfileUrl()" class="bg-[#131822] hover:bg-[#1a2230] border border-white/[0.08] hover:border-white/[0.16] text-[#F8FAFC] font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="18" cy="5" r="3"/>
+                                <circle cx="6" cy="12" r="3"/>
+                                <circle cx="18" cy="19" r="3"/>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            </svg>
+                            <span>Share Profile</span>
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h2 id="earnUserName" class="text-base sm:text-lg font-black text-white">VIP Member</h2>
-                        <span class="bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-black px-2 py-0.5 rounded-full">
-                            18+ VIP Bound ✓
+
+                <!-- Display Name, @username & Details -->
+                <div class="mt-3 flex flex-col gap-1.5">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <h2 id="profileDisplayName" class="text-xl sm:text-2xl font-bold text-[#F8FAFC] leading-tight">DarkPAKI Creator</h2>
+                        <span id="profileTopUsername" class="text-xs text-[#94A3B8] font-mono bg-[#0B0E14] px-2.5 py-1 rounded-md border border-white/[0.08]">@username</span>
+                        <span id="profilePronouns" class="text-xs text-[#94A3B8] hidden"></span>
+                        <span id="profileBannerStrip" class="hidden text-xs text-[#7C3AED] bg-[#7C3AED]/15 px-2.5 py-0.5 rounded-full border border-[#7C3AED]/30 font-semibold items-center gap-1.5">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <polyline points="9 12 11 14 15 10"/>
+                            </svg>
+                            <span id="profileBannerText">Verified Creator</span>
                         </span>
                     </div>
-                    <p id="earnUserGmail" class="text-xs text-neutral-400 mt-0.5">Sign in to access your wallet</p>
-                    <p id="earnUserDeviceLock" class="text-[10px] font-mono text-amber-400 mt-0.5">Device Lock: Not Bound</p>
+
+                    <!-- Multi-line Bio -->
+                    <div id="profileBioContainer" class="text-xs sm:text-sm text-[#94A3B8] leading-relaxed mt-1 max-w-2xl whitespace-pre-wrap break-words hidden">
+                        <p id="profileBioText"></p>
+                    </div>
+                    <div id="profileEmptyBioPrompt" class="text-xs text-[#94A3B8]/60 italic mt-1">
+                        No bio added yet. Click "Edit Profile" to introduce your channel.
+                    </div>
+
+                    <!-- Clickable External Links Section -->
+                    <div id="profileLinksContainer" class="hidden flex items-center gap-2 flex-wrap mt-2">
+                        <!-- Rendered dynamically as clean slate chips -->
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="flex items-center gap-2">
-                <button onclick="switchView('home')" class="bg-white/10 hover:bg-white/15 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition">
-                    <i class="fa-solid fa-play mr-1 text-rose-500"></i> Watch & Earn
-                </button>
-                <button onclick="logoutCurrentSession()" class="bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-bold px-3 py-2 rounded-xl transition">
-                    Lock
-                </button>
+        <!-- 2. Horizontal Creator Stats Bar (Posts, Followers, Following, Total Views) -->
+        <div class="bg-[#131822] border border-white/[0.08] rounded-2xl p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mt-5 shadow-lg">
+            <div class="flex flex-col items-center justify-center p-2">
+                <span id="profileStatPosts" class="text-xl sm:text-2xl font-bold text-[#F8FAFC] font-mono leading-none">0</span>
+                <span class="text-xs text-[#94A3B8] mt-1.5 font-medium">Posts</span>
+            </div>
+            <div onclick="openFollowersListModal('followers')" class="flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-white/[0.02] rounded-xl transition">
+                <span id="profileStatFollowers" class="text-xl sm:text-2xl font-bold text-[#F8FAFC] font-mono leading-none">0</span>
+                <span class="text-xs text-[#94A3B8] mt-1.5 font-medium">Followers</span>
+            </div>
+            <div onclick="openFollowersListModal('following')" class="flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-white/[0.02] rounded-xl transition">
+                <span id="profileStatFollowing" class="text-xl sm:text-2xl font-bold text-[#F8FAFC] font-mono leading-none">0</span>
+                <span class="text-xs text-[#94A3B8] mt-1.5 font-medium">Following</span>
+            </div>
+            <div class="flex flex-col items-center justify-center p-2">
+                <span id="profileStatViews" class="text-xl sm:text-2xl font-bold text-[#7C3AED] font-mono leading-none">0</span>
+                <span class="text-xs text-[#94A3B8] mt-1.5 font-medium">Total Views</span>
             </div>
         </div>
 
-        <!-- Dual Wallet Balance & Live Stats Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-            <!-- 1. Coins Wallet -->
-            <div class="bg-[#0e0e14] border border-amber-500/40 rounded-3xl p-3.5 sm:p-4 shadow-xl flex flex-col justify-between">
-                <span class="text-[10px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1">
-                    <i class="fa-solid fa-coins text-amber-400"></i> My Coins
-                </span>
-                <p id="userCoinsBalance" class="text-2xl sm:text-3xl font-black text-amber-400 mt-1 font-mono">0</p>
-                <span class="text-[10px] text-amber-300/80 font-medium">100 Coins = $0.011</span>
-            </div>
-
-            <!-- 2. Cash Wallet -->
-            <div class="bg-[#0e0e14] border border-emerald-500/40 rounded-3xl p-3.5 sm:p-4 shadow-xl flex flex-col justify-between">
-                <span class="text-[10px] font-black uppercase text-emerald-400 tracking-wider flex items-center gap-1">
-                    <i class="fa-solid fa-wallet text-emerald-400"></i> Balance $
-                </span>
-                <p id="userWalletBalance" class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 font-mono">$0.00</p>
-                <span class="text-[10px] text-amber-300/90 font-medium">Binance Pay & USDT Ready</span>
-            </div>
-
-            <!-- 3. Total Referrals -->
-            <div class="bg-[#0e0e14] border border-white/10 rounded-3xl p-3.5 sm:p-4 shadow-xl flex flex-col justify-between">
-                <span class="text-[10px] font-black uppercase text-neutral-400 tracking-wider flex items-center gap-1">
-                    <i class="fa-solid fa-users text-sky-400"></i> Referrals
-                </span>
-                <p id="userReferralCount" class="text-2xl sm:text-3xl font-black text-sky-400 mt-1 font-mono">0</p>
-                <span class="text-[10px] text-neutral-400 font-medium">+1,100 Coins/ref</span>
-            </div>
-
-            <!-- 4. Video Ads Watched -->
-            <div class="bg-[#0e0e14] border border-white/10 rounded-3xl p-3.5 sm:p-4 shadow-xl flex flex-col justify-between">
-                <span class="text-[10px] font-black uppercase text-neutral-400 tracking-wider flex items-center gap-1">
-                    <i class="fa-solid fa-play text-rose-500"></i> Ads Watched
-                </span>
-                <p id="userAdsWatchedCount" class="text-2xl sm:text-3xl font-black text-white mt-1 font-mono">0</p>
-                <span class="text-[10px] text-rose-400 font-medium">+20–30 Coins & Cash/ad</span>
-            </div>
-        </div>
-
-        <!-- ============================================================================
-             CONVERT COINS TO CASH
-             ============================================================================ -->
-        
-        <!-- ============================================================================
-             CREATOR MONETIZATION PROGRAM (YOUTUBE PARTNER PROGRAM STYLE)
-             ============================================================================ -->
-        <div class="bg-gradient-to-r from-[#150f1a] via-[#100c16] to-[#09090f] border border-purple-500/40 rounded-3xl p-4 sm:p-5 flex flex-col gap-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-purple-500/20 pb-3">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-purple-600 to-rose-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-600/30">
-                        <i class="fa-solid fa-sack-dollar text-sm"></i>
+        <!-- 3. CREATOR STUDIO HUB (Workspace Card & Integrated Earning) -->
+        <div id="creatorStudioHubCard" class="bg-[#131822] border border-white/[0.08] rounded-2xl p-4 sm:p-6 mt-6 shadow-xl">
+            <!-- Studio Header Strip -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[#7C3AED]/15 text-[#7C3AED] border border-[#7C3AED]/30 flex items-center justify-center shrink-0">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                            <polyline points="2 17 12 22 22 17"/>
+                            <polyline points="2 12 12 17 22 12"/>
+                        </svg>
                     </div>
                     <div>
-                        <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                            <span>Creator Monetization Program</span>
-                            <span id="creatorMonetizedBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">★ Monetized Active</span>
+                        <h3 class="text-base sm:text-lg font-bold text-[#F8FAFC] flex items-center gap-2">
+                            <span>Creator Studio</span>
+                            <span class="text-[10px] font-mono font-bold bg-[#7C3AED]/15 text-[#7C3AED] border border-[#7C3AED]/30 px-2 py-0.5 rounded-full uppercase">Workspace</span>
                         </h3>
-                        <p class="text-[11px] text-purple-300/80">Earn on your videos & ads • 100 Coins = $0.011 USD Cash</p>
+                        <p class="text-xs text-[#94A3B8]">Manage content, earnings, channel performance, and security.</p>
                     </div>
                 </div>
-                <button onclick="checkAndOpenMonetizationModal()" id="applyMonetizationBtn" class="bg-gradient-to-r from-purple-600 to-rose-600 hover:from-purple-500 hover:to-rose-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-lg shadow-purple-600/25 flex items-center gap-1.5 shrink-0">
-                    <i class="fa-solid fa-bolt text-amber-300 text-xs"></i>
-                    <span id="applyMonetizeBtnText">Apply Now</span>
-                </button>
+
+                <!-- Studio Sub-Tabs Nav -->
+                <div class="flex items-center gap-1.5 bg-[#0B0E14] border border-white/[0.08] p-1 rounded-xl">
+                    <button type="button" id="studioTabOverviewBtn" onclick="switchCreatorStudioTab('overview')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#F8FAFC] bg-[#7C3AED] transition flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="7" height="9" x="3" y="3" rx="1"/>
+                            <rect width="7" height="5" x="14" y="3" rx="1"/>
+                            <rect width="7" height="9" x="14" y="12" rx="1"/>
+                            <rect width="7" height="5" x="3" y="16" rx="1"/>
+                        </svg>
+                        <span>Overview</span>
+                    </button>
+                    <button type="button" id="studioTabEarningsBtn" onclick="switchCreatorStudioTab('earnings')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#94A3B8] hover:text-[#F8FAFC] transition flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+                            <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+                        </svg>
+                        <span>Earnings</span>
+                    </button>
+                    <button type="button" id="studioTabAnalyticsBtn" onclick="switchCreatorStudioTab('analytics')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#94A3B8] hover:text-[#F8FAFC] transition flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        <span>Analytics</span>
+                    </button>
+                    <button type="button" id="studioTabSettingsBtn" onclick="switchCreatorStudioTab('settings')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#94A3B8] hover:text-[#F8FAFC] transition flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                        <span>Settings</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- Monetization Requirements Bars -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div class="p-3.5 bg-black/40 border border-white/10 rounded-2xl flex flex-col justify-between gap-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-neutral-300 font-bold flex items-center gap-1.5">
-                            <i class="fa-solid fa-eye text-rose-400"></i> Video Views Threshold
+            <!-- SUB-VIEW 1: OVERVIEW -->
+            <div id="studioViewOverview" class="pt-5 space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 flex flex-col justify-between">
+                        <span class="text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
+                                <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+                                <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+                            </svg>
+                            Available USD Balance
                         </span>
-                        <span id="reqViewsText" class="font-mono font-bold text-white">0 / 1,000 views</span>
-                    </div>
-                    <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div id="reqViewsBar" class="h-full bg-gradient-to-r from-rose-500 to-amber-500 w-0 transition-all duration-300"></div>
-                    </div>
-                    <span class="text-[10px] text-neutral-400">At least 1 video must reach 1,000+ views</span>
-                </div>
-
-                <div class="p-3.5 bg-black/40 border border-white/10 rounded-2xl flex flex-col justify-between gap-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-neutral-300 font-bold flex items-center gap-1.5">
-                            <i class="fa-solid fa-user-plus text-purple-400"></i> Followers Threshold
-                        </span>
-                        <span id="reqFollowersText" class="font-mono font-bold text-white">0 / 10 followers</span>
-                    </div>
-                    <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div id="reqFollowersBar" class="h-full bg-gradient-to-r from-purple-500 to-indigo-500 w-0 transition-all duration-300"></div>
-                    </div>
-                    <span class="text-[10px] text-neutral-400">Verified unique device follower anti-spam audit</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-gradient-to-r from-[#171106] via-[#120e09] to-[#0d0d12] border border-amber-500/40 rounded-3xl p-4 sm:p-5 flex flex-col gap-3.5 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-amber-500/20 pb-2.5">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-arrows-rotate text-sm"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm sm:text-base font-black text-white">Convert Coins to Cash</h3>
-                        <p class="text-[11px] text-amber-300/90 font-medium">Official Rate: 1,000 Coins = $0.11 USD Cash • Min 1,000 Coins</p>
-                    </div>
-                </div>
-                <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] font-black px-2.5 py-0.5 rounded-full hidden sm:inline-block">
-                    Instant Conversion
-                </span>
-            </div>
-
-            <!-- 1-Click Fast Conversion Buttons (Min 1,000 Coins) -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button onclick="handleConvertCoins(1000)" class="bg-[#1c1507] hover:bg-amber-600/30 border border-amber-500/30 hover:border-amber-400 text-amber-300 font-bold text-xs py-2 px-2.5 rounded-xl transition flex flex-col items-center">
-                    <span>1,000 Coins</span>
-                    <span class="text-[10px] text-emerald-400 font-mono">➔ $0.11 USD</span>
-                </button>
-                <button onclick="handleConvertCoins(5000)" class="bg-[#1c1507] hover:bg-amber-600/30 border border-amber-500/30 hover:border-amber-400 text-amber-300 font-bold text-xs py-2 px-2.5 rounded-xl transition flex flex-col items-center">
-                    <span>5,000 Coins</span>
-                    <span class="text-[10px] text-emerald-400 font-mono">➔ $0.55 USD</span>
-                </button>
-                <button onclick="handleConvertCoins(10000)" class="bg-[#1c1507] hover:bg-amber-600/30 border border-amber-500/30 hover:border-amber-400 text-amber-300 font-bold text-xs py-2 px-2.5 rounded-xl transition flex flex-col items-center">
-                    <span>10,000 Coins</span>
-                    <span class="text-[10px] text-emerald-400 font-mono">➔ $1.10 USD</span>
-                </button>
-                <button onclick="handleConvertCoins('all')" class="bg-gradient-to-r from-amber-600 to-yellow-600 hover:brightness-110 text-black font-black text-xs py-2 px-2.5 rounded-xl transition flex flex-col items-center shadow-lg">
-                    <span>Convert ALL</span>
-                    <span class="text-[10px] font-mono text-neutral-900 font-black">➔ Total $ USD</span>
-                </button>
-            </div>
-
-            <!-- Custom Coins Converter Form -->
-            <div class="flex items-center gap-2 pt-1">
-                <input id="customConvertCoinsInput" type="number" min="1000" step="100" placeholder="Custom Coins (Min 1,000, e.g. 1000, 2000, 5000)" class="flex-1 bg-black/60 border border-neutral-700 focus:border-amber-500 rounded-xl px-3.5 py-2 text-xs text-white outline-none">
-                <button onclick="handleConvertCustomCoins()" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-black text-xs px-4 py-2 rounded-xl transition shadow-lg shrink-0">
-                    Convert to $
-                </button>
-            </div>
-        </div>
-
-        <!-- ============================================================================
-             WATCH ADS TO EARN COINS ACTION BANNER
-             ============================================================================ -->
-        <div class="bg-gradient-to-r from-[#170e18] via-[#120a13] to-[#0c080d] border border-rose-500/35 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
-                    <i class="fa-solid fa-play text-base"></i>
-                </div>
-                <div>
-                    <h4 class="text-sm font-black text-white">Watch Video Ads & Earn Coins</h4>
-                    <p class="text-xs text-neutral-400">Every short second sponsor ad grants coin instantly.</p>
-                </div>
-            </div>
-            <button onclick="watchAdForCoins()" class="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-red-600 hover:brightness-110 active:scale-95 text-white font-bold text-xs py-2.5 px-5 rounded-xl transition shrink-0 shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-circle-play"></i>
-                <span>Watch Ad Now</span>
-            </button>
-        </div>
-
-        <!-- Refer & Earn Box -->
-        <div class="bg-[#0c0c12] border border-white/15 rounded-3xl p-4 sm:p-5 flex flex-col gap-3 shadow-xl">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                        <i class="fa-solid fa-gift text-amber-400"></i>
-                        <span>Refer to Earn: +1,100 Coins Per Verified Friend</span>
-                    </h3>
-                    <p class="text-xs text-neutral-400">Anti-fraud system verifies 1 unique device per referral link.</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <input id="userReferralLinkInput" type="text" readonly value="https://darkpaki.vercel.app/?ref=DPK786" class="flex-1 bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-emerald-400 outline-none">
-                <button onclick="copyReferralLink()" class="bg-gradient-to-r from-emerald-600 to-green-600 hover:brightness-110 text-white font-bold text-xs px-4 py-2.5 rounded-xl shrink-0 transition shadow-lg">
-                    <i class="fa-solid fa-copy mr-1"></i> Copy
-                </button>
-            </div>
-            <!-- Social Share Buttons for Referral -->
-            <div class="flex items-center gap-2 pt-1">
-                <button onclick="shareReferralWhatsApp()" class="flex-1 bg-[#122e1b] hover:bg-[#183d24] border border-emerald-500/30 text-emerald-300 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
-                    <i class="fa-brands fa-whatsapp text-sm"></i> Share on WhatsApp
-                </button>
-                <button onclick="shareReferralTelegram()" class="flex-1 bg-[#122433] hover:bg-[#183247] border border-sky-500/30 text-sky-300 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
-                    <i class="fa-brands fa-telegram text-sm"></i> Share on Telegram
-                </button>
-            </div>
-        </div>
-
-        <!-- Instant USD Payout (Binance Pay & Crypto USDT) Form -->
-        <div class="bg-[#0c0c12] border border-white/15 rounded-3xl p-4 sm:p-5 flex flex-col gap-3 shadow-xl">
-            <div class="flex items-center justify-between">
-                <h3 class="text-sm font-black text-white flex items-center gap-2">
-                    <i class="fa-solid fa-bolt text-amber-400"></i>
-                    <span>Instant USD Payout (Binance Pay & Crypto USDT)</span>
-                </h3>
-                <span class="text-[10px] text-amber-300 font-bold bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <i class="fa-solid fa-check text-[9px]"></i> 0% Fee Binance Pay / BEP20
-                </span>
-            </div>
-            <form onsubmit="submitWithdrawalRequest(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <input id="withdrawUpiInput" type="text" required placeholder="Enter Binance Pay ID, UID or USDT Address" class="bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none">
-                <input id="withdrawAmountInput" type="number" required min="10" step="1" placeholder="Amount (Min $10)" class="bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none">
-                <button type="submit" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:brightness-110 text-black font-black text-xs py-2.5 px-4 rounded-xl transition shadow-lg shadow-amber-500/25 flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-arrow-down-to-bracket text-xs"></i>
-                    <span>Withdraw USD (Min $10)</span>
-                </button>
-            </form>
-            <p class="text-[11px] text-neutral-400 flex items-center gap-1.5">
-                <i class="fa-solid fa-circle-info text-amber-400 text-xs"></i>
-                <span>Fastest & 0% Gas Fee: Enter your <b>Binance Pay ID / UID</b> or your Trust Wallet USDT (BEP20 / TRC20) address.</span>
-            </p>
-        </div>
-    </section>
-
-    <!-- ============================================================================
-         PAGE 6: INSTAGRAM-STYLE USER PROFILE SCREEN
-         ============================================================================ -->
-    <section id="userProfileSection" class="hidden relative z-10 max-w-md sm:max-w-lg w-full mx-auto px-0 pt-0 pb-24 bg-black min-h-screen text-[#F5F5F5] font-sans">
-        
-        <!-- Top Navigation Bar -->
-        <div class="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
-            <button onclick="openUserUploadModal()" aria-label="Create Post" class="w-8 h-8 rounded-full flex items-center justify-center text-[#F5F5F5] hover:bg-[#1C1E21] active:scale-95 transition">
-                <i class="fa-solid fa-plus text-base"></i>
-            </button>
-            <div onclick="openAccountSwitchDropdown()" class="flex items-center gap-1.5 cursor-pointer">
-                <span id="profileTopUsername" class="text-sm sm:text-base font-bold text-[#F5F5F5] tracking-tight">@username</span>
-                <i class="fa-solid fa-chevron-down text-[10px] text-[#A8A8A8]"></i>
-            </div>
-            <button onclick="openProfileDrawer()" aria-label="Open Menu" class="w-8 h-8 rounded-full flex items-center justify-center text-[#F5F5F5] hover:bg-[#1C1E21] active:scale-95 transition">
-                <i class="fa-solid fa-bars text-lg"></i>
-            </button>
-        </div>
-
-        <!-- Profile Header & Stats -->
-        <div class="px-4 pt-4 pb-2 flex flex-col gap-3.5">
-            <!-- Row: Avatar + 3-Column Stats -->
-            <div class="flex items-center justify-between gap-4">
-                <!-- Circular Avatar with '+' badge overlay -->
-                <div class="relative shrink-0">
-                    <div class="w-20 h-20 sm:w-[88px] sm:h-[88px] rounded-full p-[2.5px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 flex items-center justify-center shadow-lg">
-                        <div class="w-full h-full rounded-full bg-black overflow-hidden flex items-center justify-center border-2 border-black">
-                            <img id="profileAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden">
-                            <div id="profileAvatarPlaceholder" class="w-full h-full flex items-center justify-center bg-[#262626] text-[#A8A8A8]">
-                                <i class="fa-solid fa-user text-3xl"></i>
-                            </div>
+                        <div class="mt-2 flex items-baseline justify-between">
+                            <span id="overviewWalletBalance" class="text-2xl font-bold font-mono text-[#F8FAFC]">$0.00</span>
+                            <span class="text-[10px] text-emerald-400 font-mono">Binance Pay / USDT</span>
                         </div>
                     </div>
-                    <!-- Quick Avatar Upload Badge -->
-                    <button type="button" onclick="triggerQuickAvatarUpload()" title="Change Profile Photo" class="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#0095F6] hover:bg-sky-400 text-white flex items-center justify-center border-2 border-black shadow active:scale-90 transition">
-                        <i class="fa-solid fa-plus text-[11px]"></i>
+
+                    <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 flex flex-col justify-between">
+                        <span class="text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-amber-400">
+                                <circle cx="12" cy="12" r="8"/>
+                                <path d="M12 6v12"/>
+                                <path d="M15 9.5a3 3 0 0 0-6 0c0 3 6 2 6 5a3 3 0 0 1-6 0"/>
+                            </svg>
+                            Reward Coins
+                        </span>
+                        <div class="mt-2 flex items-baseline justify-between">
+                            <span id="overviewCoinsBalance" class="text-2xl font-bold font-mono text-[#F8FAFC]">0</span>
+                            <span class="text-[10px] text-[#94A3B8] font-mono">1,000 Coins = $0.11</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 flex flex-col justify-between">
+                        <span class="text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-[#7C3AED]">
+                                <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            Total Views
+                        </span>
+                        <div class="mt-2 flex items-baseline justify-between">
+                            <span id="overviewViewsCount" class="text-2xl font-bold font-mono text-[#7C3AED]">0</span>
+                            <span class="text-[10px] text-[#94A3B8] font-mono">Channel Wide</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div class="flex items-center gap-2.5 flex-wrap pt-1">
+                    <button type="button" onclick="openUserUploadModal()" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-[#7C3AED]/20">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        <span>Upload New Video</span>
+                    </button>
+                    <button type="button" onclick="switchCreatorStudioTab('earnings')" class="bg-[#0B0E14] hover:bg-[#18202d] border border-white/[0.08] text-[#F8FAFC] font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+                            <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+                        </svg>
+                        <span>Manage Earnings & Payout</span>
+                    </button>
+                    <button type="button" onclick="switchCreatorStudioTab('analytics')" class="bg-[#0B0E14] hover:bg-[#18202d] border border-white/[0.08] text-[#F8FAFC] font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        <span>View Analytics</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUB-VIEW 2: EARNINGS TAB (Full Earning Page Moved Inside Creator Studio) -->
+            <div id="studioViewEarnings" class="pt-5 space-y-5 hidden">
+                <!-- Wallet & Coins Strip -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
+                                    <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+                                    <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+                                </svg>
+                                Wallet Cash Balance
+                            </span>
+                            <p id="userWalletBalance" class="text-2xl sm:text-3xl font-bold font-mono text-[#F8FAFC] mt-1">$0.00</p>
+                        </div>
+                        <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md">Binance Pay Ready</span>
+                    </div>
+
+                    <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-amber-400">
+                                    <circle cx="12" cy="12" r="8"/>
+                                    <path d="M12 6v12"/>
+                                    <path d="M15 9.5a3 3 0 0 0-6 0c0 3 6 2 6 5a3 3 0 0 1-6 0"/>
+                                </svg>
+                                Reward Coins
+                            </span>
+                            <p id="userCoinsBalance" class="text-2xl sm:text-3xl font-bold font-mono text-[#F8FAFC] mt-1">0</p>
+                        </div>
+                        <span class="text-[10px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md">1,000 = $0.11 USD</span>
+                    </div>
+                </div>
+
+                <!-- Creator Monetization Program -->
+                <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 sm:p-5 flex flex-col gap-3.5">
+                    <div class="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-[#7C3AED]/15 text-[#7C3AED] border border-[#7C3AED]/30 flex items-center justify-center shrink-0">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
+                                    <span>Creator Monetization Program</span>
+                                    <span id="creatorMonetizedBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">Verified Partner</span>
+                                </h4>
+                                <p class="text-[11px] text-[#94A3B8]">Earn revenue from video views & ads.</p>
+                            </div>
+                        </div>
+                        <button onclick="checkAndOpenMonetizationModal()" id="applyMonetizationBtn" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] text-xs font-semibold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shrink-0">
+                            <span id="applyMonetizeBtnText">Apply Now</span>
+                        </button>
+                    </div>
+
+                    <!-- Monetization Requirements Progress -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="p-3 bg-[#131822] border border-white/[0.06] rounded-xl flex flex-col justify-between gap-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[#94A3B8] font-medium flex items-center gap-1.5">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-rose-400">
+                                        <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    Views Threshold
+                                </span>
+                                <span id="reqViewsText" class="font-mono font-bold text-[#F8FAFC]">0 / 1,000 views</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                                <div id="reqViewsBar" class="h-full bg-[#7C3AED] w-0 transition-all duration-300"></div>
+                            </div>
+                            <span class="text-[10px] text-[#94A3B8]/70">At least 1 video must reach 1,000+ views</span>
+                        </div>
+
+                        <div class="p-3 bg-[#131822] border border-white/[0.06] rounded-xl flex flex-col justify-between gap-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[#94A3B8] font-medium flex items-center gap-1.5">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-[#7C3AED]">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <line x1="19" y1="8" x2="19" y2="14"/>
+                                        <line x1="22" y1="11" x2="16" y2="11"/>
+                                    </svg>
+                                    Followers Threshold
+                                </span>
+                                <span id="reqFollowersText" class="font-mono font-bold text-[#F8FAFC]">0 / 10 followers</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                                <div id="reqFollowersBar" class="h-full bg-[#7C3AED] w-0 transition-all duration-300"></div>
+                            </div>
+                            <span class="text-[10px] text-[#94A3B8]/70">Verified unique device followers</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Convert Coins to Cash Form -->
+                <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 sm:p-5 flex flex-col gap-3">
+                    <div class="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-amber-400">
+                                <path d="m16 3 4 4-4 4"/>
+                                <path d="M20 7H4"/>
+                                <path d="m8 21-4-4 4-4"/>
+                                <path d="M4 17h16"/>
+                            </svg>
+                            <h4 class="text-sm font-bold text-[#F8FAFC]">Convert Coins to Cash</h4>
+                        </div>
+                        <span class="text-[10px] text-[#94A3B8] font-mono">1,000 Coins = $0.11 USD</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button onclick="handleConvertCoins(1000)" class="bg-[#131822] hover:bg-[#1a2230] border border-white/[0.08] hover:border-[#7C3AED]/40 text-[#F8FAFC] font-semibold text-xs py-2 px-2.5 rounded-xl transition flex flex-col items-center">
+                            <span>1,000 Coins</span>
+                            <span class="text-[10px] text-emerald-400 font-mono">$0.11 USD</span>
+                        </button>
+                        <button onclick="handleConvertCoins(5000)" class="bg-[#131822] hover:bg-[#1a2230] border border-white/[0.08] hover:border-[#7C3AED]/40 text-[#F8FAFC] font-semibold text-xs py-2 px-2.5 rounded-xl transition flex flex-col items-center">
+                            <span>5,000 Coins</span>
+                            <span class="text-[10px] text-emerald-400 font-mono">$0.55 USD</span>
+                        </button>
+                        <button onclick="handleConvertCoins(10000)" class="bg-[#131822] hover:bg-[#1a2230] border border-white/[0.08] hover:border-[#7C3AED]/40 text-[#F8FAFC] font-semibold text-xs py-2 px-2.5 rounded-xl transition flex flex-col items-center">
+                            <span>10,000 Coins</span>
+                            <span class="text-[10px] text-emerald-400 font-mono">$1.10 USD</span>
+                        </button>
+                        <button onclick="handleConvertCoins('all')" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] font-semibold text-xs py-2 px-2.5 rounded-xl transition flex flex-col items-center shadow-lg shadow-[#7C3AED]/20">
+                            <span>Convert All</span>
+                            <span class="text-[10px] text-[#F8FAFC]/80 font-mono">Total Balance</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <input id="customConvertCoinsInput" type="number" min="1000" step="100" placeholder="Custom Coins (Min 1,000)" class="flex-1 bg-[#131822] border border-white/[0.08] focus:border-[#7C3AED] rounded-xl px-3.5 py-2 text-xs text-[#F8FAFC] outline-none">
+                        <button onclick="handleConvertCustomCoins()" class="bg-[#131822] hover:bg-[#1a2230] border border-white/[0.08] hover:border-[#7C3AED]/40 text-[#F8FAFC] font-semibold text-xs px-4 py-2 rounded-xl transition shrink-0">
+                            Convert
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Watch Ads for Coins -->
+                <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center justify-center shrink-0">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-[#F8FAFC]">Watch Video Ads & Earn Coins</h4>
+                            <p class="text-xs text-[#94A3B8]">Watched: <span id="userAdsWatchedCount" class="font-mono text-[#F8FAFC]">0 Videos</span> (+20–30 Coins per ad)</p>
+                        </div>
+                    </div>
+                    <button onclick="watchAdForCoins()" class="w-full sm:w-auto bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] font-semibold text-xs py-2 px-4 rounded-xl transition shrink-0 flex items-center justify-center gap-2 shadow-lg shadow-[#7C3AED]/20">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <span>Watch Ad Now</span>
                     </button>
                 </div>
 
-                <!-- 3-Column Stats Row (Clickable) -->
-                <div class="flex-1 flex items-center justify-around text-center py-2">
-                    <div class="flex flex-col items-center cursor-pointer select-none">
-                        <span id="profileStatPosts" class="text-base sm:text-lg font-bold text-[#F5F5F5] font-mono leading-none">0</span>
-                        <span class="text-xs text-[#A8A8A8] mt-1 font-normal">posts</span>
+                <!-- Refer & Earn Link -->
+                <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-[#7C3AED]">
+                                    <polyline points="20 12 20 22 4 22 4 12"/>
+                                    <rect width="20" height="5" x="2" y="7"/>
+                                    <line x1="12" y1="22" x2="12" y2="7"/>
+                                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                                </svg>
+                                <span>Referral Link: +1,100 Coins Per Friend</span>
+                            </h4>
+                            <p class="text-xs text-[#94A3B8]">Total Verified Referrals: <span id="userReferralCount" class="font-mono text-[#F8FAFC]">0</span></p>
+                        </div>
                     </div>
-                    <div onclick="openFollowersListModal('followers')" class="flex flex-col items-center cursor-pointer select-none hover:opacity-80 transition">
-                        <span id="profileStatFollowers" class="text-base sm:text-lg font-bold text-[#F5F5F5] font-mono leading-none">0</span>
-                        <span class="text-xs text-[#A8A8A8] mt-1 font-normal">followers</span>
+                    <div class="flex items-center gap-2">
+                        <input id="userReferralLinkInput" type="text" readonly value="https://dark.anizon.watch/?ref=DPK786" class="flex-1 bg-[#131822] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#7C3AED] outline-none">
+                        <button onclick="copyReferralLink()" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] font-semibold text-xs px-4 py-2.5 rounded-xl shrink-0 transition flex items-center gap-1.5 shadow-lg shadow-[#7C3AED]/20">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                            </svg>
+                            <span>Copy</span>
+                        </button>
                     </div>
-                    <div onclick="openFollowersListModal('following')" class="flex flex-col items-center cursor-pointer select-none hover:opacity-80 transition">
-                        <span id="profileStatFollowing" class="text-base sm:text-lg font-bold text-[#F5F5F5] font-mono leading-none">0</span>
-                        <span class="text-xs text-[#A8A8A8] mt-1 font-normal">following</span>
+                    <div class="flex items-center gap-2 pt-1">
+                        <button onclick="shareReferralWhatsApp()" class="flex-1 bg-[#131822] hover:bg-[#1a2230] border border-white/[0.08] text-[#F8FAFC] text-xs font-semibold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
+                            Share on WhatsApp
+                        </button>
+                        <button onclick="shareReferralTelegram()" class="flex-1 bg-[#131822] hover:bg-[#1a2230] border border-white/[0.08] text-[#F8FAFC] text-xs font-semibold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
+                            Share on Telegram
+                        </button>
                     </div>
+                </div>
+
+                <!-- Instant USD Payout (Binance Pay & Crypto USDT) Form -->
+                <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 sm:p-5 flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            <span>Instant USD Payout (Binance Pay & Crypto USDT)</span>
+                        </h4>
+                        <span class="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">0% Fee Binance Pay</span>
+                    </div>
+                    <form onsubmit="submitWithdrawalRequest(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <input id="withdrawUpiInput" type="text" required placeholder="Enter Binance Pay ID, UID or USDT Address" class="bg-[#131822] border border-white/[0.08] focus:border-[#7C3AED] rounded-xl px-3.5 py-2.5 text-xs text-[#F8FAFC] outline-none">
+                        <input id="withdrawAmountInput" type="number" required min="10" step="1" placeholder="Amount (Min $10)" class="bg-[#131822] border border-white/[0.08] focus:border-[#7C3AED] rounded-xl px-3.5 py-2.5 text-xs text-[#F8FAFC] outline-none">
+                        <button type="submit" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] font-semibold text-xs py-2.5 px-4 rounded-xl transition shadow-lg shadow-[#7C3AED]/25 flex items-center justify-center gap-1.5">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            <span>Withdraw USD (Min $10)</span>
+                        </button>
+                    </form>
+                    <p class="text-[11px] text-[#94A3B8] flex items-center gap-1.5">
+                        <span>Fastest & 0% Gas Fee: Enter your <b>Binance Pay ID / UID</b> or your Trust Wallet USDT (BEP20 / TRC20) address.</span>
+                    </p>
                 </div>
             </div>
 
-            <!-- Display Name & Pronouns -->
-            <div class="flex flex-col">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <h2 id="profileDisplayName" class="text-sm sm:text-base font-bold text-[#F5F5F5] leading-tight">DarkPAKI User</h2>
-                    <span id="profilePronouns" class="text-xs text-[#A8A8A8] hidden"></span>
+            <!-- SUB-VIEW 3: ANALYTICS TAB -->
+            <div id="studioViewAnalytics" class="pt-5 space-y-4 hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4">
+                        <span class="text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-[#7C3AED]">
+                                <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            Total Views
+                        </span>
+                        <p id="analyticsTotalViews" class="text-2xl font-bold font-mono text-[#F8FAFC] mt-1.5">0</p>
+                        <span class="text-[10px] text-[#94A3B8] block mt-1">Across all uploaded videos</span>
+                    </div>
+
+                    <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4">
+                        <span class="text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="m4.93 4.93 4.24 4.24"/>
+                                <path d="m14.83 9.17 4.24-4.24"/>
+                                <path d="m14.83 14.83 4.24 4.24"/>
+                                <path d="m9.17 14.83-4.24 4.24"/>
+                            </svg>
+                            Profile Reach
+                        </span>
+                        <p id="analyticsProfileReach" class="text-2xl font-bold font-mono text-[#F8FAFC] mt-1.5">0</p>
+                        <span class="text-[10px] text-[#94A3B8] block mt-1">Accounts reached in 30 days</span>
+                    </div>
+
+                    <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4">
+                        <span class="text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
+                                <polygon points="23 7 16 12 23 17 23 7"/>
+                                <rect width="14" height="14" x="1" y="5" rx="2" ry="2"/>
+                            </svg>
+                            Uploads Count
+                        </span>
+                        <p id="analyticsUploadsCount" class="text-2xl font-bold font-mono text-[#F8FAFC] mt-1.5">0</p>
+                        <span class="text-[10px] text-[#94A3B8] block mt-1">Active published posts</span>
+                    </div>
+
+                    <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4">
+                        <span class="text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                            </svg>
+                            Followers Growth
+                        </span>
+                        <p id="analyticsFollowersCount" class="text-2xl font-bold font-mono text-[#F8FAFC] mt-1.5">0</p>
+                        <span class="text-[10px] text-[#94A3B8] block mt-1">Real authenticated followers</span>
+                    </div>
+                </div>
+
+                <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 text-xs text-[#94A3B8] leading-relaxed">
+                    <span class="font-bold text-[#F8FAFC] block mb-1">Performance Overview</span>
+                    Real-time video analytics are calculated from unique device views and engagement logs stored in the database. As you post new videos, your metrics update automatically.
                 </div>
             </div>
 
-            <!-- Profile Banner Strip (Optional Creator Badge) -->
-            <div id="profileBannerStrip" class="hidden items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/15 via-purple-500/15 to-transparent border border-rose-500/30 text-xs">
-                <i id="profileBannerIcon" class="fa-solid fa-crown text-amber-400 text-xs"></i>
-                <span id="profileBannerText" class="font-bold text-white text-[11px] truncate">Creator Spotlight</span>
-            </div>
-
-            <!-- Multi-line Bio (Hidden when empty) -->
-            <div id="profileBioContainer" class="text-xs text-[#F5F5F5] leading-relaxed whitespace-pre-wrap break-words hidden">
-                <p id="profileBioText"></p>
-            </div>
-            <div id="profileEmptyBioPrompt" class="text-xs text-[#A8A8A8] italic">
-                <span>No bio yet. Tap "Edit profile" to introduce yourself.</span>
-            </div>
-
-            <!-- Clickable External Links Section -->
-            <div id="profileLinksContainer" class="hidden flex flex-col gap-1 pt-0.5">
-                <!-- Rendered dynamically -->
-            </div>
-
-            <!-- Compact Creator Dashboard Card -->
-            <div id="profileDashboardCard" class="bg-[#1C1E21] hover:bg-[#262626] border border-[#363636] rounded-xl p-3 flex items-center justify-between transition cursor-pointer" onclick="switchView('earning')">
-                <div class="flex flex-col">
-                    <span class="text-xs font-bold text-[#F5F5F5]">Professional dashboard</span>
-                    <span id="profileDashboardReach" class="text-[11px] text-[#A8A8A8] mt-0.5">0 accounts reached in the last 30 days.</span>
+            <!-- SUB-VIEW 4: SETTINGS TAB -->
+            <div id="studioViewSettings" class="pt-5 space-y-4 hidden">
+                <div class="bg-[#0B0E14] border border-white/[0.08] rounded-xl p-4 space-y-3">
+                    <h5 class="text-xs font-bold text-[#F8FAFC] uppercase tracking-wider">Account & Security</h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="p-3 bg-[#131822] border border-white/[0.06] rounded-xl">
+                            <span class="text-[11px] text-[#94A3B8] block">Registered Email</span>
+                            <span id="settingsUserEmail" class="font-mono text-[#F8FAFC] font-semibold">user@gmail.com</span>
+                        </div>
+                        <div class="p-3 bg-[#131822] border border-white/[0.06] rounded-xl">
+                            <span class="text-[11px] text-[#94A3B8] block">Hardware Device Lock</span>
+                            <span id="settingsUserDevice" class="font-mono text-[#F8FAFC] font-semibold truncate block">DPK-DEVICE</span>
+                        </div>
+                    </div>
                 </div>
-                <i class="fa-solid fa-chevron-right text-xs text-[#A8A8A8]"></i>
-            </div>
 
-            <!-- Action Buttons Row -->
-            <div class="grid grid-cols-2 gap-2 pt-1">
-                <button onclick="openEditProfileModal()" class="w-full bg-[#1C1E21] hover:bg-[#262626] active:bg-[#363636] text-[#F5F5F5] font-bold text-xs py-2 px-3 rounded-lg border border-[#363636] transition flex items-center justify-center gap-1.5">
-                    <span>Edit profile</span>
-                </button>
-                <button onclick="shareProfileUrl()" class="w-full bg-[#1C1E21] hover:bg-[#262626] active:bg-[#363636] text-[#F5F5F5] font-bold text-xs py-2 px-3 rounded-lg border border-[#363636] transition flex items-center justify-center gap-1.5">
-                    <span>Share profile</span>
-                </button>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <button type="button" onclick="openEditProfileModal()" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-[#7C3AED]/20">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                            <path d="m15 5 4 4"/>
+                        </svg>
+                        <span>Edit Profile Information</span>
+                    </button>
+                    <button type="button" onclick="openLegalModal('privacy')" class="bg-[#0B0E14] hover:bg-[#18202d] border border-white/[0.08] text-[#94A3B8] hover:text-[#F8FAFC] font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        <span>Privacy & Security</span>
+                    </button>
+                    <button type="button" onclick="handleLogoutUser()" class="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-semibold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2 ml-auto">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span>Log Out</span>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Content Tabs (Posts / Reels / Saved) -->
-        <div class="mt-4 border-t border-[#262626] flex items-center">
-            <button id="profileTabPostsBtn" onclick="switchProfileTab('posts')" class="flex-1 py-3 border-b-2 border-[#F5F5F5] text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition">
-                <i class="fa-solid fa-table-cells text-base"></i>
+        <!-- 4. Content Tabs (Videos / Posts / Saved) -->
+        <div class="mt-8 border-b border-white/[0.08] flex items-center gap-2 sm:gap-6">
+            <button id="profileTabVideosBtn" onclick="switchProfileTab('videos')" class="pb-3 border-b-2 border-[#7C3AED] text-[#F8FAFC] font-semibold text-sm flex items-center gap-2 transition px-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7"/>
+                    <rect width="14" height="14" x="1" y="5" rx="2" ry="2"/>
+                </svg>
+                <span>Videos</span>
             </button>
-            <button id="profileTabReelsBtn" onclick="switchProfileTab('reels')" class="flex-1 py-3 border-b-2 border-transparent text-[#A8A8A8] hover:text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition">
-                <i class="fa-solid fa-film text-base"></i>
+            <button id="profileTabPostsBtn" onclick="switchProfileTab('posts')" class="pb-3 border-b-2 border-transparent text-[#94A3B8] hover:text-[#F8FAFC] font-semibold text-sm flex items-center gap-2 transition px-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="7" height="7" x="3" y="3" rx="1"/>
+                    <rect width="7" height="7" x="14" y="3" rx="1"/>
+                    <rect width="7" height="7" x="14" y="14" rx="1"/>
+                    <rect width="7" height="7" x="3" y="14" rx="1"/>
+                </svg>
+                <span>Posts</span>
             </button>
-            <button id="profileTabSavedBtn" onclick="switchProfileTab('saved')" class="flex-1 py-3 border-b-2 border-transparent text-[#A8A8A8] hover:text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition">
-                <i class="fa-regular fa-bookmark text-base"></i>
+            <button id="profileTabSavedBtn" onclick="switchProfileTab('saved')" class="pb-3 border-b-2 border-transparent text-[#94A3B8] hover:text-[#F8FAFC] font-semibold text-sm flex items-center gap-2 transition px-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                </svg>
+                <span>Saved</span>
             </button>
         </div>
 
-        <!-- Tight 3-Column Media Grid (gap: 2px) -->
-        <div id="profileMediaGrid" class="grid grid-cols-3 gap-[2px] bg-black min-h-[220px]">
-            <!-- Rendered dynamically -->
+        <!-- 5. Responsive 16:9 / 4:5 Creator Media Grid -->
+        <div id="profileMediaGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mt-5">
+            <!-- Rendered dynamically as high-end 16:9 cards -->
         </div>
 
-        <!-- Clean Zero-Mock Empty State -->
-        <div id="profileGridEmptyState" class="hidden flex-col items-center justify-center py-14 px-4 text-center">
-            <div class="w-16 h-16 rounded-full border-2 border-[#363636] flex items-center justify-center text-[#A8A8A8] mb-3">
-                <i id="profileEmptyIcon" class="fa-solid fa-camera text-2xl"></i>
+        <!-- Dead-Center Empty State -->
+        <div id="profileGridEmptyState" class="hidden flex flex-col items-center justify-center text-center py-16 px-4 bg-[#131822] border border-white/[0.08] rounded-2xl mt-5">
+            <div class="w-16 h-16 rounded-2xl bg-[#7C3AED]/15 text-[#7C3AED] border border-[#7C3AED]/30 flex items-center justify-center mb-3.5">
+                <svg id="profileEmptyIcon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                    <polyline points="11 3 11 11 14 8 17 11 17 3"/>
+                    <circle cx="9" cy="9" r="2"/>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                </svg>
             </div>
-            <h3 id="profileEmptyTitle" class="text-sm font-bold text-[#F5F5F5]">Share Photos & Videos</h3>
-            <p id="profileEmptyDesc" class="text-xs text-[#A8A8A8] max-w-[260px] mt-1">When you share photos and videos, they will appear on your profile.</p>
-            <button id="profileEmptyActionBtn" onclick="openUserUploadModal()" class="mt-3.5 text-xs font-bold text-[#0095F6] hover:text-sky-400">
-                Share your first video
+            <h3 id="profileEmptyTitle" class="text-base font-bold text-[#F8FAFC]">No Videos Published Yet</h3>
+            <p id="profileEmptyDesc" class="text-xs text-[#94A3B8] max-w-sm mt-1">Upload your video to start building your audience and unlocking earnings.</p>
+            <button id="profileEmptyActionBtn" onclick="openUserUploadModal()" class="mt-4 bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] font-semibold text-xs py-2.5 px-5 rounded-xl transition shadow-lg shadow-[#7C3AED]/25 flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Upload First Video</span>
             </button>
         </div>
 
@@ -1260,37 +1501,42 @@
     <!-- ============================================================================
          BOTTOM FIXED NAVIGATION DOCK (5 Items: Home, Trending, Contact Me, Telegram, Earn)
          ============================================================================ -->
-    <nav class="fixed bottom-0 inset-x-0 z-50 glass-dock border-t border-white/10 px-2 py-2 flex items-center justify-around max-w-4xl mx-auto shadow-[0_-10px_35px_rgba(0,0,0,0.9)]">
-        <button id="bottomNavHome" onclick="switchView('home')" class="text-rose-500 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition">
-            <i class="fa-solid fa-house text-base sm:text-lg"></i>
-            <span class="text-[10px] font-black">Home</span>
+    <nav class="fixed bottom-0 inset-x-0 z-50 bg-[#0B0E14]/95 backdrop-blur-xl border-t border-white/[0.08] px-4 py-2 flex items-center justify-around max-w-md sm:max-w-xl mx-auto shadow-[0_-8px_30px_rgba(0,0,0,0.8)] rounded-t-2xl sm:rounded-2xl sm:bottom-3">
+        <button id="bottomNavHome" onclick="switchView('home')" class="text-[#7C3AED] flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span class="text-[10px] font-semibold">Home</span>
         </button>
 
-        <button id="bottomNavTrending" onclick="switchView('trending')" class="text-neutral-400 hover:text-rose-400 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition">
-            <i class="fa-solid fa-fire text-base sm:text-lg"></i>
-            <span class="text-[10px] font-black">Trending</span>
+        <button id="bottomNavTrending" onclick="switchView('trending')" class="text-[#94A3B8] hover:text-[#F8FAFC] flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+            </svg>
+            <span class="text-[10px] font-semibold">Trending</span>
         </button>
 
-        <!-- Upload Short / Video Button (YouTube Shorts Style) -->
-        <button id="bottomNavUpload" onclick="openUserUploadModal()" class="text-rose-400 hover:text-rose-300 flex flex-col items-center gap-0.5 py-0.5 px-2 rounded-2xl transition">
-            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-rose-600/40 -mt-2">
-                <i class="fa-solid fa-plus text-sm"></i>
+        <!-- Upload Short / Video Button -->
+        <button id="bottomNavUpload" onclick="openUserUploadModal()" class="text-[#7C3AED] hover:text-[#6D28D9] flex flex-col items-center gap-0.5 py-0.5 px-3 rounded-xl transition">
+            <div class="w-9 h-9 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] flex items-center justify-center text-white shadow-lg shadow-[#7C3AED]/30 transition -mt-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
             </div>
-            <span class="text-[10px] font-black">Upload</span>
+            <span class="text-[10px] font-semibold">Upload</span>
         </button>
 
-
-        <button id="bottomNavProfile" onclick="openProfileOrLogin()" class="text-neutral-400 hover:text-white flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition">
-            <div id="bottomNavAvatarWrap" class="w-5 h-5 rounded-full overflow-hidden bg-[#262626] flex items-center justify-center shrink-0 border border-white/20">
+        <button id="bottomNavProfile" onclick="openProfileOrLogin()" class="text-[#94A3B8] hover:text-[#F8FAFC] flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition">
+            <div id="bottomNavAvatarWrap" class="w-5 h-5 rounded-lg overflow-hidden bg-[#131822] flex items-center justify-center shrink-0 border border-white/[0.12]">
                 <img id="bottomNavAvatarImg" class="w-full h-full object-cover hidden" alt="Avatar" />
-                <i id="bottomNavAvatarIcon" class="fa-solid fa-user text-[10px] text-neutral-400"></i>
+                <svg id="bottomNavAvatarIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
             </div>
-            <span class="text-[10px] font-black">Profile</span>
-        </button>
-
-        <button id="bottomNavEarning" onclick="openEarningOrLogin()" class="text-amber-400 hover:text-amber-300 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition relative">
-            <i class="fa-solid fa-wallet text-base sm:text-lg"></i>
-            <span class="text-[10px] font-black">Earning</span>
+            <span class="text-[10px] font-semibold">Profile</span>
         </button>
     </nav>
 
@@ -1715,15 +1961,15 @@
          MODAL 1: EDIT PROFILE FULL-SCREEN / SHEET (NO FACEBOOK / NO CATEGORY)
          ============================================================================ -->
     <div id="editProfileModal" class="hidden fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
-        <div class="bg-black sm:bg-[#101216] border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col shadow-2xl relative text-[#F5F5F5] font-sans">
+        <div class="bg-[#0B0E14] sm:bg-[#131822] border-0 sm:border border-white/[0.08] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col shadow-2xl relative text-[#F5F5F5] font-sans">
             
             <!-- Sticky Header: Cancel, Title, Done/Save -->
-            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
                 <button type="button" onclick="closeEditProfileModal()" class="text-sm text-[#F5F5F5] hover:text-[#A8A8A8] font-normal transition">
                     Cancel
                 </button>
                 <h3 class="text-sm font-bold text-[#F5F5F5]">Edit profile</h3>
-                <button type="button" id="btnSaveEditProfile" onclick="handleEditProfileSubmit()" class="text-sm font-bold text-[#0095F6] hover:text-sky-400 transition flex items-center gap-1">
+                <button type="button" id="btnSaveEditProfile" onclick="handleEditProfileSubmit()" class="text-sm font-bold text-[#7C3AED] hover:text-sky-400 transition flex items-center gap-1">
                     <span id="btnSaveEditProfileText">Done</span>
                     <i id="btnSaveEditProfileSpinner" class="fa-solid fa-circle-notch fa-spin text-xs hidden"></i>
                 </button>
@@ -1734,7 +1980,7 @@
                 <!-- Circular Avatar Editor -->
                 <div class="flex flex-col items-center justify-center py-2">
                     <div class="relative group cursor-pointer" onclick="triggerEditAvatarPicker()">
-                        <div class="w-20 h-20 rounded-full bg-[#262626] overflow-hidden flex items-center justify-center border-2 border-[#363636]">
+                        <div class="w-20 h-20 rounded-full bg-[#18202d] overflow-hidden flex items-center justify-center border-2 border-white/[0.08]">
                             <img id="editProfileAvatarPreview" src="" alt="Avatar" class="w-full h-full object-cover hidden">
                             <div id="editProfileAvatarPlaceholder" class="w-full h-full flex items-center justify-center text-[#A8A8A8]">
                                 <i class="fa-solid fa-user text-3xl"></i>
@@ -1743,7 +1989,7 @@
                     </div>
                     <input type="file" id="editAvatarFileInput" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="handleEditAvatarSelected(this)">
                     <div class="flex items-center gap-3 mt-2">
-                        <button type="button" onclick="triggerEditAvatarPicker()" class="text-xs font-bold text-[#0095F6] hover:text-sky-400">
+                        <button type="button" onclick="triggerEditAvatarPicker()" class="text-xs font-bold text-[#7C3AED] hover:text-sky-400">
                             Edit picture
                         </button>
                         <span class="text-neutral-600 text-xs">•</span>
@@ -1757,7 +2003,7 @@
                 <div class="space-y-3 text-xs">
                     <div>
                         <label class="block text-[11px] text-[#A8A8A8] mb-1">Name</label>
-                        <input type="text" id="editProfileName" maxlength="60" required placeholder="Your display name" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition">
+                        <input type="text" id="editProfileName" maxlength="60" required placeholder="Your display name" class="w-full bg-[#0B0E14] border border-white/[0.08] focus:border-[#7C3AED] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition">
                     </div>
 
                     <div>
@@ -1767,14 +2013,14 @@
                         </div>
                         <div class="relative">
                             <span class="absolute left-3.5 top-2.5 text-neutral-500 font-mono text-xs">@</span>
-                            <input type="text" id="editProfileUsername" maxlength="30" required placeholder="username" oninput="onUsernameInputChange(this.value)" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl pl-8 pr-3.5 py-2.5 text-xs text-[#F5F5F5] font-mono outline-none transition">
+                            <input type="text" id="editProfileUsername" maxlength="30" required placeholder="username" oninput="onUsernameInputChange(this.value)" class="w-full bg-[#0B0E14] border border-white/[0.08] focus:border-[#7C3AED] rounded-xl pl-8 pr-3.5 py-2.5 text-xs text-[#F5F5F5] font-mono outline-none transition">
                         </div>
                         <span class="text-[10px] text-neutral-500 mt-1 block">Letters, numbers, underscores and periods allowed.</span>
                     </div>
 
                     <div>
                         <label class="block text-[11px] text-[#A8A8A8] mb-1">Pronouns</label>
-                        <input type="text" id="editProfilePronouns" maxlength="30" placeholder="e.g. they/them or he/him" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition">
+                        <input type="text" id="editProfilePronouns" maxlength="30" placeholder="e.g. they/them or he/him" class="w-full bg-[#0B0E14] border border-white/[0.08] focus:border-[#7C3AED] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition">
                     </div>
 
                     <div>
@@ -1782,12 +2028,12 @@
                             <label class="block text-[11px] text-[#A8A8A8]">Bio</label>
                             <span id="editProfileBioCount" class="text-[10px] text-neutral-400 font-mono">0 / 150</span>
                         </div>
-                        <textarea id="editProfileBio" rows="3" maxlength="150" placeholder="Add a bio to your profile..." oninput="updateBioCharCount(this)" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2 text-xs text-[#F5F5F5] outline-none resize-none transition"></textarea>
+                        <textarea id="editProfileBio" rows="3" maxlength="150" placeholder="Add a bio to your profile..." oninput="updateBioCharCount(this)" class="w-full bg-[#0B0E14] border border-white/[0.08] focus:border-[#7C3AED] rounded-xl px-3.5 py-2 text-xs text-[#F5F5F5] outline-none resize-none transition"></textarea>
                     </div>
 
                     <!-- Links Sub-Panel Trigger -->
                     <div class="pt-1">
-                        <button type="button" id="btnOpenLinksModal" onclick="openManageLinksModal()" class="w-full bg-[#1C1E21] hover:bg-[#262626] border border-[#363636] rounded-xl px-3.5 py-2.5 flex items-center justify-between transition">
+                        <button type="button" id="btnOpenLinksModal" onclick="openManageLinksModal()" class="w-full bg-[#0B0E14] hover:bg-[#18202d] border border-white/[0.08] rounded-xl px-3.5 py-2.5 flex items-center justify-between transition">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-link text-[#A8A8A8] text-xs"></i>
                                 <span class="text-xs text-[#F5F5F5] font-medium">Links</span>
@@ -1802,7 +2048,7 @@
                     <!-- Banners & Highlights Dropdown -->
                     <div>
                         <label class="block text-[11px] text-[#A8A8A8] mb-1">Profile Badge / Banner</label>
-                        <select id="editProfileBannerStyle" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition cursor-pointer">
+                        <select id="editProfileBannerStyle" class="w-full bg-[#0B0E14] border border-white/[0.08] focus:border-[#7C3AED] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition cursor-pointer">
                             <option value="">None (Standard Profile)</option>
                             <option value="creator">👑 Creator Spotlight</option>
                             <option value="verified">⭐ Verified Streamer</option>
@@ -1813,7 +2059,7 @@
                     <!-- Gender Selection Dropdown -->
                     <div>
                         <label class="block text-[11px] text-[#A8A8A8] mb-1">Gender</label>
-                        <select id="editProfileGender" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition cursor-pointer">
+                        <select id="editProfileGender" class="w-full bg-[#0B0E14] border border-white/[0.08] focus:border-[#7C3AED] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition cursor-pointer">
                             <option value="Prefer not to say">Prefer not to say</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
@@ -1824,7 +2070,7 @@
 
                     <!-- Reorder / Pin Grid Modal Trigger -->
                     <div class="pt-2">
-                        <button type="button" id="btnOpenReorderGridModal" onclick="openReorderGridModal()" class="w-full bg-[#1C1E21] hover:bg-[#262626] border border-[#363636] rounded-xl px-3.5 py-2.5 flex items-center justify-between transition">
+                        <button type="button" id="btnOpenReorderGridModal" onclick="openReorderGridModal()" class="w-full bg-[#0B0E14] hover:bg-[#18202d] border border-white/[0.08] rounded-xl px-3.5 py-2.5 flex items-center justify-between transition">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-thumbtack text-rose-400 text-xs"></i>
                                 <span class="text-xs text-[#F5F5F5] font-medium">Reorder or Pin Posts</span>
@@ -1841,8 +2087,8 @@
          MODAL 2: MANAGE EXTERNAL LINKS SUB-PANEL MODAL
          ============================================================================ -->
     <div id="manageLinksModal" class="hidden fixed inset-0 z-[130] bg-black/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
-        <div class="bg-black sm:bg-[#101216] border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col shadow-2xl relative">
-            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+        <div class="bg-[#0B0E14] sm:bg-[#131822] border-0 sm:border border-white/[0.08] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col shadow-2xl relative">
+            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
                 <button type="button" onclick="closeManageLinksModal()" class="text-[#A8A8A8] hover:text-white p-1">
                     <i class="fa-solid fa-arrow-left text-base"></i>
                 </button>
@@ -1852,13 +2098,13 @@
 
             <div class="p-4 flex flex-col gap-4 overflow-y-auto">
                 <!-- Add New Link Form -->
-                <div class="bg-[#1C1E21] border border-[#363636] rounded-2xl p-3 flex flex-col gap-2">
+                <div class="bg-[#0B0E14] border border-white/[0.08] rounded-2xl p-3 flex flex-col gap-2">
                     <span class="text-xs font-bold text-white flex items-center gap-1.5">
                         <i class="fa-solid fa-plus text-sky-400"></i> Add External Link
                     </span>
                     <input type="url" id="newLinkUrlInput" placeholder="URL (e.g. https://t.me/...)" class="w-full bg-black/70 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
                     <input type="text" id="newLinkTitleInput" maxlength="60" placeholder="Title (e.g. My Telegram Channel)" class="w-full bg-black/70 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
-                    <button type="button" onclick="handleAddLinkSubmit()" class="w-full bg-[#0095F6] hover:bg-sky-500 text-white font-bold text-xs py-2 rounded-xl transition">
+                    <button type="button" onclick="handleAddLinkSubmit()" class="w-full bg-[#7C3AED] hover:bg-sky-500 text-white font-bold text-xs py-2 rounded-xl transition">
                         Add Link
                     </button>
                 </div>
@@ -1881,22 +2127,22 @@
          MODAL 3: BOTTOM-SHEET PROFILE DRAWER MENU
          ============================================================================ -->
     <div id="profileDrawerModal" class="hidden fixed inset-0 z-[125] bg-black/70 backdrop-blur-sm flex items-end justify-center">
-        <div class="bg-[#1C1E21] border-t border-[#363636] rounded-t-3xl max-w-md w-full p-4 pb-8 flex flex-col gap-2 shadow-2xl animate-in slide-in-from-bottom duration-200">
+        <div class="bg-[#0B0E14] border-t border-white/[0.08] rounded-t-3xl max-w-md w-full p-4 pb-8 flex flex-col gap-2 shadow-2xl animate-in slide-in-from-bottom duration-200">
             <div class="w-10 h-1 bg-neutral-600 rounded-full mx-auto mb-2"></div>
             
-            <button onclick="closeProfileDrawer(); openProfileQrModal();" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-[#F5F5F5] hover:bg-[#262626] transition">
+            <button onclick="closeProfileDrawer(); openProfileQrModal();" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-[#F5F5F5] hover:bg-[#18202d] transition">
                 <i class="fa-solid fa-qrcode text-base text-[#F5F5F5] w-5"></i>
                 <span>Your QR code</span>
             </button>
-            <button onclick="closeProfileDrawer(); switchProfileTab('saved');" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-[#F5F5F5] hover:bg-[#262626] transition">
+            <button onclick="closeProfileDrawer(); switchProfileTab('saved');" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-[#F5F5F5] hover:bg-[#18202d] transition">
                 <i class="fa-regular fa-bookmark text-base text-[#F5F5F5] w-5"></i>
                 <span>Saved</span>
             </button>
-            <button onclick="closeProfileDrawer(); openLegalModal('privacy');" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-[#F5F5F5] hover:bg-[#262626] transition">
+            <button onclick="closeProfileDrawer(); openLegalModal('privacy');" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-[#F5F5F5] hover:bg-[#18202d] transition">
                 <i class="fa-solid fa-shield-halved text-base text-[#F5F5F5] w-5"></i>
                 <span>Settings & privacy</span>
             </button>
-            <div class="border-t border-[#262626] my-1"></div>
+            <div class="border-t border-white/[0.06] my-1"></div>
             <button onclick="closeProfileDrawer(); handleLogoutUser();" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-500/10 transition">
                 <i class="fa-solid fa-arrow-right-from-bracket text-base w-5"></i>
                 <span>Log out</span>
@@ -1908,11 +2154,11 @@
          MODAL 4: QR CODE PROFILE SHARING MODAL
          ============================================================================ -->
     <div id="qrCodeModal" class="hidden fixed inset-0 z-[130] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-gradient-to-br from-[#1C1E21] to-black border border-[#363636] rounded-3xl max-w-sm w-full p-6 flex flex-col items-center gap-4 text-center shadow-2xl relative">
+        <div class="bg-gradient-to-br from-[#1C1E21] to-black border border-white/[0.08] rounded-3xl max-w-sm w-full p-6 flex flex-col items-center gap-4 text-center shadow-2xl relative">
             <button onclick="closeProfileQrModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-white">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-            <div class="w-16 h-16 rounded-full overflow-hidden bg-[#262626] border-2 border-rose-500/50 flex items-center justify-center mt-2">
+            <div class="w-16 h-16 rounded-full overflow-hidden bg-[#18202d] border-2 border-rose-500/50 flex items-center justify-center mt-2">
                 <img id="qrAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden">
                 <i id="qrAvatarIcon" class="fa-solid fa-user text-2xl text-neutral-400"></i>
             </div>
@@ -1924,11 +2170,11 @@
                 <img id="qrImageElement" src="" alt="Profile QR Code" class="w-48 h-48">
             </div>
             <div class="w-full flex items-center gap-2 pt-2">
-                <button type="button" onclick="copyProfileLink()" class="flex-1 bg-[#262626] hover:bg-[#363636] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                <button type="button" onclick="copyProfileLink()" class="flex-1 bg-[#18202d] hover:bg-[#363636] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
                     <i class="fa-regular fa-copy"></i>
                     <span>Copy link</span>
                 </button>
-                <button type="button" onclick="shareProfileUrl()" class="flex-1 bg-[#0095F6] hover:bg-sky-500 text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                <button type="button" onclick="shareProfileUrl()" class="flex-1 bg-[#7C3AED] hover:bg-sky-500 text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
                     <i class="fa-solid fa-arrow-up-from-bracket"></i>
                     <span>Share profile</span>
                 </button>
@@ -1940,13 +2186,13 @@
          MODAL 5: REORDER & PIN POSTS MODAL
          ============================================================================ -->
     <div id="reorderGridModal" class="hidden fixed inset-0 z-[130] bg-black/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
-        <div class="bg-black sm:bg-[#101216] border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col shadow-2xl relative">
-            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+        <div class="bg-[#0B0E14] sm:bg-[#131822] border-0 sm:border border-white/[0.08] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col shadow-2xl relative">
+            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
                 <button type="button" onclick="closeReorderGridModal()" class="text-[#A8A8A8] hover:text-white p-1">
                     <i class="fa-solid fa-arrow-left text-base"></i>
                 </button>
                 <h3 class="text-sm font-bold text-white">Reorder & Pin Posts</h3>
-                <button type="button" onclick="saveReorderGrid()" class="text-sm font-bold text-[#0095F6] hover:text-sky-400">
+                <button type="button" onclick="saveReorderGrid()" class="text-sm font-bold text-[#7C3AED] hover:text-sky-400">
                     Save
                 </button>
             </div>
@@ -1964,8 +2210,8 @@
          MODAL 6: FOLLOWERS & FOLLOWING LIST MODAL
          ============================================================================ -->
     <div id="followersModal" class="hidden fixed inset-0 z-[130] bg-black/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
-        <div class="bg-black sm:bg-[#101216] border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col shadow-2xl relative">
-            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+        <div class="bg-[#0B0E14] sm:bg-[#131822] border-0 sm:border border-white/[0.08] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col shadow-2xl relative">
+            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
                 <button type="button" onclick="closeFollowersModal()" class="text-[#A8A8A8] hover:text-white p-1">
                     <i class="fa-solid fa-arrow-left text-base"></i>
                 </button>
@@ -1990,9 +2236,9 @@
          MODAL 7: FULL POST / VIDEO VIEWER MODAL
          ============================================================================ -->
     <div id="profileMediaViewerModal" class="hidden fixed inset-0 z-[140] bg-black/95 backdrop-blur-md flex items-center justify-center p-0 sm:p-4">
-        <div class="bg-black border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[92vh] flex flex-col shadow-2xl relative overflow-hidden">
+        <div class="bg-black border-0 sm:border border-white/[0.08] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[92vh] flex flex-col shadow-2xl relative overflow-hidden">
             <!-- Header -->
-            <div class="sticky top-0 z-20 bg-black/95 border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+            <div class="sticky top-0 z-20 bg-black/95 border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
                 <button type="button" onclick="closeProfileMediaViewer()" class="text-[#A8A8A8] hover:text-white p-1">
                     <i class="fa-solid fa-arrow-left text-base"></i>
                 </button>
@@ -2027,7 +2273,7 @@
                 </div>
                 <h4 id="viewerTitle" class="text-sm font-bold text-[#F5F5F5] leading-snug">Video Title</h4>
                 <div class="pt-2 flex items-center gap-2">
-                    <button type="button" onclick="shareCurrentViewerVideo()" class="flex-1 bg-[#1C1E21] hover:bg-[#262626] border border-[#363636] text-white py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                    <button type="button" onclick="shareCurrentViewerVideo()" class="flex-1 bg-[#0B0E14] hover:bg-[#18202d] border border-white/[0.08] text-white py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
                         <i class="fa-solid fa-share-nodes"></i>
                         <span>Share Video</span>
                     </button>
