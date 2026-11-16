@@ -58,6 +58,16 @@ const step1Badge = document.getElementById('step1Badge');
 const step2Badge = document.getElementById('step2Badge');
 const step3Badge = document.getElementById('step3Badge');
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ============================================================================
 // 18+ AGE GATE VERIFICATION SYSTEM
 // ============================================================================
@@ -421,26 +431,31 @@ function renderFeaturedSpotlight() {
 
   if (!MEDIA_SOURCES.mainVideos || MEDIA_SOURCES.mainVideos.length === 0) {
     container.innerHTML = `
-      <div class="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#13131c] via-[#0c0c14] to-[#07070b] p-6 sm:p-10 shadow-2xl text-center">
+      <div class="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#131822] via-[#0B0E14] to-[#07070b] p-6 sm:p-10 shadow-2xl text-center">
         <div class="max-w-xl mx-auto flex flex-col items-center">
-          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-rose-600 to-red-600 text-white flex items-center justify-center shadow-xl shadow-rose-600/30 mb-3.5">
-            <i class="fa-solid fa-film text-xl sm:text-2xl"></i>
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#7C3AED]/20 border border-[#7C3AED]/40 text-[#7C3AED] flex items-center justify-center shadow-xl shadow-[#7C3AED]/20 mb-3.5">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <polygon points="23 7 16 12 23 17 23 7"/>
+              <rect width="14" height="14" x="1" y="5" rx="2" ry="2"/>
+            </svg>
           </div>
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[10px] sm:text-xs font-bold mb-2.5 uppercase tracking-wider">
-            <i class="fa-solid fa-crown"></i> DarkPAKI VIP Cinema & Stream Hub
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#7C3AED] text-[10px] sm:text-xs font-bold mb-2.5 uppercase tracking-wider">
+            DarkPAKI Creator Cinema & Stream Hub
           </div>
           <h2 class="text-base sm:text-2xl font-black text-white leading-tight">
             VIP 4K Video Catalog Ready
           </h2>
-          <p class="text-xs sm:text-sm text-neutral-400 mt-1.5 max-w-md">
-            Sabhi fake posts aur test items clean ho chuke hain. Admin panel se direct 4K video stream publish karein ya creator submission approve karein.
+          <p class="text-xs sm:text-sm text-[#94A3B8] mt-1.5 max-w-md">
+            Sabhi fake posts aur test items clean ho chuke hain. Direct 4K video stream upload karein ya creator submissions explore karein.
           </p>
           <div class="flex items-center gap-3 mt-4 flex-wrap justify-center">
-            <a href="/admin" class="bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs sm:text-sm font-bold px-5 sm:px-6 py-2.5 rounded-xl shadow-lg shadow-rose-600/30 transition flex items-center gap-2">
-              <i class="fa-solid fa-lock"></i> Open Admin Panel
-            </a>
-            <button onclick="switchView('upload')" class="bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold px-4 sm:px-5 py-2.5 rounded-xl border border-white/10 transition flex items-center gap-2">
-              <i class="fa-solid fa-cloud-arrow-up"></i> + Upload Video
+            <button onclick="openUserUploadModal()" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] text-xs sm:text-sm font-semibold px-5 sm:px-6 py-2.5 rounded-xl shadow-lg shadow-[#7C3AED]/25 transition flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span>+ Upload Video</span>
             </button>
           </div>
         </div>
@@ -506,14 +521,15 @@ function renderHomeVideoGrid(searchQuery = '') {
   grid.innerHTML = '';
 
   if (!MEDIA_SOURCES.mainVideos || MEDIA_SOURCES.mainVideos.length === 0) {
-    grid.innerHTML = `
-      <div class="col-span-2 bg-[#0c0c12] border border-white/10 rounded-3xl p-8 text-center shadow-xl">
-        <p class="text-sm text-neutral-300 font-semibold">No 18+ videos found for "${searchQuery || currentCategoryFilter}"</p>
-        <button onclick="switchView('demand')" class="mt-3 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-5 py-2.5 rounded-full transition shadow-lg shadow-rose-600/30">
-          + Demand This Video on Demand Hub
-        </button>
-      </div>
-    `;
+    if (searchQuery && searchQuery.trim().length > 0) {
+      grid.innerHTML = `
+        <div class="col-span-2 bg-[#131822] border border-white/10 rounded-2xl p-6 text-center shadow-xl">
+          <p class="text-xs sm:text-sm text-[#94A3B8]">No videos found matching "${escapeHtml(searchQuery)}"</p>
+        </div>
+      `;
+    } else {
+      grid.innerHTML = '';
+    }
     return;
   }
 
