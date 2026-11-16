@@ -239,6 +239,40 @@ function initializeSchema() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS user_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      url TEXT NOT NULL,
+      position INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_links_user ON user_links(user_id);
+
+    CREATE TABLE IF NOT EXISTS saved_videos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      video_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, video_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_saved_videos_user ON saved_videos(user_id);
+
+    CREATE TABLE IF NOT EXISTS user_follows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      follower_id INTEGER NOT NULL,
+      following_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(follower_id, following_id),
+      FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON user_follows(follower_id);
+    CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows(following_id);
   `);
 
   // Safe runtime migrations for existing databases
@@ -263,6 +297,10 @@ function initializeSchema() {
   runMigration("ALTER TABLE users ADD COLUMN bio TEXT DEFAULT '';");
   runMigration('ALTER TABLE users ADD COLUMN following_count INTEGER NOT NULL DEFAULT 0;');
   runMigration("ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'active';");
+  runMigration("ALTER TABLE users ADD COLUMN pronouns TEXT DEFAULT '';");
+  runMigration("ALTER TABLE users ADD COLUMN gender TEXT DEFAULT 'Prefer not to say';");
+  runMigration("ALTER TABLE users ADD COLUMN banner_style TEXT DEFAULT '';");
+  runMigration("ALTER TABLE users ADD COLUMN banner_url TEXT DEFAULT '';");
   runMigration('ALTER TABLE email_otps ADD COLUMN pending_name TEXT;');
   runMigration('ALTER TABLE email_otps ADD COLUMN pending_pass TEXT;');
   runMigration('ALTER TABLE email_otps ADD COLUMN pending_ref TEXT;');
@@ -270,6 +308,9 @@ function initializeSchema() {
   runMigration("ALTER TABLE videos ADD COLUMN status TEXT NOT NULL DEFAULT 'APPROVED';");
   runMigration('ALTER TABLE videos ADD COLUMN owner_name TEXT;');
   runMigration('ALTER TABLE videos ADD COLUMN owner_email TEXT;');
+  runMigration('ALTER TABLE videos ADD COLUMN user_id INTEGER;');
+  runMigration('ALTER TABLE videos ADD COLUMN is_pinned INTEGER DEFAULT 0;');
+  runMigration('ALTER TABLE videos ADD COLUMN grid_order INTEGER DEFAULT 0;');
   runMigration('ALTER TABLE videos ADD COLUMN views_count INTEGER NOT NULL DEFAULT 0;');
   runMigration('ALTER TABLE videos ADD COLUMN likes_count INTEGER NOT NULL DEFAULT 0;');
   runMigration('ALTER TABLE videos ADD COLUMN is_short INTEGER NOT NULL DEFAULT 0;');
@@ -277,6 +318,16 @@ function initializeSchema() {
   runMigration('ALTER TABLE videos ADD COLUMN storage_key TEXT;');
   runMigration('ALTER TABLE videos ADD COLUMN thumbnail_key TEXT;');
   runMigration('ALTER TABLE videos ADD COLUMN duration_seconds INTEGER DEFAULT 0;');
+  runMigration('ALTER TABLE user_follows ADD COLUMN follower_id INTEGER;');
+  runMigration('ALTER TABLE user_follows ADD COLUMN following_id INTEGER;');
+  runMigration('ALTER TABLE user_follows ADD COLUMN follower_user_id INTEGER;');
+  runMigration('ALTER TABLE user_follows ADD COLUMN following_user_id INTEGER;');
+  try {
+    db.prepare('UPDATE user_follows SET follower_id = follower_user_id WHERE follower_id IS NULL AND follower_user_id IS NOT NULL').run();
+    db.prepare('UPDATE user_follows SET following_id = following_user_id WHERE following_id IS NULL AND following_user_id IS NOT NULL').run();
+    db.prepare('UPDATE user_follows SET follower_user_id = follower_id WHERE follower_user_id IS NULL AND follower_id IS NOT NULL').run();
+    db.prepare('UPDATE user_follows SET following_user_id = following_id WHERE following_user_id IS NULL AND following_id IS NOT NULL').run();
+  } catch (err) {}
   runMigration("ALTER TABLE videos ADD COLUMN mime_type TEXT DEFAULT 'video/mp4';");
   runMigration("ALTER TABLE videos ADD COLUMN moderation_status TEXT DEFAULT 'clear';");
   runMigration('ALTER TABLE videos ADD COLUMN ai_risk_score REAL DEFAULT 0.0;');
@@ -303,6 +354,24 @@ function initializeSchema() {
         }
         db.prepare('UPDATE videos SET views_count = ? WHERE id = ?').run(count, v.id);
       }
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  // Ensure all users have a valid unique username synced in usernames table
+  try {
+    const usersWithoutUsername = db.prepare("SELECT id, name, ref_code, username FROM users WHERE username IS NULL OR trim(username) = ''").all();
+    for (const u of usersWithoutUsername) {
+      let base = (u.name || 'user').toLowerCase().replace(/[^a-z0-9_.]/g, '');
+      if (base.length < 3) base = 'user_' + (u.ref_code || Math.floor(1000 + Math.random() * 9000)).toLowerCase();
+      let candidate = base;
+      let counter = 1;
+      while (db.prepare('SELECT user_id FROM usernames WHERE normalized_username = ?').get(candidate)) {
+        candidate = `${base}_${counter++}`;
+      }
+      db.prepare('UPDATE users SET username = ? WHERE id = ?').run(candidate, u.id);
+      db.prepare('INSERT OR IGNORE INTO usernames (normalized_username, user_id) VALUES (?, ?)').run(candidate, u.id);
     }
   } catch (err) {
     // ignore

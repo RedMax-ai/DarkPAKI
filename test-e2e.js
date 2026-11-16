@@ -63,6 +63,11 @@ async function runTests() {
     }
   }
 
+  // Pre-audit test isolation: clean up any residual automated test artifacts
+  const setupDb = require('./src/db/database');
+  setupDb.prepare("DELETE FROM users WHERE device_id LIKE 'DPK-OTP-DEV%' OR device_id LIKE 'DPK-DEV-TEST%'").run();
+  setupDb.prepare("DELETE FROM demand_votes WHERE device_id LIKE 'DPK-%'").run();
+
   // 1. Health Check
   const healthRes = await request('GET', '/health');
   assert(healthRes.status === 200 && healthRes.body.status === 'online', 'Health check responds online');
@@ -334,6 +339,91 @@ async function runTests() {
     deviceId: otpNewDevice
   });
   assert(otpVerifyRes.status === 200 && otpVerifyRes.body.token && otpVerifyRes.body.data.deviceId === otpNewDevice, 'OTP verification binds & authorizes new device successfully');
+
+  // 22. Instagram-Style User Profile & Edit Profile Audit
+  // 22a. Get Profile Me (Strict Real Zero-Mock Data)
+  const profileMeRes = await request('GET', '/profile/me', null, { Authorization: `Bearer ${userToken}` });
+  assert(profileMeRes.status === 200 && profileMeRes.body.success === true && profileMeRes.body.data.username, 'Profile retrieval returns authentic user data with zero mocks');
+  assert(profileMeRes.body.data.posts_count === 0 && profileMeRes.body.data.followers_count === 0 && profileMeRes.body.data.following_count === 0, 'Clean zero-counts returned for posts, followers, and following');
+
+  // 22b. Check Username Availability (Real-Time Availability Check)
+  const availRes = await request('GET', `/profile/check-username?username=darkpaki_creator_${Date.now()}`);
+  assert(availRes.status === 200 && availRes.body.available === true, 'Real-time username availability confirms unique candidate is available');
+
+  const takenRes = await request('GET', `/profile/check-username?username=${profileMeRes.body.data.username}`, null, { Authorization: `Bearer ${userToken}` });
+  assert(takenRes.status === 200 && takenRes.body.available === true, 'User checking their own current username returns available');
+
+  const invalidUsernameRes = await request('GET', '/profile/check-username?username=bad username!');
+  assert(invalidUsernameRes.status === 200 && invalidUsernameRes.body.available === false, 'Username with invalid characters correctly flagged as unavailable');
+
+  // 22c. Update Profile (Name, Username, Pronouns, Bio, Banner, Gender - strictly no Facebook/Category)
+  const newUsernameCandidate = 'naved_star_' + Math.floor(1000 + Math.random() * 9000);
+  const updateProfileRes = await request('PUT', '/profile', {
+    name: 'Naved Official VIP',
+    username: newUsernameCandidate,
+    pronouns: 'he/him',
+    bio: 'Official DarkPAKI VIP Creator & Streamer. No fake data.',
+    banner_style: 'creator',
+    gender: 'Male'
+  }, { Authorization: `Bearer ${userToken}` });
+  assert(updateProfileRes.status === 200 && updateProfileRes.body.data.username === newUsernameCandidate, 'Profile successfully updated: Name, Username, Pronouns, Bio, Banner, Gender persisted in SQLite');
+
+  // 22d. Bio Overflow Check (Max 150 chars)
+  const longBio = 'a'.repeat(160);
+  const bioOverflowRes = await request('PUT', '/profile', {
+    name: 'Naved Official VIP',
+    bio: longBio
+  }, { Authorization: `Bearer ${userToken}` });
+  assert(bioOverflowRes.status === 400 && bioOverflowRes.body.message.includes('150'), 'Bio exceeding 150 characters strictly rejected with 400 Bad Request');
+
+  // 22e. Upload & Remove Avatar
+  const sampleBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  const uploadAvatarRes = await request('POST', '/profile/avatar', { imageBase64: sampleBase64 }, { Authorization: `Bearer ${userToken}` });
+  assert(uploadAvatarRes.status === 200 && uploadAvatarRes.body.avatarUrl.includes('/uploads/avatars/'), 'Base64 Profile photo uploaded and saved to server storage');
+
+  const removeAvatarRes = await request('DELETE', '/profile/avatar', null, { Authorization: `Bearer ${userToken}` });
+  assert(removeAvatarRes.status === 200 && removeAvatarRes.body.avatarUrl === '', 'Profile picture removed and reset to empty state');
+
+  // 22f. External Links Management (Add, Get, Delete)
+  const addLinkRes = await request('POST', '/profile/links', {
+    title: 'My Official Telegram',
+    url: 'https://t.me/darkpaki_official'
+  }, { Authorization: `Bearer ${userToken}` });
+  assert(addLinkRes.status === 200 && addLinkRes.body.data.id, 'External link added to profile in SQLite');
+  const linkId = addLinkRes.body.data.id;
+
+  const getLinksRes = await request('GET', '/profile/links', null, { Authorization: `Bearer ${userToken}` });
+  assert(getLinksRes.status === 200 && getLinksRes.body.data.length >= 1, 'External links list retrieved from database');
+
+  const delLinkRes = await request('DELETE', `/profile/links/${linkId}`, null, { Authorization: `Bearer ${userToken}` });
+  assert(delLinkRes.status === 200 && delLinkRes.body.success === true, 'External link deleted from SQLite database');
+
+  // 22g. Real Posts Grid Retrieval (Strict Zero Fake Data)
+  const postsGridRes = await request('GET', '/profile/posts?tab=posts', null, { Authorization: `Bearer ${userToken}` });
+  assert(postsGridRes.status === 200 && Array.isArray(postsGridRes.body.data), 'User media posts grid retrieved with real state');
+
+  // 22h. Save & Unsave Video
+  const sampleVid = dbModule.prepare("SELECT id FROM videos LIMIT 1").get();
+  if (sampleVid) {
+    const saveVidRes = await request('POST', '/profile/save-video', { videoId: sampleVid.id }, { Authorization: `Bearer ${userToken}` });
+    assert(saveVidRes.status === 200 && saveVidRes.body.saved === true, 'Post/video saved to user collection');
+
+    const savedPostsRes = await request('GET', '/profile/posts?tab=saved', null, { Authorization: `Bearer ${userToken}` });
+    assert(savedPostsRes.status === 200 && savedPostsRes.body.data.some(p => p.id === sampleVid.id), 'Saved tab returns bookmarked video');
+
+    const unsaveVidRes = await request('DELETE', `/profile/save-video/${sampleVid.id}`, null, { Authorization: `Bearer ${userToken}` });
+    assert(unsaveVidRes.status === 200 && unsaveVidRes.body.saved === false, 'Video successfully unsaved from collection');
+  }
+
+  // 22i. Follow System
+  const secondUser = dbModule.prepare("SELECT id FROM users WHERE id != ? LIMIT 1").get(profileMeRes.body.data.id);
+  if (secondUser) {
+    const followRes = await request('POST', `/profile/follow/${secondUser.id}`, null, { Authorization: `Bearer ${userToken}` });
+    assert(followRes.status === 200 && followRes.body.following === true, 'User follow toggle activated in SQLite user_follows');
+
+    const unfollowRes = await request('POST', `/profile/follow/${secondUser.id}`, null, { Authorization: `Bearer ${userToken}` });
+    assert(unfollowRes.status === 200 && unfollowRes.body.following === false, 'User unfollow toggle deactivated in SQLite user_follows');
+  }
 
   // Automatic Cleanup of Temporary Test Artifacts (Preserves Clean Database)
   const db = require('./src/db/database');

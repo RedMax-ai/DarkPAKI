@@ -385,6 +385,7 @@ async function loadCurrentUserProfile() {
     if (res.success && res.data) {
       CURRENT_USER = res.data;
       refreshEarningDashboardUI();
+      updateHeaderProfileUI(CURRENT_USER);
     }
   } catch (err) {
     console.warn('Session expired or invalid.');
@@ -392,6 +393,7 @@ async function loadCurrentUserProfile() {
     localStorage.removeItem('darkpaki_auth_token');
     CURRENT_USER = null;
     refreshEarningDashboardUI();
+    updateHeaderProfileUI(null);
   }
 }
 
@@ -1974,8 +1976,9 @@ function switchView(mode) {
   const demandSec = document.getElementById('demandAndCommentHub');
   const loginSec = document.getElementById('authLoginSection');
   const earningSec = document.getElementById('earningPageSection');
+  const profileSec = document.getElementById('userProfileSection');
 
-  [homeSec, watchSec, demandSec, loginSec, earningSec].forEach(sec => {
+  [homeSec, watchSec, demandSec, loginSec, earningSec, profileSec].forEach(sec => {
     if (sec) sec.classList.add('hidden');
   });
 
@@ -1990,9 +1993,11 @@ function switchView(mode) {
   const bHome = document.getElementById('bottomNavHome');
   const bTrend = document.getElementById('bottomNavTrending');
   const bEarn = document.getElementById('bottomNavEarning');
+  const bProfile = document.getElementById('bottomNavProfile');
   if (bHome) bHome.className = mode === 'home' ? botActive : botInactive;
   if (bTrend) bTrend.className = mode === 'trending' ? botActive : botInactive;
   if (bEarn) bEarn.className = (mode === 'earning' || mode === 'login') ? botActive : "text-amber-400 hover:text-amber-300 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition";
+  if (bProfile) bProfile.className = mode === 'profile' ? botActive : "text-neutral-400 hover:text-white flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition";
 
   if (mode === 'watch') {
     watchSec.classList.remove('hidden');
@@ -2004,6 +2009,11 @@ function switchView(mode) {
     initGoogleSignIn();
   } else if (mode === 'earning') {
     earningSec.classList.remove('hidden');
+  } else if (mode === 'profile') {
+    if (profileSec) {
+      profileSec.classList.remove('hidden');
+      loadInstagramUserProfile();
+    }
   } else if (mode === 'trending') {
     homeSec.classList.remove('hidden');
     currentCategoryFilter = 'TRENDING VIDEOS';
@@ -2288,6 +2298,8 @@ function bindDirectDOMListeners() {
   if (botSearch) botSearch.addEventListener('click', (e) => { e.preventDefault(); focusSearchBar(); });
   const botEarn = document.getElementById('bottomNavEarning');
   if (botEarn) botEarn.addEventListener('click', (e) => { e.preventDefault(); openEarningOrLogin(); });
+  const botProfile = document.getElementById('bottomNavProfile');
+  if (botProfile) botProfile.addEventListener('click', (e) => { e.preventDefault(); openProfileOrLogin(); });
 
   // Secret Admin Shortcut: Ctrl+Shift+A or 3 quick clicks on logo
   let logoClickCount = 0;
@@ -2610,3 +2622,929 @@ window.addEventListener('load', () => {
   setTimeout(initGoogleSignIn, 1200);
   setTimeout(renderGoogleRecaptcha, 600);
 });
+
+
+// ============================================================================
+// INSTAGRAM-STYLE USER PROFILE & EDIT PROFILE SYSTEM (FULL-STACK ZERO-MOCK)
+// ============================================================================
+let CURRENT_PROFILE_DATA = null;
+let CURRENT_PROFILE_TAB = 'posts';
+let PROFILE_POSTS_CACHE = [];
+let CURRENT_VIEWER_POST = null;
+let USERNAME_CHECK_TIMER = null;
+
+function updateHeaderProfileUI(user) {
+  const headerAvatarImg = document.getElementById('headerAvatarImg');
+  const headerAvatarDefault = document.getElementById('headerAvatarDefaultIcon');
+  const headerProfileText = document.getElementById('headerProfileText');
+  const bottomAvatarImg = document.getElementById('bottomNavAvatarImg');
+  const bottomAvatarIcon = document.getElementById('bottomNavAvatarIcon');
+
+  if (user && user.id) {
+    if (headerProfileText) {
+      headerProfileText.textContent = user.username ? ('@' + user.username) : (user.name || 'Profile');
+    }
+    if (user.avatar_url && user.avatar_url.trim()) {
+      if (headerAvatarImg) {
+        headerAvatarImg.src = user.avatar_url;
+        headerAvatarImg.classList.remove('hidden');
+      }
+      if (headerAvatarDefault) headerAvatarDefault.classList.add('hidden');
+      if (bottomAvatarImg) {
+        bottomAvatarImg.src = user.avatar_url;
+        bottomAvatarImg.classList.remove('hidden');
+      }
+      if (bottomAvatarIcon) bottomAvatarIcon.classList.add('hidden');
+    } else {
+      if (headerAvatarImg) headerAvatarImg.classList.add('hidden');
+      if (headerAvatarDefault) headerAvatarDefault.classList.remove('hidden');
+      if (bottomAvatarImg) bottomAvatarImg.classList.add('hidden');
+      if (bottomAvatarIcon) bottomAvatarIcon.classList.remove('hidden');
+    }
+  } else {
+    if (headerProfileText) headerProfileText.textContent = 'Profile';
+    if (headerAvatarImg) headerAvatarImg.classList.add('hidden');
+    if (headerAvatarDefault) headerAvatarDefault.classList.remove('hidden');
+    if (bottomAvatarImg) bottomAvatarImg.classList.add('hidden');
+    if (bottomAvatarIcon) bottomAvatarIcon.classList.remove('hidden');
+  }
+}
+
+function openProfileOrLogin() {
+  if (AUTH_TOKEN) {
+    switchView('profile');
+  } else {
+    switchView('login');
+    showToast("Please log in to access your profile");
+  }
+}
+
+function openAccountSwitchDropdown() {
+  openProfileDrawer();
+}
+
+async function loadInstagramUserProfile() {
+  if (!AUTH_TOKEN) {
+    openProfileOrLogin();
+    return;
+  }
+
+  try {
+    const res = await apiFetch('/profile/me');
+    if (res.success && res.data) {
+      CURRENT_PROFILE_DATA = res.data;
+      renderProfileHeaderUI(CURRENT_PROFILE_DATA);
+      updateHeaderProfileUI(CURRENT_PROFILE_DATA);
+      await loadProfileGridPosts(CURRENT_PROFILE_TAB);
+    }
+  } catch (err) {
+    console.error('Failed to load user profile:', err);
+    showToast('Failed to load profile. Please sign in again.');
+    switchView('login');
+  }
+}
+
+function renderProfileHeaderUI(data) {
+  // Top Username
+  const topUsername = document.getElementById('profileTopUsername');
+  if (topUsername) topUsername.textContent = '@' + (data.username || 'user');
+
+  // Display Name & Pronouns
+  const dispName = document.getElementById('profileDisplayName');
+  if (dispName) dispName.textContent = data.name || 'DarkPAKI User';
+
+  const pronounsEl = document.getElementById('profilePronouns');
+  if (pronounsEl) {
+    if (data.pronouns && data.pronouns.trim()) {
+      pronounsEl.textContent = '(' + data.pronouns.trim() + ')';
+      pronounsEl.classList.remove('hidden');
+    } else {
+      pronounsEl.classList.add('hidden');
+    }
+  }
+
+  // Circular Avatar
+  const avatarImg = document.getElementById('profileAvatarImg');
+  const avatarPlaceholder = document.getElementById('profileAvatarPlaceholder');
+  if (data.avatar_url && data.avatar_url.trim()) {
+    if (avatarImg) {
+      avatarImg.src = data.avatar_url;
+      avatarImg.classList.remove('hidden');
+    }
+    if (avatarPlaceholder) avatarPlaceholder.classList.add('hidden');
+  } else {
+    if (avatarImg) avatarImg.classList.add('hidden');
+    if (avatarPlaceholder) avatarPlaceholder.classList.remove('hidden');
+  }
+
+  // 3-Column Stats Row (Strict Real Zero-Mock Data)
+  const postsCountEl = document.getElementById('profileStatPosts');
+  const followersCountEl = document.getElementById('profileStatFollowers');
+  const followingCountEl = document.getElementById('profileStatFollowing');
+  if (postsCountEl) postsCountEl.textContent = data.posts_count || 0;
+  if (followersCountEl) followersCountEl.textContent = data.followers_count || 0;
+  if (followingCountEl) followingCountEl.textContent = data.following_count || 0;
+
+  // Banner Strip
+  const bannerStrip = document.getElementById('profileBannerStrip');
+  const bannerIcon = document.getElementById('profileBannerIcon');
+  const bannerText = document.getElementById('profileBannerText');
+  if (bannerStrip) {
+    if (data.banner_style === 'creator') {
+      bannerStrip.classList.remove('hidden');
+      bannerStrip.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-transparent border border-amber-500/40 text-xs";
+      if (bannerIcon) bannerIcon.className = "fa-solid fa-crown text-amber-400 text-xs";
+      if (bannerText) bannerText.textContent = "Creator Spotlight";
+    } else if (data.banner_style === 'verified') {
+      bannerStrip.classList.remove('hidden');
+      bannerStrip.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-500/20 via-indigo-500/20 to-transparent border border-sky-500/40 text-xs";
+      if (bannerIcon) bannerIcon.className = "fa-solid fa-star text-sky-400 text-xs";
+      if (bannerText) bannerText.textContent = "Verified Streamer";
+    } else if (data.banner_style === 'vip') {
+      bannerStrip.classList.remove('hidden');
+      bannerStrip.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/20 via-purple-500/20 to-transparent border border-rose-500/40 text-xs";
+      if (bannerIcon) bannerIcon.className = "fa-solid fa-fire text-rose-400 text-xs";
+      if (bannerText) bannerText.textContent = "VIP Gold Member";
+    } else {
+      bannerStrip.classList.add('hidden');
+    }
+  }
+
+  // Multi-line Bio Rendering (Preserve line breaks & emojis)
+  const bioContainer = document.getElementById('profileBioContainer');
+  const bioText = document.getElementById('profileBioText');
+  const emptyBioPrompt = document.getElementById('profileEmptyBioPrompt');
+  if (data.bio && data.bio.trim()) {
+    if (bioContainer) bioContainer.classList.remove('hidden');
+    if (bioText) bioText.textContent = data.bio.trim();
+    if (emptyBioPrompt) emptyBioPrompt.classList.add('hidden');
+  } else {
+    if (bioContainer) bioContainer.classList.add('hidden');
+    if (emptyBioPrompt) emptyBioPrompt.classList.remove('hidden');
+  }
+
+  // Clickable External Links Section
+  const linksContainer = document.getElementById('profileLinksContainer');
+  if (linksContainer) {
+    if (Array.isArray(data.links) && data.links.length > 0) {
+      linksContainer.classList.remove('hidden');
+      linksContainer.innerHTML = data.links.map(link => {
+        let cleanUrl = link.url;
+        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+          cleanUrl = 'https://' + cleanUrl;
+        }
+        return `
+          <a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-[#0095F6] hover:underline font-semibold truncate max-w-full">
+            <i class="fa-solid fa-link text-[10px] text-[#A8A8A8] shrink-0"></i>
+            <span class="truncate">${escapeHtml(link.title || link.url)}</span>
+          </a>
+        `;
+      }).join('');
+    } else {
+      linksContainer.classList.add('hidden');
+      linksContainer.innerHTML = '';
+    }
+  }
+
+  // Creator Dashboard Analytics Card
+  const dashboardReach = document.getElementById('profileDashboardReach');
+  if (dashboardReach && data.dashboard) {
+    const reached = data.dashboard.accounts_reached || 0;
+    const views = data.dashboard.views || 0;
+    dashboardReach.textContent = `${reached.toLocaleString()} accounts reached • ${views.toLocaleString()} total views`;
+  }
+}
+
+function switchProfileTab(tab) {
+  CURRENT_PROFILE_TAB = tab;
+
+  const btnPosts = document.getElementById('profileTabPostsBtn');
+  const btnReels = document.getElementById('profileTabReelsBtn');
+  const btnSaved = document.getElementById('profileTabSavedBtn');
+
+  const activeCls = "flex-1 py-3 border-b-2 border-[#F5F5F5] text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition";
+  const inactiveCls = "flex-1 py-3 border-b-2 border-transparent text-[#A8A8A8] hover:text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition";
+
+  if (btnPosts) btnPosts.className = tab === 'posts' ? activeCls : inactiveCls;
+  if (btnReels) btnReels.className = tab === 'reels' ? activeCls : inactiveCls;
+  if (btnSaved) btnSaved.className = tab === 'saved' ? activeCls : inactiveCls;
+
+  loadProfileGridPosts(tab);
+}
+
+async function loadProfileGridPosts(tab) {
+  const grid = document.getElementById('profileMediaGrid');
+  const emptyState = document.getElementById('profileGridEmptyState');
+  const emptyIcon = document.getElementById('profileEmptyIcon');
+  const emptyTitle = document.getElementById('profileEmptyTitle');
+  const emptyDesc = document.getElementById('profileEmptyDesc');
+  const emptyActionBtn = document.getElementById('profileEmptyActionBtn');
+
+  if (!grid || !emptyState) return;
+
+  grid.innerHTML = '<div class="col-span-3 py-10 flex items-center justify-center text-neutral-500"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i></div>';
+
+  try {
+    const res = await apiFetch(`/profile/posts?tab=${encodeURIComponent(tab)}`);
+    PROFILE_POSTS_CACHE = (res.success && Array.isArray(res.data)) ? res.data : [];
+
+    if (PROFILE_POSTS_CACHE.length === 0) {
+      grid.classList.add('hidden');
+      grid.innerHTML = '';
+      emptyState.classList.remove('hidden');
+
+      if (tab === 'saved') {
+        if (emptyIcon) emptyIcon.className = "fa-regular fa-bookmark text-2xl";
+        if (emptyTitle) emptyTitle.textContent = "Save Photos and Videos";
+        if (emptyDesc) emptyDesc.textContent = "Save photos and videos that you want to see again. No one is notified.";
+        if (emptyActionBtn) {
+          emptyActionBtn.textContent = "Explore Cinema";
+          emptyActionBtn.onclick = () => switchView('home');
+        }
+      } else if (tab === 'reels') {
+        if (emptyIcon) emptyIcon.className = "fa-solid fa-film text-2xl";
+        if (emptyTitle) emptyTitle.textContent = "No Reels Yet";
+        if (emptyDesc) emptyDesc.textContent = "When you upload vertical short reels, they will appear here.";
+        if (emptyActionBtn) {
+          emptyActionBtn.textContent = "Upload a Reel";
+          emptyActionBtn.onclick = () => openUserUploadModal();
+        }
+      } else {
+        if (emptyIcon) emptyIcon.className = "fa-solid fa-camera text-2xl";
+        if (emptyTitle) emptyTitle.textContent = "Share Photos & Videos";
+        if (emptyDesc) emptyDesc.textContent = "When you share photos and videos, they will appear on your profile.";
+        if (emptyActionBtn) {
+          emptyActionBtn.textContent = "Share your first video";
+          emptyActionBtn.onclick = () => openUserUploadModal();
+        }
+      }
+    } else {
+      emptyState.classList.add('hidden');
+      grid.classList.remove('hidden');
+
+      grid.innerHTML = PROFILE_POSTS_CACHE.map(post => {
+        const thumb = post.thumb_img || '/public/darkpaki-logo.png';
+        const viewsCount = post.views_count || post.views || 0;
+        const pinnedBadge = post.is_pinned ? `
+          <div class="absolute top-1.5 left-1.5 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] text-xs z-10">
+            <i class="fa-solid fa-thumbtack text-rose-400"></i>
+          </div>
+        ` : '';
+
+        return `
+          <div onclick="openProfileMediaViewer(${post.id})" class="relative aspect-square bg-[#1C1E21] overflow-hidden group cursor-pointer select-none active:opacity-75 transition">
+            <img src="${thumb}" alt="${escapeHtml(post.title || 'Video')}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+            ${pinnedBadge}
+            <div class="absolute top-1.5 right-1.5 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] text-xs">
+              <i class="fa-solid fa-film"></i>
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-1.5">
+              <span class="text-[10px] text-white font-mono font-bold flex items-center gap-1">
+                <i class="fa-solid fa-eye text-sky-400 text-[9px]"></i> ${viewsCount}
+              </span>
+            </div>
+            <div class="absolute bottom-1 left-1.5 text-white/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] text-[10px] font-mono font-bold flex items-center gap-1 sm:hidden">
+              <i class="fa-solid fa-eye text-[9px] text-sky-400"></i> ${viewsCount}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    console.error('Failed to load profile posts:', err);
+    grid.innerHTML = '<div class="col-span-3 py-10 text-center text-xs text-rose-400">Failed to load posts.</div>';
+  }
+}
+
+// ----------------------------------------------------------------------------
+// FULL POST / VIDEO VIEWER MODAL
+// ----------------------------------------------------------------------------
+function openProfileMediaViewer(videoId) {
+  const post = PROFILE_POSTS_CACHE.find(p => p.id === videoId);
+  if (!post) return;
+
+  CURRENT_VIEWER_POST = post;
+
+  const modal = document.getElementById('profileMediaViewerModal');
+  const videoEl = document.getElementById('profileViewerVideo');
+  const creatorEl = document.getElementById('viewerCreatorName');
+  const tagEl = document.getElementById('viewerPostTag');
+  const likesEl = document.getElementById('viewerLikesCount');
+  const viewsEl = document.getElementById('viewerViewsCount');
+  const titleEl = document.getElementById('viewerTitle');
+  const dateEl = document.getElementById('viewerDate');
+  const saveIcon = document.getElementById('viewerSaveIcon');
+
+  if (creatorEl) creatorEl.textContent = '@' + (post.creator || CURRENT_PROFILE_DATA?.username || 'user');
+  if (tagEl) tagEl.textContent = post.tag || 'VIDEO';
+  if (likesEl) likesEl.textContent = (post.likes_count || 0).toLocaleString();
+  if (viewsEl) viewsEl.textContent = (post.views_count || post.views || 0).toLocaleString();
+  if (titleEl) titleEl.textContent = post.title || 'Untitled Video';
+  if (dateEl) dateEl.textContent = post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Recent';
+
+  if (saveIcon) {
+    if (CURRENT_PROFILE_TAB === 'saved') {
+      saveIcon.className = "fa-solid fa-bookmark text-amber-400 text-base";
+    } else {
+      saveIcon.className = "fa-regular fa-bookmark text-base";
+    }
+  }
+
+  if (videoEl) {
+    videoEl.src = post.src || '';
+    videoEl.play().catch(() => {});
+  }
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeProfileMediaViewer() {
+  const modal = document.getElementById('profileMediaViewerModal');
+  const videoEl = document.getElementById('profileViewerVideo');
+  if (videoEl) videoEl.pause();
+  if (modal) modal.classList.add('hidden');
+  CURRENT_VIEWER_POST = null;
+}
+
+async function toggleViewerSaveCurrent() {
+  if (!CURRENT_VIEWER_POST || !AUTH_TOKEN) {
+    showToast("Please sign in to save videos");
+    return;
+  }
+
+  const saveIcon = document.getElementById('viewerSaveIcon');
+  try {
+    const isCurrentlySaved = saveIcon && saveIcon.classList.contains('fa-solid');
+    if (isCurrentlySaved) {
+      await apiFetch(`/profile/save-video/${CURRENT_VIEWER_POST.id}`, { method: 'DELETE' });
+      if (saveIcon) saveIcon.className = "fa-regular fa-bookmark text-base";
+      showToast("Post removed from saved collection");
+    } else {
+      await apiFetch('/profile/save-video', {
+        method: 'POST',
+        body: JSON.stringify({ videoId: CURRENT_VIEWER_POST.id })
+      });
+      if (saveIcon) saveIcon.className = "fa-solid fa-bookmark text-amber-400 text-base";
+      showToast("Post saved to collection");
+    }
+  } catch (err) {
+    showToast(err.message || 'Action failed');
+  }
+}
+
+function shareCurrentViewerVideo() {
+  if (!CURRENT_VIEWER_POST) return;
+  const shareUrl = window.location.origin + '/?v=' + CURRENT_VIEWER_POST.id;
+  if (navigator.share) {
+    navigator.share({
+      title: CURRENT_VIEWER_POST.title || 'DarkPAKI Video',
+      url: shareUrl
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      showToast("Video link copied to clipboard!");
+    });
+  }
+}
+
+// ----------------------------------------------------------------------------
+// EDIT PROFILE MODAL (NO FACEBOOK / NO CATEGORY)
+// ----------------------------------------------------------------------------
+function openEditProfileModal() {
+  if (!CURRENT_PROFILE_DATA) return;
+
+  const modal = document.getElementById('editProfileModal');
+  const nameInput = document.getElementById('editProfileName');
+  const usernameInput = document.getElementById('editProfileUsername');
+  const pronounsInput = document.getElementById('editProfilePronouns');
+  const bioInput = document.getElementById('editProfileBio');
+  const bioCount = document.getElementById('editProfileBioCount');
+  const bannerSelect = document.getElementById('editProfileBannerStyle');
+  const genderSelect = document.getElementById('editProfileGender');
+  const linksBadge = document.getElementById('editProfileLinksCountBadge');
+  const avatarPreview = document.getElementById('editProfileAvatarPreview');
+  const avatarPlaceholder = document.getElementById('editProfileAvatarPlaceholder');
+  const statusEl = document.getElementById('editProfileUsernameStatus');
+
+  if (nameInput) nameInput.value = CURRENT_PROFILE_DATA.name || '';
+  if (usernameInput) usernameInput.value = CURRENT_PROFILE_DATA.username || '';
+  if (pronounsInput) pronounsInput.value = CURRENT_PROFILE_DATA.pronouns || '';
+  if (bioInput) bioInput.value = CURRENT_PROFILE_DATA.bio || '';
+  if (bioCount) bioCount.textContent = `${(CURRENT_PROFILE_DATA.bio || '').length} / 150`;
+  if (bannerSelect) bannerSelect.value = CURRENT_PROFILE_DATA.banner_style || '';
+  if (genderSelect) genderSelect.value = CURRENT_PROFILE_DATA.gender || 'Prefer not to say';
+  if (linksBadge) linksBadge.textContent = `${(CURRENT_PROFILE_DATA.links || []).length} links`;
+  if (statusEl) statusEl.textContent = '';
+
+  if (CURRENT_PROFILE_DATA.avatar_url && CURRENT_PROFILE_DATA.avatar_url.trim()) {
+    if (avatarPreview) {
+      avatarPreview.src = CURRENT_PROFILE_DATA.avatar_url;
+      avatarPreview.classList.remove('hidden');
+    }
+    if (avatarPlaceholder) avatarPlaceholder.classList.add('hidden');
+  } else {
+    if (avatarPreview) avatarPreview.classList.add('hidden');
+    if (avatarPlaceholder) avatarPlaceholder.classList.remove('hidden');
+  }
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeEditProfileModal() {
+  const modal = document.getElementById('editProfileModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function onUsernameInputChange(val) {
+  clearTimeout(USERNAME_CHECK_TIMER);
+  const statusEl = document.getElementById('editProfileUsernameStatus');
+  if (!statusEl) return;
+
+  const cleaned = (val || '').toLowerCase().trim().replace(/^@/, '');
+  if (!cleaned || cleaned.length < 3) {
+    statusEl.textContent = 'Min 3 chars';
+    statusEl.className = 'text-[10px] text-amber-400 font-mono';
+    return;
+  }
+
+  if (CURRENT_PROFILE_DATA && cleaned === CURRENT_PROFILE_DATA.username.toLowerCase()) {
+    statusEl.textContent = '✓ Current';
+    statusEl.className = 'text-[10px] text-emerald-400 font-mono font-bold';
+    return;
+  }
+
+  USERNAME_CHECK_TIMER = setTimeout(async () => {
+    try {
+      const res = await apiFetch(`/profile/check-username?username=${encodeURIComponent(cleaned)}`);
+      if (res.available) {
+        statusEl.textContent = '✓ Available';
+        statusEl.className = 'text-[10px] text-emerald-400 font-mono font-bold';
+      } else {
+        statusEl.textContent = '✗ ' + (res.message || 'Taken');
+        statusEl.className = 'text-[10px] text-rose-400 font-mono font-bold';
+      }
+    } catch (e) {
+      statusEl.textContent = '';
+    }
+  }, 300);
+}
+
+function updateBioCharCount(textarea) {
+  const counter = document.getElementById('editProfileBioCount');
+  if (counter && textarea) {
+    counter.textContent = `${textarea.value.length} / 150`;
+  }
+}
+
+async function handleEditProfileSubmit() {
+  const name = document.getElementById('editProfileName')?.value.trim();
+  const username = document.getElementById('editProfileUsername')?.value.trim();
+  const pronouns = document.getElementById('editProfilePronouns')?.value.trim();
+  const bio = document.getElementById('editProfileBio')?.value.trim();
+  const banner_style = document.getElementById('editProfileBannerStyle')?.value;
+  const gender = document.getElementById('editProfileGender')?.value;
+
+  if (!name) {
+    showToast("Name is required");
+    return;
+  }
+  if (!username) {
+    showToast("Username is required");
+    return;
+  }
+
+  const btn = document.getElementById('btnSaveEditProfile');
+  const spinner = document.getElementById('btnSaveEditProfileSpinner');
+  const btnText = document.getElementById('btnSaveEditProfileText');
+  if (btn) btn.disabled = true;
+  if (spinner) spinner.classList.remove('hidden');
+  if (btnText) btnText.classList.add('hidden');
+
+  try {
+    const res = await apiFetch('/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ name, username, pronouns, bio, banner_style, gender })
+    });
+
+    if (res.success && res.data) {
+      CURRENT_PROFILE_DATA = { ...CURRENT_PROFILE_DATA, ...res.data };
+      renderProfileHeaderUI(CURRENT_PROFILE_DATA);
+      updateHeaderProfileUI(CURRENT_PROFILE_DATA);
+      closeEditProfileModal();
+      showToast("Profile updated successfully!");
+    } else {
+      showToast(res.message || "Failed to update profile");
+    }
+  } catch (err) {
+    showToast(err.message || "Error updating profile");
+  } finally {
+    if (btn) btn.disabled = false;
+    if (spinner) spinner.classList.add('hidden');
+    if (btnText) btnText.classList.remove('hidden');
+  }
+}
+
+// ----------------------------------------------------------------------------
+// AVATAR UPLOAD & REMOVAL
+// ----------------------------------------------------------------------------
+function triggerEditAvatarPicker() {
+  const input = document.getElementById('editAvatarFileInput');
+  if (input) input.click();
+}
+
+function triggerQuickAvatarUpload() {
+  triggerEditAvatarPicker();
+}
+
+function handleEditAvatarSelected(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+
+  if (file.size > 5 * 1024 * 1024) {
+    showToast("Image size must be less than 5MB");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const base64Data = e.target.result;
+
+    // Instant local preview
+    const preview = document.getElementById('editProfileAvatarPreview');
+    const placeholder = document.getElementById('editProfileAvatarPlaceholder');
+    if (preview) {
+      preview.src = base64Data;
+      preview.classList.remove('hidden');
+    }
+    if (placeholder) placeholder.classList.add('hidden');
+
+    try {
+      showToast("Uploading profile picture...");
+      const res = await apiFetch('/profile/avatar', {
+        method: 'POST',
+        body: JSON.stringify({ imageBase64: base64Data })
+      });
+
+      if (res.success && res.avatarUrl) {
+        if (CURRENT_PROFILE_DATA) CURRENT_PROFILE_DATA.avatar_url = res.avatarUrl;
+        renderProfileHeaderUI(CURRENT_PROFILE_DATA);
+        updateHeaderProfileUI(CURRENT_PROFILE_DATA);
+        showToast("Profile photo updated!");
+      }
+    } catch (err) {
+      showToast(err.message || "Failed to upload photo");
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function handleRemoveAvatar() {
+  try {
+    const res = await apiFetch('/profile/avatar', { method: 'DELETE' });
+    if (res.success) {
+      if (CURRENT_PROFILE_DATA) CURRENT_PROFILE_DATA.avatar_url = '';
+      const preview = document.getElementById('editProfileAvatarPreview');
+      const placeholder = document.getElementById('editProfileAvatarPlaceholder');
+      if (preview) preview.classList.add('hidden');
+      if (placeholder) placeholder.classList.remove('hidden');
+      renderProfileHeaderUI(CURRENT_PROFILE_DATA);
+      updateHeaderProfileUI(CURRENT_PROFILE_DATA);
+      showToast("Profile photo removed");
+    }
+  } catch (err) {
+    showToast(err.message || "Failed to remove photo");
+  }
+}
+
+// ----------------------------------------------------------------------------
+// EXTERNAL LINKS MANAGEMENT SUB-PANEL
+// ----------------------------------------------------------------------------
+async function openManageLinksModal() {
+  const modal = document.getElementById('manageLinksModal');
+  if (modal) modal.classList.remove('hidden');
+  await refreshLinksList();
+}
+
+function closeManageLinksModal() {
+  const modal = document.getElementById('manageLinksModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function refreshLinksList() {
+  const list = document.getElementById('manageLinksList');
+  const countEl = document.getElementById('manageLinksCount');
+  if (!list) return;
+
+  try {
+    const res = await apiFetch('/profile/links');
+    const links = (res.success && Array.isArray(res.data)) ? res.data : [];
+    if (CURRENT_PROFILE_DATA) CURRENT_PROFILE_DATA.links = links;
+    if (countEl) countEl.textContent = `${links.length} / 10`;
+
+    const badge = document.getElementById('editProfileLinksCountBadge');
+    if (badge) badge.textContent = `${links.length} links`;
+
+    if (links.length === 0) {
+      list.innerHTML = '<p class="text-xs text-neutral-500 py-3 text-center">No external links added yet.</p>';
+    } else {
+      list.innerHTML = links.map(link => `
+        <div class="bg-black/60 border border-[#363636] rounded-xl p-2.5 flex items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <h5 class="text-xs font-bold text-white truncate">${escapeHtml(link.title)}</h5>
+            <p class="text-[10px] text-neutral-400 font-mono truncate">${escapeHtml(link.url)}</p>
+          </div>
+          <button type="button" onclick="handleDeleteLink(${link.id})" class="text-neutral-500 hover:text-rose-500 p-1.5 transition">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    renderProfileHeaderUI(CURRENT_PROFILE_DATA);
+  } catch (err) {
+    list.innerHTML = '<p class="text-xs text-rose-400 py-2">Failed to load links.</p>';
+  }
+}
+
+async function handleAddLinkSubmit() {
+  const urlInput = document.getElementById('newLinkUrlInput');
+  const titleInput = document.getElementById('newLinkTitleInput');
+  if (!urlInput) return;
+
+  const url = urlInput.value.trim();
+  const title = (titleInput?.value || '').trim() || url;
+
+  if (!url) {
+    showToast("Please enter a link URL");
+    return;
+  }
+
+  try {
+    const res = await apiFetch('/profile/links', {
+      method: 'POST',
+      body: JSON.stringify({ title, url })
+    });
+    if (res.success) {
+      urlInput.value = '';
+      if (titleInput) titleInput.value = '';
+      showToast("Link added!");
+      await refreshLinksList();
+    }
+  } catch (err) {
+    showToast(err.message || "Failed to add link");
+  }
+}
+
+async function handleDeleteLink(linkId) {
+  try {
+    await apiFetch(`/profile/links/${linkId}`, { method: 'DELETE' });
+    showToast("Link removed");
+    await refreshLinksList();
+  } catch (err) {
+    showToast(err.message || "Failed to delete link");
+  }
+}
+
+// ----------------------------------------------------------------------------
+// DRAWER & QR CODE MODAL
+// ----------------------------------------------------------------------------
+function openProfileDrawer() {
+  const modal = document.getElementById('profileDrawerModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeProfileDrawer() {
+  const modal = document.getElementById('profileDrawerModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function openProfileQrModal() {
+  const modal = document.getElementById('qrCodeModal');
+  const qrImg = document.getElementById('qrImageElement');
+  const nameEl = document.getElementById('qrDisplayName');
+  const userEl = document.getElementById('qrUsername');
+  const qrAvatarImg = document.getElementById('qrAvatarImg');
+  const qrAvatarIcon = document.getElementById('qrAvatarIcon');
+
+  if (!CURRENT_PROFILE_DATA) return;
+
+  const profileUrl = window.location.origin + '/?u=' + (CURRENT_PROFILE_DATA.username || 'user');
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(profileUrl)}&bgcolor=ffffff&color=000000&margin=1`;
+
+  if (qrImg) qrImg.src = qrApiUrl;
+  if (nameEl) nameEl.textContent = CURRENT_PROFILE_DATA.name || 'User';
+  if (userEl) userEl.textContent = '@' + (CURRENT_PROFILE_DATA.username || 'user');
+
+  if (CURRENT_PROFILE_DATA.avatar_url && CURRENT_PROFILE_DATA.avatar_url.trim()) {
+    if (qrAvatarImg) {
+      qrAvatarImg.src = CURRENT_PROFILE_DATA.avatar_url;
+      qrAvatarImg.classList.remove('hidden');
+    }
+    if (qrAvatarIcon) qrAvatarIcon.classList.add('hidden');
+  } else {
+    if (qrAvatarImg) qrAvatarImg.classList.add('hidden');
+    if (qrAvatarIcon) qrAvatarIcon.classList.remove('hidden');
+  }
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeProfileQrModal() {
+  const modal = document.getElementById('qrCodeModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function copyProfileLink() {
+  if (!CURRENT_PROFILE_DATA) return;
+  const profileUrl = window.location.origin + '/?u=' + (CURRENT_PROFILE_DATA.username || 'user');
+  navigator.clipboard.writeText(profileUrl).then(() => {
+    showToast("Profile link copied to clipboard!");
+  });
+}
+
+function shareProfileUrl() {
+  if (!CURRENT_PROFILE_DATA) return;
+  const profileUrl = window.location.origin + '/?u=' + (CURRENT_PROFILE_DATA.username || 'user');
+  if (navigator.share) {
+    navigator.share({
+      title: `${CURRENT_PROFILE_DATA.name} (@${CURRENT_PROFILE_DATA.username}) on DarkPAKI`,
+      url: profileUrl
+    }).catch(() => {});
+  } else {
+    openProfileQrModal();
+  }
+}
+
+// ----------------------------------------------------------------------------
+// REORDER & PIN GRID MODAL
+// ----------------------------------------------------------------------------
+function openReorderGridModal() {
+  const modal = document.getElementById('reorderGridModal');
+  const list = document.getElementById('reorderGridList');
+  if (!modal || !list) return;
+
+  if (PROFILE_POSTS_CACHE.length === 0) {
+    list.innerHTML = '<p class="text-xs text-neutral-500 py-4 text-center">You have no posts to reorder.</p>';
+  } else {
+    list.innerHTML = PROFILE_POSTS_CACHE.map((p, idx) => `
+      <div class="bg-[#1C1E21] border border-[#363636] rounded-xl p-2.5 flex items-center justify-between gap-3">
+        <img src="${p.thumb_img || '/public/darkpaki-logo.png'}" class="w-12 h-12 object-cover rounded-lg shrink-0">
+        <div class="min-w-0 flex-1">
+          <h5 class="text-xs font-bold text-white truncate">${escapeHtml(p.title)}</h5>
+          <span class="text-[10px] text-neutral-400 font-mono">${p.views_count || p.views || 0} views</span>
+        </div>
+        <button type="button" onclick="togglePinGridItem(${p.id})" class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition ${p.is_pinned ? 'bg-rose-500/20 text-rose-400 border-rose-500/40' : 'bg-black/50 text-neutral-400 border-neutral-700 hover:text-white'}">
+          <i class="fa-solid fa-thumbtack mr-1"></i> ${p.is_pinned ? 'Pinned' : 'Pin'}
+        </button>
+      </div>
+    `).join('');
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function closeReorderGridModal() {
+  const modal = document.getElementById('reorderGridModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function togglePinGridItem(postId) {
+  const item = PROFILE_POSTS_CACHE.find(p => p.id === postId);
+  if (!item) return;
+
+  const currentlyPinnedCount = PROFILE_POSTS_CACHE.filter(p => p.is_pinned).length;
+  if (!item.is_pinned && currentlyPinnedCount >= 3) {
+    showToast("You can only pin up to 3 posts");
+    return;
+  }
+
+  item.is_pinned = item.is_pinned ? 0 : 1;
+  openReorderGridModal();
+}
+
+async function saveReorderGrid() {
+  try {
+    const payload = PROFILE_POSTS_CACHE.map((p, index) => ({
+      id: p.id,
+      grid_order: index,
+      is_pinned: p.is_pinned ? 1 : 0
+    }));
+
+    await apiFetch('/profile/grid-order', {
+      method: 'PUT',
+      body: JSON.stringify({ items: payload })
+    });
+
+    closeReorderGridModal();
+    showToast("Grid order & pins saved!");
+    await loadProfileGridPosts(CURRENT_PROFILE_TAB);
+  } catch (err) {
+    showToast(err.message || "Failed to update grid order");
+  }
+}
+
+// ----------------------------------------------------------------------------
+// FOLLOWERS & FOLLOWING LISTS
+// ----------------------------------------------------------------------------
+let CURRENT_FOLLOWERS_TAB = 'followers';
+
+async function openFollowersListModal(type) {
+  CURRENT_FOLLOWERS_TAB = type || 'followers';
+  const modal = document.getElementById('followersModal');
+  if (modal) modal.classList.remove('hidden');
+  await switchFollowersTab(CURRENT_FOLLOWERS_TAB);
+}
+
+function closeFollowersModal() {
+  const modal = document.getElementById('followersModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function switchFollowersTab(tab) {
+  CURRENT_FOLLOWERS_TAB = tab;
+
+  const btnFollowers = document.getElementById('modalTabFollowersBtn');
+  const btnFollowing = document.getElementById('modalTabFollowingBtn');
+  const countFollowers = document.getElementById('modalFollowersCount');
+  const countFollowing = document.getElementById('modalFollowingCount');
+  const container = document.getElementById('followersListContainer');
+
+  const activeTabCls = "pb-1 border-b-2 border-white text-white font-bold transition";
+  const inactiveTabCls = "pb-1 border-b-2 border-transparent text-[#A8A8A8] hover:text-white transition";
+
+  if (btnFollowers) btnFollowers.className = tab === 'followers' ? activeTabCls : inactiveTabCls;
+  if (btnFollowing) btnFollowing.className = tab === 'following' ? activeTabCls : inactiveTabCls;
+
+  if (countFollowers) countFollowers.textContent = CURRENT_PROFILE_DATA?.followers_count || 0;
+  if (countFollowing) countFollowing.textContent = CURRENT_PROFILE_DATA?.following_count || 0;
+
+  if (!container) return;
+  container.innerHTML = '<div class="py-10 text-center text-neutral-500"><i class="fa-solid fa-circle-notch fa-spin text-xl"></i></div>';
+
+  try {
+    const endpoint = tab === 'followers' ? '/profile/followers' : '/profile/following';
+    const res = await apiFetch(endpoint);
+    const users = (res.success && Array.isArray(res.data)) ? res.data : [];
+
+    if (users.length === 0) {
+      container.innerHTML = `<p class="text-xs text-neutral-500 py-10 text-center">No ${tab} yet.</p>`;
+    } else {
+      container.innerHTML = users.map(u => `
+        <div class="flex items-center justify-between p-2 rounded-xl hover:bg-[#1C1E21] transition">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-full overflow-hidden bg-[#262626] border border-neutral-700 flex items-center justify-center shrink-0">
+              ${u.avatar_url ? `<img src="${u.avatar_url}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user text-neutral-400 text-xs"></i>`}
+            </div>
+            <div class="min-w-0">
+              <span class="text-xs font-bold text-white block truncate">${escapeHtml(u.name || 'User')}</span>
+              <span class="text-[11px] text-neutral-400 font-mono truncate">@${escapeHtml(u.username || 'user')}</span>
+            </div>
+          </div>
+          <button type="button" onclick="toggleFollowUser(${u.id}, this)" class="bg-[#262626] hover:bg-[#363636] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+            ${tab === 'following' ? 'Following' : 'Follow'}
+          </button>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    container.innerHTML = '<p class="text-xs text-rose-400 py-6 text-center">Failed to load list.</p>';
+  }
+}
+
+async function toggleFollowUser(targetId, btnEl) {
+  try {
+    const res = await apiFetch(`/profile/follow/${targetId}`, { method: 'POST' });
+    if (res.success) {
+      if (res.following) {
+        btnEl.textContent = 'Following';
+        btnEl.className = 'bg-[#262626] hover:bg-[#363636] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition';
+      } else {
+        btnEl.textContent = 'Follow';
+        btnEl.className = 'bg-[#0095F6] hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition';
+      }
+      showToast(res.message);
+      // Reload profile data to update counts
+      const pRes = await apiFetch('/profile/me');
+      if (pRes.success) {
+        CURRENT_PROFILE_DATA = pRes.data;
+        renderProfileHeaderUI(CURRENT_PROFILE_DATA);
+      }
+    }
+  } catch (err) {
+    showToast(err.message || 'Action failed');
+  }
+}
+
+// ----------------------------------------------------------------------------
+// LOGOUT
+// ----------------------------------------------------------------------------
+function handleLogoutUser() {
+  AUTH_TOKEN = null;
+  CURRENT_USER = null;
+  CURRENT_PROFILE_DATA = null;
+  localStorage.removeItem('darkpaki_auth_token');
+  updateHeaderProfileUI(null);
+  refreshEarningDashboardUI();
+  switchView('home');
+  showToast("Logged out successfully");
+}

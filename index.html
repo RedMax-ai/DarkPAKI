@@ -260,9 +260,16 @@
                 <span class="hidden sm:inline">Upload Video</span>
                 <span class="sm:hidden">Upload</span>
             </button>
-            <button onclick="openEarningOrLogin()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#121217] to-[#171318] hover:border-rose-500/60 border border-white/15 text-white px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-lg">
+            <button id="headerProfileBtn" onclick="openProfileOrLogin()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#121217] to-[#171318] hover:border-rose-500/60 border border-white/15 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-lg">
+                <div id="headerAvatarWrap" class="w-4 h-4 rounded-full overflow-hidden bg-[#262626] flex items-center justify-center shrink-0">
+                    <img id="headerAvatarImg" class="w-full h-full object-cover hidden" alt="Avatar" />
+                    <i id="headerAvatarDefaultIcon" class="fa-solid fa-user text-[10px] text-neutral-400"></i>
+                </div>
+                <span id="headerProfileText">Profile</span>
+            </button>
+            <button onclick="openEarningOrLogin()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#121217] to-[#171318] hover:border-rose-500/60 border border-white/15 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-lg">
                 <i class="fa-solid fa-coins text-amber-400 text-xs"></i>
-                <span id="headerWalletText" class="text-emerald-400 font-mono font-bold">Login & Earn</span>
+                <span id="headerWalletText" class="text-emerald-400 font-mono font-bold">Earn</span>
             </button>
         </div>
     </header>
@@ -1071,6 +1078,141 @@
     </section>
 
     <!-- ============================================================================
+         PAGE 6: INSTAGRAM-STYLE USER PROFILE SCREEN
+         ============================================================================ -->
+    <section id="userProfileSection" class="hidden relative z-10 max-w-md sm:max-w-lg w-full mx-auto px-0 pt-0 pb-24 bg-black min-h-screen text-[#F5F5F5] font-sans">
+        
+        <!-- Top Navigation Bar -->
+        <div class="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+            <button onclick="openUserUploadModal()" aria-label="Create Post" class="w-8 h-8 rounded-full flex items-center justify-center text-[#F5F5F5] hover:bg-[#1C1E21] active:scale-95 transition">
+                <i class="fa-solid fa-plus text-base"></i>
+            </button>
+            <div onclick="openAccountSwitchDropdown()" class="flex items-center gap-1.5 cursor-pointer">
+                <span id="profileTopUsername" class="text-sm sm:text-base font-bold text-[#F5F5F5] tracking-tight">@username</span>
+                <i class="fa-solid fa-chevron-down text-[10px] text-[#A8A8A8]"></i>
+            </div>
+            <button onclick="openProfileDrawer()" aria-label="Open Menu" class="w-8 h-8 rounded-full flex items-center justify-center text-[#F5F5F5] hover:bg-[#1C1E21] active:scale-95 transition">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Profile Header & Stats -->
+        <div class="px-4 pt-4 pb-2 flex flex-col gap-3.5">
+            <!-- Row: Avatar + 3-Column Stats -->
+            <div class="flex items-center justify-between gap-4">
+                <!-- Circular Avatar with '+' badge overlay -->
+                <div class="relative shrink-0">
+                    <div class="w-20 h-20 sm:w-[88px] sm:h-[88px] rounded-full p-[2.5px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 flex items-center justify-center shadow-lg">
+                        <div class="w-full h-full rounded-full bg-black overflow-hidden flex items-center justify-center border-2 border-black">
+                            <img id="profileAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                            <div id="profileAvatarPlaceholder" class="w-full h-full flex items-center justify-center bg-[#262626] text-[#A8A8A8]">
+                                <i class="fa-solid fa-user text-3xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Quick Avatar Upload Badge -->
+                    <button type="button" onclick="triggerQuickAvatarUpload()" title="Change Profile Photo" class="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#0095F6] hover:bg-sky-400 text-white flex items-center justify-center border-2 border-black shadow active:scale-90 transition">
+                        <i class="fa-solid fa-plus text-[11px]"></i>
+                    </button>
+                </div>
+
+                <!-- 3-Column Stats Row (Clickable) -->
+                <div class="flex-1 flex items-center justify-around text-center py-2">
+                    <div class="flex flex-col items-center cursor-pointer select-none">
+                        <span id="profileStatPosts" class="text-base sm:text-lg font-bold text-[#F5F5F5] font-mono leading-none">0</span>
+                        <span class="text-xs text-[#A8A8A8] mt-1 font-normal">posts</span>
+                    </div>
+                    <div onclick="openFollowersListModal('followers')" class="flex flex-col items-center cursor-pointer select-none hover:opacity-80 transition">
+                        <span id="profileStatFollowers" class="text-base sm:text-lg font-bold text-[#F5F5F5] font-mono leading-none">0</span>
+                        <span class="text-xs text-[#A8A8A8] mt-1 font-normal">followers</span>
+                    </div>
+                    <div onclick="openFollowersListModal('following')" class="flex flex-col items-center cursor-pointer select-none hover:opacity-80 transition">
+                        <span id="profileStatFollowing" class="text-base sm:text-lg font-bold text-[#F5F5F5] font-mono leading-none">0</span>
+                        <span class="text-xs text-[#A8A8A8] mt-1 font-normal">following</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Display Name & Pronouns -->
+            <div class="flex flex-col">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <h2 id="profileDisplayName" class="text-sm sm:text-base font-bold text-[#F5F5F5] leading-tight">DarkPAKI User</h2>
+                    <span id="profilePronouns" class="text-xs text-[#A8A8A8] hidden"></span>
+                </div>
+            </div>
+
+            <!-- Profile Banner Strip (Optional Creator Badge) -->
+            <div id="profileBannerStrip" class="hidden items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/15 via-purple-500/15 to-transparent border border-rose-500/30 text-xs">
+                <i id="profileBannerIcon" class="fa-solid fa-crown text-amber-400 text-xs"></i>
+                <span id="profileBannerText" class="font-bold text-white text-[11px] truncate">Creator Spotlight</span>
+            </div>
+
+            <!-- Multi-line Bio (Hidden when empty) -->
+            <div id="profileBioContainer" class="text-xs text-[#F5F5F5] leading-relaxed whitespace-pre-wrap break-words hidden">
+                <p id="profileBioText"></p>
+            </div>
+            <div id="profileEmptyBioPrompt" class="text-xs text-[#A8A8A8] italic">
+                <span>No bio yet. Tap "Edit profile" to introduce yourself.</span>
+            </div>
+
+            <!-- Clickable External Links Section -->
+            <div id="profileLinksContainer" class="hidden flex flex-col gap-1 pt-0.5">
+                <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Compact Creator Dashboard Card -->
+            <div id="profileDashboardCard" class="bg-[#1C1E21] hover:bg-[#262626] border border-[#363636] rounded-xl p-3 flex items-center justify-between transition cursor-pointer" onclick="switchView('earning')">
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold text-[#F5F5F5]">Professional dashboard</span>
+                    <span id="profileDashboardReach" class="text-[11px] text-[#A8A8A8] mt-0.5">0 accounts reached in the last 30 days.</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-xs text-[#A8A8A8]"></i>
+            </div>
+
+            <!-- Action Buttons Row -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="openEditProfileModal()" class="w-full bg-[#1C1E21] hover:bg-[#262626] active:bg-[#363636] text-[#F5F5F5] font-bold text-xs py-2 px-3 rounded-lg border border-[#363636] transition flex items-center justify-center gap-1.5">
+                    <span>Edit profile</span>
+                </button>
+                <button onclick="shareProfileUrl()" class="w-full bg-[#1C1E21] hover:bg-[#262626] active:bg-[#363636] text-[#F5F5F5] font-bold text-xs py-2 px-3 rounded-lg border border-[#363636] transition flex items-center justify-center gap-1.5">
+                    <span>Share profile</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Tabs (Posts / Reels / Saved) -->
+        <div class="mt-4 border-t border-[#262626] flex items-center">
+            <button id="profileTabPostsBtn" onclick="switchProfileTab('posts')" class="flex-1 py-3 border-b-2 border-[#F5F5F5] text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition">
+                <i class="fa-solid fa-table-cells text-base"></i>
+            </button>
+            <button id="profileTabReelsBtn" onclick="switchProfileTab('reels')" class="flex-1 py-3 border-b-2 border-transparent text-[#A8A8A8] hover:text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition">
+                <i class="fa-solid fa-film text-base"></i>
+            </button>
+            <button id="profileTabSavedBtn" onclick="switchProfileTab('saved')" class="flex-1 py-3 border-b-2 border-transparent text-[#A8A8A8] hover:text-[#F5F5F5] flex items-center justify-center gap-1 text-sm transition">
+                <i class="fa-regular fa-bookmark text-base"></i>
+            </button>
+        </div>
+
+        <!-- Tight 3-Column Media Grid (gap: 2px) -->
+        <div id="profileMediaGrid" class="grid grid-cols-3 gap-[2px] bg-black min-h-[220px]">
+            <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Clean Zero-Mock Empty State -->
+        <div id="profileGridEmptyState" class="hidden flex-col items-center justify-center py-14 px-4 text-center">
+            <div class="w-16 h-16 rounded-full border-2 border-[#363636] flex items-center justify-center text-[#A8A8A8] mb-3">
+                <i id="profileEmptyIcon" class="fa-solid fa-camera text-2xl"></i>
+            </div>
+            <h3 id="profileEmptyTitle" class="text-sm font-bold text-[#F5F5F5]">Share Photos & Videos</h3>
+            <p id="profileEmptyDesc" class="text-xs text-[#A8A8A8] max-w-[260px] mt-1">When you share photos and videos, they will appear on your profile.</p>
+            <button id="profileEmptyActionBtn" onclick="openUserUploadModal()" class="mt-3.5 text-xs font-bold text-[#0095F6] hover:text-sky-400">
+                Share your first video
+            </button>
+        </div>
+
+    </section>
+
+    <!-- ============================================================================
          COMPLIANCE FOOTER & LEGAL DISCLAIMERS (CRITICAL FOR AD NETWORK APPROVALS)
          ============================================================================ -->
     <footer class="relative z-10 w-full max-w-5xl mx-auto px-4 py-8 mb-20 border-t border-white/10 text-neutral-400 text-xs">
@@ -1138,9 +1280,12 @@
         </button>
 
 
-        <button id="bottomNavTelegram" onclick="openTelegramChannel()" class="text-sky-400 hover:text-sky-300 flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl transition">
-            <i class="fa-brands fa-telegram text-lg sm:text-xl"></i>
-            <span class="text-[10px] font-black">Telegram</span>
+        <button id="bottomNavProfile" onclick="openProfileOrLogin()" class="text-neutral-400 hover:text-white flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition">
+            <div id="bottomNavAvatarWrap" class="w-5 h-5 rounded-full overflow-hidden bg-[#262626] flex items-center justify-center shrink-0 border border-white/20">
+                <img id="bottomNavAvatarImg" class="w-full h-full object-cover hidden" alt="Avatar" />
+                <i id="bottomNavAvatarIcon" class="fa-solid fa-user text-[10px] text-neutral-400"></i>
+            </div>
+            <span class="text-[10px] font-black">Profile</span>
         </button>
 
         <button id="bottomNavEarning" onclick="openEarningOrLogin()" class="text-amber-400 hover:text-amber-300 flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition relative">
@@ -1563,6 +1708,331 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MODAL 1: EDIT PROFILE FULL-SCREEN / SHEET (NO FACEBOOK / NO CATEGORY)
+         ============================================================================ -->
+    <div id="editProfileModal" class="hidden fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+        <div class="bg-black sm:bg-[#101216] border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col shadow-2xl relative text-[#F5F5F5] font-sans">
+            
+            <!-- Sticky Header: Cancel, Title, Done/Save -->
+            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+                <button type="button" onclick="closeEditProfileModal()" class="text-sm text-[#F5F5F5] hover:text-[#A8A8A8] font-normal transition">
+                    Cancel
+                </button>
+                <h3 class="text-sm font-bold text-[#F5F5F5]">Edit profile</h3>
+                <button type="button" id="btnSaveEditProfile" onclick="handleEditProfileSubmit()" class="text-sm font-bold text-[#0095F6] hover:text-sky-400 transition flex items-center gap-1">
+                    <span id="btnSaveEditProfileText">Done</span>
+                    <i id="btnSaveEditProfileSpinner" class="fa-solid fa-circle-notch fa-spin text-xs hidden"></i>
+                </button>
+            </div>
+
+            <form id="editProfileForm" onsubmit="event.preventDefault(); handleEditProfileSubmit();" class="p-4 flex flex-col gap-4 overflow-y-auto">
+                
+                <!-- Circular Avatar Editor -->
+                <div class="flex flex-col items-center justify-center py-2">
+                    <div class="relative group cursor-pointer" onclick="triggerEditAvatarPicker()">
+                        <div class="w-20 h-20 rounded-full bg-[#262626] overflow-hidden flex items-center justify-center border-2 border-[#363636]">
+                            <img id="editProfileAvatarPreview" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                            <div id="editProfileAvatarPlaceholder" class="w-full h-full flex items-center justify-center text-[#A8A8A8]">
+                                <i class="fa-solid fa-user text-3xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="file" id="editAvatarFileInput" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="handleEditAvatarSelected(this)">
+                    <div class="flex items-center gap-3 mt-2">
+                        <button type="button" onclick="triggerEditAvatarPicker()" class="text-xs font-bold text-[#0095F6] hover:text-sky-400">
+                            Edit picture
+                        </button>
+                        <span class="text-neutral-600 text-xs">•</span>
+                        <button type="button" onclick="handleRemoveAvatar()" class="text-xs font-semibold text-rose-500 hover:text-rose-400">
+                            Remove photo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input Fields (Clean Dark Design) -->
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-[11px] text-[#A8A8A8] mb-1">Name</label>
+                        <input type="text" id="editProfileName" maxlength="60" required placeholder="Your display name" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-[11px] text-[#A8A8A8]">Username</label>
+                            <span id="editProfileUsernameStatus" class="text-[10px] text-neutral-400 font-mono"></span>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute left-3.5 top-2.5 text-neutral-500 font-mono text-xs">@</span>
+                            <input type="text" id="editProfileUsername" maxlength="30" required placeholder="username" oninput="onUsernameInputChange(this.value)" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl pl-8 pr-3.5 py-2.5 text-xs text-[#F5F5F5] font-mono outline-none transition">
+                        </div>
+                        <span class="text-[10px] text-neutral-500 mt-1 block">Letters, numbers, underscores and periods allowed.</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] text-[#A8A8A8] mb-1">Pronouns</label>
+                        <input type="text" id="editProfilePronouns" maxlength="30" placeholder="e.g. they/them or he/him" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-[11px] text-[#A8A8A8]">Bio</label>
+                            <span id="editProfileBioCount" class="text-[10px] text-neutral-400 font-mono">0 / 150</span>
+                        </div>
+                        <textarea id="editProfileBio" rows="3" maxlength="150" placeholder="Add a bio to your profile..." oninput="updateBioCharCount(this)" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2 text-xs text-[#F5F5F5] outline-none resize-none transition"></textarea>
+                    </div>
+
+                    <!-- Links Sub-Panel Trigger -->
+                    <div class="pt-1">
+                        <button type="button" id="btnOpenLinksModal" onclick="openManageLinksModal()" class="w-full bg-[#1C1E21] hover:bg-[#262626] border border-[#363636] rounded-xl px-3.5 py-2.5 flex items-center justify-between transition">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-link text-[#A8A8A8] text-xs"></i>
+                                <span class="text-xs text-[#F5F5F5] font-medium">Links</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span id="editProfileLinksCountBadge" class="text-[11px] text-[#A8A8A8] font-mono">0 links</span>
+                                <i class="fa-solid fa-chevron-right text-[10px] text-[#A8A8A8]"></i>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Banners & Highlights Dropdown -->
+                    <div>
+                        <label class="block text-[11px] text-[#A8A8A8] mb-1">Profile Badge / Banner</label>
+                        <select id="editProfileBannerStyle" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition cursor-pointer">
+                            <option value="">None (Standard Profile)</option>
+                            <option value="creator">👑 Creator Spotlight</option>
+                            <option value="verified">⭐ Verified Streamer</option>
+                            <option value="vip">🔥 VIP Gold Member</option>
+                        </select>
+                    </div>
+
+                    <!-- Gender Selection Dropdown -->
+                    <div>
+                        <label class="block text-[11px] text-[#A8A8A8] mb-1">Gender</label>
+                        <select id="editProfileGender" class="w-full bg-[#1C1E21] border border-[#363636] focus:border-[#0095F6] rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F5] outline-none transition cursor-pointer">
+                            <option value="Prefer not to say">Prefer not to say</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Custom">Custom</option>
+                        </select>
+                        <span class="text-[10px] text-neutral-500 mt-1 block">This won't be part of your public profile.</span>
+                    </div>
+
+                    <!-- Reorder / Pin Grid Modal Trigger -->
+                    <div class="pt-2">
+                        <button type="button" id="btnOpenReorderGridModal" onclick="openReorderGridModal()" class="w-full bg-[#1C1E21] hover:bg-[#262626] border border-[#363636] rounded-xl px-3.5 py-2.5 flex items-center justify-between transition">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-thumbtack text-rose-400 text-xs"></i>
+                                <span class="text-xs text-[#F5F5F5] font-medium">Reorder or Pin Posts</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-[10px] text-[#A8A8A8]"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MODAL 2: MANAGE EXTERNAL LINKS SUB-PANEL MODAL
+         ============================================================================ -->
+    <div id="manageLinksModal" class="hidden fixed inset-0 z-[130] bg-black/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+        <div class="bg-black sm:bg-[#101216] border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col shadow-2xl relative">
+            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+                <button type="button" onclick="closeManageLinksModal()" class="text-[#A8A8A8] hover:text-white p-1">
+                    <i class="fa-solid fa-arrow-left text-base"></i>
+                </button>
+                <h3 class="text-sm font-bold text-white">Links</h3>
+                <div class="w-6"></div>
+            </div>
+
+            <div class="p-4 flex flex-col gap-4 overflow-y-auto">
+                <!-- Add New Link Form -->
+                <div class="bg-[#1C1E21] border border-[#363636] rounded-2xl p-3 flex flex-col gap-2">
+                    <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus text-sky-400"></i> Add External Link
+                    </span>
+                    <input type="url" id="newLinkUrlInput" placeholder="URL (e.g. https://t.me/...)" class="w-full bg-black/70 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                    <input type="text" id="newLinkTitleInput" maxlength="60" placeholder="Title (e.g. My Telegram Channel)" class="w-full bg-black/70 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                    <button type="button" onclick="handleAddLinkSubmit()" class="w-full bg-[#0095F6] hover:bg-sky-500 text-white font-bold text-xs py-2 rounded-xl transition">
+                        Add Link
+                    </button>
+                </div>
+
+                <!-- Existing Links List -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-[#A8A8A8]">Added Links</span>
+                        <span id="manageLinksCount" class="text-[11px] text-neutral-500 font-mono">0 / 10</span>
+                    </div>
+                    <div id="manageLinksList" class="flex flex-col gap-2">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MODAL 3: BOTTOM-SHEET PROFILE DRAWER MENU
+         ============================================================================ -->
+    <div id="profileDrawerModal" class="hidden fixed inset-0 z-[125] bg-black/70 backdrop-blur-sm flex items-end justify-center">
+        <div class="bg-[#1C1E21] border-t border-[#363636] rounded-t-3xl max-w-md w-full p-4 pb-8 flex flex-col gap-2 shadow-2xl animate-in slide-in-from-bottom duration-200">
+            <div class="w-10 h-1 bg-neutral-600 rounded-full mx-auto mb-2"></div>
+            
+            <button onclick="closeProfileDrawer(); openProfileQrModal();" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-[#F5F5F5] hover:bg-[#262626] transition">
+                <i class="fa-solid fa-qrcode text-base text-[#F5F5F5] w-5"></i>
+                <span>Your QR code</span>
+            </button>
+            <button onclick="closeProfileDrawer(); switchProfileTab('saved');" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-[#F5F5F5] hover:bg-[#262626] transition">
+                <i class="fa-regular fa-bookmark text-base text-[#F5F5F5] w-5"></i>
+                <span>Saved</span>
+            </button>
+            <button onclick="closeProfileDrawer(); openLegalModal('privacy');" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-[#F5F5F5] hover:bg-[#262626] transition">
+                <i class="fa-solid fa-shield-halved text-base text-[#F5F5F5] w-5"></i>
+                <span>Settings & privacy</span>
+            </button>
+            <div class="border-t border-[#262626] my-1"></div>
+            <button onclick="closeProfileDrawer(); handleLogoutUser();" class="flex items-center gap-3.5 px-3 py-3 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-500/10 transition">
+                <i class="fa-solid fa-arrow-right-from-bracket text-base w-5"></i>
+                <span>Log out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MODAL 4: QR CODE PROFILE SHARING MODAL
+         ============================================================================ -->
+    <div id="qrCodeModal" class="hidden fixed inset-0 z-[130] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-gradient-to-br from-[#1C1E21] to-black border border-[#363636] rounded-3xl max-w-sm w-full p-6 flex flex-col items-center gap-4 text-center shadow-2xl relative">
+            <button onclick="closeProfileQrModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="w-16 h-16 rounded-full overflow-hidden bg-[#262626] border-2 border-rose-500/50 flex items-center justify-center mt-2">
+                <img id="qrAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                <i id="qrAvatarIcon" class="fa-solid fa-user text-2xl text-neutral-400"></i>
+            </div>
+            <div>
+                <h4 id="qrDisplayName" class="text-sm font-bold text-white">User</h4>
+                <p id="qrUsername" class="text-xs text-neutral-400 font-mono">@username</p>
+            </div>
+            <div class="p-3 bg-white rounded-2xl shadow-xl flex items-center justify-center">
+                <img id="qrImageElement" src="" alt="Profile QR Code" class="w-48 h-48">
+            </div>
+            <div class="w-full flex items-center gap-2 pt-2">
+                <button type="button" onclick="copyProfileLink()" class="flex-1 bg-[#262626] hover:bg-[#363636] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy link</span>
+                </button>
+                <button type="button" onclick="shareProfileUrl()" class="flex-1 bg-[#0095F6] hover:bg-sky-500 text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                    <span>Share profile</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MODAL 5: REORDER & PIN POSTS MODAL
+         ============================================================================ -->
+    <div id="reorderGridModal" class="hidden fixed inset-0 z-[130] bg-black/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+        <div class="bg-black sm:bg-[#101216] border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col shadow-2xl relative">
+            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+                <button type="button" onclick="closeReorderGridModal()" class="text-[#A8A8A8] hover:text-white p-1">
+                    <i class="fa-solid fa-arrow-left text-base"></i>
+                </button>
+                <h3 class="text-sm font-bold text-white">Reorder & Pin Posts</h3>
+                <button type="button" onclick="saveReorderGrid()" class="text-sm font-bold text-[#0095F6] hover:text-sky-400">
+                    Save
+                </button>
+            </div>
+
+            <div class="p-4 flex flex-col gap-3 overflow-y-auto">
+                <p class="text-xs text-[#A8A8A8]">Pin up to 3 posts to keep them at the top of your profile grid.</p>
+                <div id="reorderGridList" class="flex flex-col gap-2">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MODAL 6: FOLLOWERS & FOLLOWING LIST MODAL
+         ============================================================================ -->
+    <div id="followersModal" class="hidden fixed inset-0 z-[130] bg-black/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+        <div class="bg-black sm:bg-[#101216] border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col shadow-2xl relative">
+            <div class="sticky top-0 z-20 bg-black/95 sm:bg-[#101216]/95 backdrop-blur-md border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+                <button type="button" onclick="closeFollowersModal()" class="text-[#A8A8A8] hover:text-white p-1">
+                    <i class="fa-solid fa-arrow-left text-base"></i>
+                </button>
+                <div class="flex items-center gap-4 text-xs sm:text-sm font-bold">
+                    <button id="modalTabFollowersBtn" onclick="switchFollowersTab('followers')" class="pb-1 border-b-2 border-white text-white transition">
+                        Followers (<span id="modalFollowersCount">0</span>)
+                    </button>
+                    <button id="modalTabFollowingBtn" onclick="switchFollowersTab('following')" class="pb-1 border-b-2 border-transparent text-[#A8A8A8] hover:text-white transition">
+                        Following (<span id="modalFollowingCount">0</span>)
+                    </button>
+                </div>
+                <div class="w-6"></div>
+            </div>
+
+            <div id="followersListContainer" class="p-4 overflow-y-auto flex flex-col gap-2.5">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MODAL 7: FULL POST / VIDEO VIEWER MODAL
+         ============================================================================ -->
+    <div id="profileMediaViewerModal" class="hidden fixed inset-0 z-[140] bg-black/95 backdrop-blur-md flex items-center justify-center p-0 sm:p-4">
+        <div class="bg-black border-0 sm:border border-[#363636] sm:rounded-3xl max-w-md w-full min-h-screen sm:min-h-0 sm:max-h-[92vh] flex flex-col shadow-2xl relative overflow-hidden">
+            <!-- Header -->
+            <div class="sticky top-0 z-20 bg-black/95 border-b border-[#262626] px-4 py-3 flex items-center justify-between">
+                <button type="button" onclick="closeProfileMediaViewer()" class="text-[#A8A8A8] hover:text-white p-1">
+                    <i class="fa-solid fa-arrow-left text-base"></i>
+                </button>
+                <div class="text-center">
+                    <span id="viewerCreatorName" class="text-xs font-bold text-white block">@creator</span>
+                    <span id="viewerPostTag" class="text-[10px] text-rose-400 uppercase font-mono">POST</span>
+                </div>
+                <button type="button" id="viewerSaveBtn" onclick="toggleViewerSaveCurrent()" class="text-[#A8A8A8] hover:text-rose-500 p-1 transition">
+                    <i id="viewerSaveIcon" class="fa-regular fa-bookmark text-base"></i>
+                </button>
+            </div>
+
+            <!-- Video Player -->
+            <div class="relative bg-black w-full aspect-square sm:aspect-video flex items-center justify-center overflow-hidden">
+                <video id="profileViewerVideo" controls playsinline class="w-full h-full object-contain"></video>
+            </div>
+
+            <!-- Video Info & Stats -->
+            <div class="p-4 flex flex-col gap-2 text-xs overflow-y-auto flex-1">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="flex items-center gap-1 font-bold text-[#F5F5F5]">
+                            <i class="fa-solid fa-heart text-rose-500"></i>
+                            <span id="viewerLikesCount">0</span>
+                        </span>
+                        <span class="flex items-center gap-1 font-bold text-[#A8A8A8]">
+                            <i class="fa-solid fa-eye text-sky-400"></i>
+                            <span id="viewerViewsCount">0</span>
+                        </span>
+                    </div>
+                    <span id="viewerDate" class="text-[10px] text-[#A8A8A8]">Just now</span>
+                </div>
+                <h4 id="viewerTitle" class="text-sm font-bold text-[#F5F5F5] leading-snug">Video Title</h4>
+                <div class="pt-2 flex items-center gap-2">
+                    <button type="button" onclick="shareCurrentViewerVideo()" class="flex-1 bg-[#1C1E21] hover:bg-[#262626] border border-[#363636] text-white py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>Share Video</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

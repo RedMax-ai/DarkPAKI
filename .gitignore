@@ -17,6 +17,11 @@ data/*.db-shm
 *.sqlite
 *.sqlite3
 
+# Uploads
+public/uploads/*
+!public/uploads/avatars/
+!public/uploads/avatars/.gitkeep
+
 # OS metadata
 .DS_Store
 Thumbs.db
