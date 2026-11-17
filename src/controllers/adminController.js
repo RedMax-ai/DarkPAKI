@@ -544,7 +544,10 @@ function updateSettings(req, res, next) {
     }
 
     if (cdnStreamUrl !== undefined) {
-      const cleanCdn = sanitizeString(cdnStreamUrl).replace(/\/+$/, '');
+      let cleanCdn = sanitizeString(cdnStreamUrl).replace(/\/+$/, '');
+      if (!cleanCdn || cleanCdn.includes('anizon.watch') || cleanCdn.includes('localhost:5000')) {
+        cleanCdn = 'https://darkpaki-stream.onrender.com';
+      }
       db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('cdn_stream_url', ?)").run(cleanCdn);
     }
 

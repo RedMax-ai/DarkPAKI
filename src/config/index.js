@@ -1,6 +1,11 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
+const rawCdnUrl = (process.env.CDN_STREAM_URL || '').trim();
+const safeCdnUrl = (rawCdnUrl && !rawCdnUrl.includes('anizon.watch')) 
+  ? rawCdnUrl 
+  : 'https://darkpaki-stream.onrender.com';
+
 module.exports = {
   port: parseInt(process.env.PORT || '5000', 10),
   nodeEnv: process.env.NODE_ENV || 'production',
@@ -8,7 +13,7 @@ module.exports = {
   adminPin: process.env.ADMIN_PIN || '7860',
   dbPath: path.resolve(__dirname, '../../', process.env.DB_PATH || 'data/darkpaki.db'),
   corsOrigin: process.env.CORS_ORIGIN || '*',
-  cdnStreamUrl: process.env.CDN_STREAM_URL || 'https://darkpaki-stream.onrender.com',
+  cdnStreamUrl: safeCdnUrl,
   cdnApiKey: process.env.CDN_API_KEY || 'DarkPakiAdminSecret2026',
   adminAccessKey: process.env.ADMIN_ACCESS_KEY || 'naved_master_786',
   recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK',
