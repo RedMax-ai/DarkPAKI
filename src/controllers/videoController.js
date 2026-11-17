@@ -1,9 +1,27 @@
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const db = require('../db/database');
 const config = require('../config');
 const { sanitizeString } = require('../middleware/validator');
 const aiModeration = require('../services/aiModerationService');
+
+// Self-healing CDN URL resolver (Prevents self-referencing loops & 404s)
+function getEffectiveCdnUrl() {
+  try {
+    const row = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get();
+    let val = (row?.value || '').trim();
+    if (!val || val.includes('dark.anizon.watch') || val.includes('anizon.watch') || val.includes('localhost:5000')) {
+      val = config.cdnStreamUrl || 'https://darkpaki-stream.onrender.com';
+      try {
+        db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('cdn_stream_url', ?)").run(val);
+      } catch (e) {}
+    }
+    return val.replace(/\/+$/, '');
+  } catch (e) {
+    return (config.cdnStreamUrl || 'https://darkpaki-stream.onrender.com').replace(/\/+$/, '');
+  }
+}
 
 function getVideos(req, res, next) {
   try {
@@ -174,9 +192,7 @@ function uploadThumbnail(req, res, next) {
 // Public User Video Upload (Shorts / Reels style with Admin Review Queue)
 function submitUserVideo(req, res, next) {
   try {
-    const cdnSetting = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get();
-    const cdnUrl = (cdnSetting?.value || config.cdnStreamUrl || 'https://darkpaki-stream.onrender.com').trim().replace(/\/+$/, '');
-
+    const cdnUrl = getEffectiveCdnUrl();
     const parsedUrl = new URL(`${cdnUrl}/api/upload`);
     const isHttps = parsedUrl.protocol === 'https:';
     const client = isHttps ? require('https') : require('http');
@@ -189,6 +205,7 @@ function submitUserVideo(req, res, next) {
     delete headers['origin'];
     delete headers['referer'];
     delete headers['connection'];
+    delete headers['accept-encoding']; // Prevents upstream gzip/brotli compressed strings
 
     const proxyReq = client.request({
       method: 'POST',
@@ -199,10 +216,16 @@ function submitUserVideo(req, res, next) {
       headers: headers,
       timeout: 180000 // 3 minutes timeout
     }, (proxyRes) => {
+      let stream = proxyRes;
+      const encoding = proxyRes.headers['content-encoding'];
+      if (encoding === 'gzip') stream = proxyRes.pipe(zlib.createGunzip());
+      else if (encoding === 'br') stream = proxyRes.pipe(zlib.createBrotliDecompress());
+      else if (encoding === 'deflate') stream = proxyRes.pipe(zlib.createInflate());
+
       let rawData = '';
-      proxyRes.setEncoding('utf8');
-      proxyRes.on('data', chunk => { rawData += chunk; });
-      proxyRes.on('end', () => {
+      stream.setEncoding('utf8');
+      stream.on('data', chunk => { rawData += chunk; });
+      stream.on('end', () => {
         try {
           if (proxyRes.statusCode < 200 || proxyRes.statusCode >= 300) {
             return res.status(proxyRes.statusCode).json({

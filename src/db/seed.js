@@ -16,6 +16,14 @@ function seedDatabase() {
   insertSetting.run('ad_video_url', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4');
   insertSetting.run('allow_instant_skip', 'false');
 
+  // Self-heal CDN Stream URL to ensure it never self-references dark.anizon.watch
+  try {
+    const currentCdn = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get();
+    if (!currentCdn || !currentCdn.value || currentCdn.value.includes('dark.anizon.watch') || currentCdn.value.includes('anizon.watch')) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('cdn_stream_url', ?)").run(config.cdnStreamUrl || 'https://darkpaki-stream.onrender.com');
+    }
+  } catch (e) {}
+
   // Check Initial Verified User (Clean Zero-State, Zero Fake Data)
   const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
   if (userCount === 0) {

@@ -1,8 +1,25 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const zlib = require('zlib');
 const db = require('../db/database');
 const config = require('../config');
 const { sanitizeString } = require('../middleware/validator');
+
+function getEffectiveCdnUrl() {
+  try {
+    const row = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get();
+    let val = (row?.value || '').trim();
+    if (!val || val.includes('dark.anizon.watch') || val.includes('anizon.watch') || val.includes('localhost:5000')) {
+      val = config.cdnStreamUrl || 'https://darkpaki-stream.onrender.com';
+      try {
+        db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('cdn_stream_url', ?)").run(val);
+      } catch (e) {}
+    }
+    return val.replace(/\/+$/, '');
+  } catch (e) {
+    return (config.cdnStreamUrl || 'https://darkpaki-stream.onrender.com').replace(/\/+$/, '');
+  }
+}
 
 function loginAdmin(req, res, next) {
   try {
@@ -595,8 +612,7 @@ function resetDeviceLock(req, res, next) {
 // Pipes file stream straight to Telegram-Stream CDN (Render or Local) with Zero CORS issues
 function cdnDirectUpload(req, res, next) {
   try {
-    const cdnSetting = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get();
-    const cdnUrl = (cdnSetting?.value || config.cdnStreamUrl || 'https://darkpaki-stream.onrender.com').trim().replace(/\/+$/, '');
+    const cdnUrl = getEffectiveCdnUrl();
 
     const parsedUrl = new URL(`${cdnUrl}/api/upload`);
     const isHttps = parsedUrl.protocol === 'https:';
@@ -609,19 +625,28 @@ function cdnDirectUpload(req, res, next) {
     delete headers['cookie'];
     delete headers['origin'];
     delete headers['referer'];
+    delete headers['connection'];
+    delete headers['accept-encoding'];
 
     const proxyReq = client.request({
       method: 'POST',
       protocol: parsedUrl.protocol,
       hostname: parsedUrl.hostname,
       port: parsedUrl.port || (isHttps ? 443 : 80),
-      path: parsedUrl.pathname + parsedUrl.search,
-      headers: headers
+      path: parsedUrl.pathname,
+      headers: headers,
+      timeout: 180000
     }, (proxyRes) => {
+      let stream = proxyRes;
+      const encoding = proxyRes.headers['content-encoding'];
+      if (encoding === 'gzip') stream = proxyRes.pipe(zlib.createGunzip());
+      else if (encoding === 'br') stream = proxyRes.pipe(zlib.createBrotliDecompress());
+      else if (encoding === 'deflate') stream = proxyRes.pipe(zlib.createInflate());
+
       let rawData = '';
-      proxyRes.setEncoding('utf8');
-      proxyRes.on('data', chunk => { rawData += chunk; });
-      proxyRes.on('end', () => {
+      stream.setEncoding('utf8');
+      stream.on('data', chunk => { rawData += chunk; });
+      stream.on('end', () => {
         try {
           if (proxyRes.statusCode < 200 || proxyRes.statusCode >= 300) {
             return res.status(proxyRes.statusCode).json({
