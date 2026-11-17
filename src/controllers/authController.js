@@ -41,7 +41,7 @@ async function verifyGoogleRecaptcha(token, remoteIp) {
   }
 
   const dbSecret = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_secret_key'").get()?.value;
-  const secretKey = (dbSecret && dbSecret.trim()) ? dbSecret.trim() : (config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZ0p6_tqzZ85t');
+  const secretKey = (dbSecret && dbSecret.trim()) ? dbSecret.trim() : (config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZOp6_tqzZ85t');
 
   try {
     const postData = new URLSearchParams({

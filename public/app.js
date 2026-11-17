@@ -969,7 +969,7 @@ function highlightTermsCard() {
   }
 }
 
-// Google reCAPTCHA v2 Integration (Official dark.anizon.watch)
+// Google reCAPTCHA v2 Invisible Integration (Official dark.anizon.watch)
 async function renderGoogleRecaptcha() {
   const container = document.getElementById('googleRecaptchaWidget');
   if (!container) return;
@@ -1002,8 +1002,11 @@ async function renderGoogleRecaptcha() {
 
   try {
     container.innerHTML = '';
+    // User key is registered as Invisible reCAPTCHA (size: 'invisible' prevents 'Invalid key type' error)
     RECAPTCHA_WIDGET_ID = grecaptcha.render('googleRecaptchaWidget', {
       sitekey: RECAPTCHA_SITE_KEY,
+      size: 'invisible',
+      badge: 'inline',
       theme: 'dark',
       callback: function(token) {
         GOOGLE_RECAPTCHA_TOKEN = token;
@@ -1018,7 +1021,7 @@ async function renderGoogleRecaptcha() {
         CF_TURNSTILE_TOKEN = '';
         const statusLabel = document.getElementById('recaptchaStatusLabel');
         if (statusLabel) {
-          statusLabel.innerHTML = '<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Checkbox expired, please verify again';
+          statusLabel.innerHTML = '<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Security token refreshed';
         }
       },
       'error-callback': function() {
@@ -1028,9 +1031,75 @@ async function renderGoogleRecaptcha() {
         }
       }
     });
+
+    // Warm up invisible verification so token is prepared
+    try {
+      grecaptcha.execute(RECAPTCHA_WIDGET_ID);
+    } catch (e) {}
   } catch (err) {
     console.debug('reCAPTCHA render:', err.message);
   }
+}
+
+// Automatically executes invisible reCAPTCHA if token not yet acquired
+async function acquireRecaptchaToken() {
+  if (GOOGLE_RECAPTCHA_TOKEN) return GOOGLE_RECAPTCHA_TOKEN;
+  if (typeof grecaptcha === 'undefined' || RECAPTCHA_WIDGET_ID === null) {
+    return CF_TURNSTILE_TOKEN || '';
+  }
+
+  try {
+    const existing = grecaptcha.getResponse(RECAPTCHA_WIDGET_ID);
+    if (existing) {
+      GOOGLE_RECAPTCHA_TOKEN = existing;
+      return existing;
+    }
+  } catch (e) {}
+
+  return new Promise((resolve) => {
+    let finished = false;
+    const timer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        resolve(GOOGLE_RECAPTCHA_TOKEN || '');
+      }
+    }, 3000);
+
+    try {
+      const res = grecaptcha.execute(RECAPTCHA_WIDGET_ID);
+      if (res && typeof res.then === 'function') {
+        res.then(token => {
+          if (!finished) {
+            finished = true;
+            clearTimeout(timer);
+            GOOGLE_RECAPTCHA_TOKEN = token || '';
+            resolve(token || '');
+          }
+        }).catch(() => {
+          if (!finished) {
+            finished = true;
+            clearTimeout(timer);
+            resolve(GOOGLE_RECAPTCHA_TOKEN || '');
+          }
+        });
+        return;
+      }
+    } catch (e) {}
+
+    const poll = setInterval(() => {
+      let t = '';
+      try { t = GOOGLE_RECAPTCHA_TOKEN || grecaptcha.getResponse(RECAPTCHA_WIDGET_ID); } catch (e) {}
+      if (t) {
+        if (!finished) {
+          finished = true;
+          clearInterval(poll);
+          clearTimeout(timer);
+          GOOGLE_RECAPTCHA_TOKEN = t;
+          resolve(t);
+        }
+      }
+    }, 100);
+  });
 }
 
 // Fallback alias for backward-compatibility
@@ -1457,13 +1526,7 @@ async function handleSecureUserLogin(e) {
   if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-spinner fa-spin';
 
   try {
-    let recaptchaToken = GOOGLE_RECAPTCHA_TOKEN;
-    if (!recaptchaToken && typeof grecaptcha !== 'undefined' && RECAPTCHA_WIDGET_ID !== null) {
-      try {
-        recaptchaToken = grecaptcha.getResponse(RECAPTCHA_WIDGET_ID);
-      } catch (e) {}
-    }
-    if (!recaptchaToken) recaptchaToken = CF_TURNSTILE_TOKEN;
+    const recaptchaToken = await acquireRecaptchaToken();
 
     const payload = {
       mode: AUTH_MODE,
