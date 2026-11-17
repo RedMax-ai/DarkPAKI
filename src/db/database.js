@@ -273,6 +273,22 @@ function initializeSchema() {
     );
     CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON user_follows(follower_id);
     CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows(following_id);
+
+    CREATE TABLE IF NOT EXISTS video_views_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      video_id INTEGER NOT NULL,
+      creator_name TEXT,
+      user_id INTEGER,
+      source TEXT NOT NULL DEFAULT 'direct',
+      ip TEXT,
+      user_agent TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_views_log_video ON video_views_log(video_id);
+    CREATE INDEX IF NOT EXISTS idx_views_log_creator ON video_views_log(creator_name);
+    CREATE INDEX IF NOT EXISTS idx_views_log_user ON video_views_log(user_id);
+    CREATE INDEX IF NOT EXISTS idx_views_log_created ON video_views_log(created_at);
   `);
 
   // Safe runtime migrations for existing databases
@@ -344,6 +360,25 @@ function initializeSchema() {
   runMigration("ALTER TABLE users ADD COLUMN allow_comments INTEGER NOT NULL DEFAULT 1;");
   runMigration("ALTER TABLE users ADD COLUMN show_watermark INTEGER NOT NULL DEFAULT 1;");
   runMigration("ALTER TABLE users ADD COLUMN email_notifications INTEGER NOT NULL DEFAULT 1;");
+
+  // Video Views Log Table Migration
+  runMigration(`
+    CREATE TABLE IF NOT EXISTS video_views_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      video_id INTEGER NOT NULL,
+      creator_name TEXT,
+      user_id INTEGER,
+      source TEXT NOT NULL DEFAULT 'direct',
+      ip TEXT,
+      user_agent TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+    );
+  `);
+  runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_video ON video_views_log(video_id);");
+  runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_creator ON video_views_log(creator_name);");
+  runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_user ON video_views_log(user_id);");
+  runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_created ON video_views_log(created_at);");
 
   // Sync existing videos' views_count from views string if 0
   try {

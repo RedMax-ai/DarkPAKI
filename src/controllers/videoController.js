@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const db = require('../db/database');
 const config = require('../config');
 const { sanitizeString } = require('../middleware/validator');
@@ -87,7 +89,7 @@ function incrementView(req, res, next) {
       return res.status(400).json({ success: false, message: 'Invalid video ID.' });
     }
 
-    const video = db.prepare('SELECT id, views_count FROM videos WHERE id = ?').get(id);
+    const video = db.prepare('SELECT id, views_count, creator, owner_name, user_id FROM videos WHERE id = ?').get(id);
     if (!video) {
       return res.status(404).json({ success: false, message: 'Video not found.' });
     }
@@ -102,13 +104,67 @@ function incrementView(req, res, next) {
 
     db.prepare('UPDATE videos SET views_count = ?, views = ? WHERE id = ?').run(newCount, formattedViews, id);
 
+    // Record authentic traffic source into video_views_log
+    const allowedSources = ['trending', 'search', 'direct'];
+    const rawSource = (req.body?.source || req.query?.source || 'direct').toString().toLowerCase().trim();
+    const source = allowedSources.includes(rawSource) ? rawSource : 'direct';
+
+    const creatorName = video.creator || video.owner_name || '';
+    const creatorUserId = video.user_id || null;
+
+    try {
+      db.prepare(`
+        INSERT INTO video_views_log (video_id, creator_name, user_id, source, ip, user_agent)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(id, creatorName, creatorUserId, source, req.ip || '', req.headers['user-agent'] || '');
+    } catch (logErr) {
+      console.warn('[Views Log Error]', logErr.message);
+    }
+
     res.json({
       success: true,
       data: {
         id,
         viewsCount: newCount,
-        views: formattedViews
+        views: formattedViews,
+        source
       }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/videos/upload-thumbnail
+function uploadThumbnail(req, res, next) {
+  try {
+    const { imageBase64 } = req.body;
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return res.status(400).json({ success: false, message: 'Base64 image data is required.' });
+    }
+
+    const match = imageBase64.match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/);
+    if (!match) {
+      return res.status(400).json({ success: false, message: 'Invalid image format. Supported formats: PNG, JPEG, WebP.' });
+    }
+
+    const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+    const buffer = Buffer.from(match[2], 'base64');
+    if (buffer.length > 5 * 1024 * 1024) {
+      return res.status(400).json({ success: false, message: 'Thumbnail image exceeds 5MB limit.' });
+    }
+
+    const thumbDir = path.resolve(__dirname, '../../public/uploads/thumbnails');
+    if (!fs.existsSync(thumbDir)) {
+      fs.mkdirSync(thumbDir, { recursive: true });
+    }
+
+    const fileName = `thumb_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    fs.writeFileSync(path.join(thumbDir, fileName), buffer);
+
+    res.json({
+      success: true,
+      thumbUrl: `/public/uploads/thumbnails/${fileName}`
     });
   } catch (err) {
     next(err);
@@ -132,14 +188,16 @@ function submitUserVideo(req, res, next) {
     delete headers['cookie'];
     delete headers['origin'];
     delete headers['referer'];
+    delete headers['connection'];
 
     const proxyReq = client.request({
       method: 'POST',
       protocol: parsedUrl.protocol,
       hostname: parsedUrl.hostname,
       port: parsedUrl.port || (isHttps ? 443 : 80),
-      path: parsedUrl.pathname + parsedUrl.search,
-      headers: headers
+      path: parsedUrl.pathname, // Clean path to avoid huge query string proxy error
+      headers: headers,
+      timeout: 180000 // 3 minutes timeout
     }, (proxyRes) => {
       let rawData = '';
       proxyRes.setEncoding('utf8');
@@ -165,20 +223,44 @@ function submitUserVideo(req, res, next) {
           const duration = sanitizeString(req.query.duration) || cdnData.file_size || '0:45';
           const isShort = (req.query.isShort === '1' || category.includes('SHORT')) ? 1 : 0;
 
-          let thumb = req.query.thumb ? sanitizeString(req.query.thumb) : cdnData.thumb_url;
+          let thumb = req.query.thumb ? sanitizeString(req.query.thumb) : '';
+          // If thumb is base64, save safely to disk
+          if (thumb && thumb.startsWith('data:image')) {
+            try {
+              const match = thumb.match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/);
+              if (match) {
+                const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+                const thumbDir = path.resolve(__dirname, '../../public/uploads/thumbnails');
+                if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true });
+                const fileName = `thumb_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+                fs.writeFileSync(path.join(thumbDir, fileName), Buffer.from(match[2], 'base64'));
+                thumb = `/public/uploads/thumbnails/${fileName}`;
+              }
+            } catch (e) {
+              thumb = '';
+            }
+          }
+
           if (!thumb && cdnData.chat_id && cdnData.msg_id) {
             thumb = `${cdnUrl}/api/thumb/${cdnData.chat_id}?id=${cdnData.msg_id}`;
           }
           if (!thumb) {
-            thumb = 'https://placehold.co/600x400/121218/f43f5e?text=User+Video';
+            thumb = cdnData.thumb_url || '/public/darkpaki-logo.png';
           }
 
-          // Insert with status = 'PENDING' for Admin Review!
+          // Find creator user ID if registered
+          let userId = null;
+          if (ownerEmail) {
+            const userMatch = db.prepare('SELECT id FROM users WHERE gmail = ? COLLATE NOCASE').get(ownerEmail);
+            if (userMatch) userId = userMatch.id;
+          }
+
+          // Insert with status = 'PENDING' for Admin Review
           const insertVideo = db.prepare(`
-            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, status, owner_name, owner_email, views_count, is_short)
-            VALUES (?, ?, '0 views', ?, ?, ?, ?, 'Submitted by Community', 0, 'PENDING', ?, ?, 0, ?)
+            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, status, owner_name, owner_email, user_id, views_count, is_short)
+            VALUES (?, ?, '0 views', ?, ?, ?, ?, 'Submitted by Community', 0, 'PENDING', ?, ?, ?, 0, ?)
           `);
-          const result = insertVideo.run(title, ownerName, duration, cdnData.stream_url, thumb, category, ownerName, ownerEmail, isShort);
+          const result = insertVideo.run(title, ownerName, duration, cdnData.stream_url, thumb, category, ownerName, ownerEmail, userId, isShort);
           const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);
 
           db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
@@ -197,6 +279,10 @@ function submitUserVideo(req, res, next) {
           return res.status(500).json({ success: false, message: 'Failed to process CDN response', error: parseErr.message, raw: rawData });
         }
       });
+    });
+
+    proxyReq.on('timeout', () => {
+      proxyReq.destroy(new Error('CDN stream connection timed out'));
     });
 
     proxyReq.on('error', (err) => {
@@ -242,6 +328,7 @@ module.exports = {
   getVideos,
   getVideoById,
   incrementView,
+  uploadThumbnail,
   submitUserVideo,
   getAdConfig
 };

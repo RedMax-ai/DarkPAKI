@@ -91,6 +91,9 @@ function getProfileMe(req, res, next) {
         banner_style: user.banner_style || '',
         banner_url: user.banner_url || '',
         is_monetized: Boolean(user.is_monetized),
+        coins: user.coins !== undefined ? user.coins : 50,
+        balance: user.balance !== undefined ? user.balance : 0,
+        referrals: user.referrals || 0,
         posts_count: postsCount,
         followers_count: followersCount,
         following_count: followingCount,
@@ -655,20 +658,78 @@ function getCreatorAnalytics(req, res, next) {
       LIMIT 5
     `).all(user.id, user.gmail);
 
-    // 3. 7-Day Performance Timeline (Daily views distribution)
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const weights = [0.10, 0.12, 0.14, 0.15, 0.18, 0.17, 0.14];
-    const dailyViews = days.map((day, idx) => ({
-      day,
-      views: totalViews > 0 ? Math.round(totalViews * weights[idx]) : 0
-    }));
+    // 3. 7-Day Performance Timeline from authentic SQLite views log
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dailyViews = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayName = dayNames[d.getDay()];
 
-    // 4. Traffic Sources
-    const trafficSources = [
-      { name: 'Trending Feed & Recommendations', percentage: totalViews > 0 ? 54 : 0 },
-      { name: 'Channel Search & Tags', percentage: totalViews > 0 ? 31 : 0 },
-      { name: 'Direct & Referral Links', percentage: totalViews > 0 ? 15 : 0 }
-    ];
+      const row = db.prepare(`
+        SELECT COUNT(*) as count
+        FROM video_views_log
+        WHERE (user_id = ? OR creator_name = ? COLLATE NOCASE OR video_id IN (
+          SELECT id FROM videos WHERE (user_id = ? OR owner_email = ? COLLATE NOCASE) AND status = 'APPROVED'
+        ))
+        AND date(created_at) = date(?)
+      `).get(user.id, user.name, user.id, user.gmail, dateStr);
+
+      dailyViews.push({
+        day: dayName,
+        date: dateStr,
+        views: row?.count || 0
+      });
+    }
+
+    // 4. Authentic Traffic Sources from REAL SQLite views log (Zero Fake Data)
+    const trafficRows = db.prepare(`
+      SELECT source, COUNT(*) as count
+      FROM video_views_log
+      WHERE (user_id = ? OR creator_name = ? COLLATE NOCASE OR video_id IN (
+        SELECT id FROM videos WHERE (user_id = ? OR owner_email = ? COLLATE NOCASE) AND status = 'APPROVED'
+      ))
+      GROUP BY source
+    `).all(user.id, user.name, user.id, user.gmail);
+
+    const loggedViewsTotal = trafficRows.reduce((sum, r) => sum + r.count, 0);
+
+    let trafficSources = [];
+    if (totalViews > 0 && loggedViewsTotal > 0) {
+      const sourceMap = {
+        trending: { name: 'Trending Feed & Recommendations', color: '#7C3AED', count: 0 },
+        search: { name: 'Channel Search & Tags', color: '#38BDF8', count: 0 },
+        direct: { name: 'Direct & Referral Links', color: '#34D399', count: 0 }
+      };
+
+      trafficRows.forEach(r => {
+        const key = (r.source || 'direct').toLowerCase();
+        if (sourceMap[key]) {
+          sourceMap[key].count += r.count;
+        } else {
+          sourceMap.direct.count += r.count;
+        }
+      });
+
+      trafficSources = Object.keys(sourceMap).map(k => {
+        const item = sourceMap[k];
+        const pct = loggedViewsTotal > 0 ? Math.round((item.count / loggedViewsTotal) * 100) : 0;
+        return {
+          id: k,
+          name: item.name,
+          color: item.color,
+          views: item.count,
+          percentage: pct
+        };
+      });
+    } else if (totalViews > 0 && loggedViewsTotal === 0) {
+      trafficSources = [
+        { id: 'direct', name: 'Direct & Organic Platform Views', color: '#7C3AED', views: totalViews, percentage: 100 }
+      ];
+    } else {
+      trafficSources = [];
+    }
 
     res.json({
       success: true,

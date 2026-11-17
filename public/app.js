@@ -482,7 +482,7 @@ function renderFeaturedSpotlight() {
           <p class="text-[10px] sm:text-[11px] text-[#94A3B8] mt-1 flex items-center gap-3">
             <span class="flex items-center gap-1">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
               ${(video.views_count || video.views || 0).toLocaleString()}
@@ -556,7 +556,7 @@ function renderHomeVideoGrid(searchQuery = '') {
         <div class="absolute bottom-1.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-[#94A3B8]">
           <span class="flex items-center gap-1 font-mono">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-              <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
             ${(video.views_count || video.views || 0).toLocaleString()}
@@ -2453,10 +2453,10 @@ async function handleUserUploadSubmit(event) {
   }
 
   const file = fileInput.files[0];
-  const title = document.getElementById('userUploadTitle').value.trim();
+  const title = document.getElementById('userUploadTitle').value.trim() || file.name.replace(/\.[^/.]+$/, '');
   const category = document.getElementById('userUploadCategory').value;
   const duration = document.getElementById('userUploadDuration').value.trim() || '0:45';
-  const creator = document.getElementById('userUploadCreator').value.trim() || 'Community Creator';
+  const creator = document.getElementById('userUploadCreator').value.trim() || (CURRENT_USER ? CURRENT_USER.name : 'Community Creator');
   const ownerEmail = document.getElementById('userUploadEmail').value.trim() || (CURRENT_USER ? CURRENT_USER.gmail : '');
   const isShort = category === 'SHORTS' ? '1' : '0';
 
@@ -2469,9 +2469,29 @@ async function handleUserUploadSubmit(event) {
   progressContainer.classList.remove('hidden');
   progressBar.style.width = '0%';
   progressPct.textContent = '0%';
-  progressStatus.textContent = 'Streaming to Telegram Cloud...';
+  progressStatus.textContent = 'Preparing video upload...';
   submitBtn.disabled = true;
 
+  // 1. If base64 thumbnail was generated from canvas, persist it cleanly first to prevent URI length errors
+  let serverThumbUrl = '';
+  if (userGeneratedThumbDataUrl && userGeneratedThumbDataUrl.startsWith('data:image')) {
+    try {
+      progressStatus.textContent = 'Saving high-resolution thumbnail...';
+      const thumbRes = await fetch('/api/videos/upload-thumbnail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: userGeneratedThumbDataUrl })
+      });
+      const thumbData = await thumbRes.json();
+      if (thumbData && thumbData.thumbUrl) {
+        serverThumbUrl = thumbData.thumbUrl;
+      }
+    } catch (tErr) {
+      console.warn('[Thumbnail Pre-upload Warning]', tErr);
+    }
+  }
+
+  // 2. Safe and compact query params (under 200 bytes)
   const queryParams = new URLSearchParams({
     title,
     category,
@@ -2479,7 +2499,7 @@ async function handleUserUploadSubmit(event) {
     ownerName: creator,
     ownerEmail,
     isShort,
-    thumb: userGeneratedThumbDataUrl || ''
+    thumb: serverThumbUrl
   });
 
   const uploadUrl = `/api/videos/user-upload?${queryParams.toString()}`;
@@ -2493,34 +2513,55 @@ async function handleUserUploadSubmit(event) {
 
   xhr.upload.onprogress = (ev) => {
     if (ev.lengthComputable) {
-      const pct = Math.round((ev.loaded / ev.total) * 95);
+      const pct = Math.min(95, Math.round((ev.loaded / ev.total) * 95));
       progressBar.style.width = `${pct}%`;
       progressPct.textContent = `${pct}%`;
-      progressStatus.textContent = `Streaming bytes: ${(ev.loaded / (1024 * 1024)).toFixed(1)} MB / ${(ev.total / (1024 * 1024)).toFixed(1)} MB`;
+      progressStatus.textContent = `Streaming bytes: ${(ev.loaded / (1024 * 1024)).toFixed(1)} MB / ${(ev.total / (1024 * 1024)).toFixed(1)} MB (${pct}%)`;
     }
+  };
+
+  xhr.upload.onload = () => {
+    progressBar.style.width = '96%';
+    progressPct.textContent = '96%';
+    progressStatus.textContent = 'Verifying stream & queuing for Admin approval...';
   };
 
   xhr.onload = () => {
     if (xhr.status >= 200 && xhr.status < 300) {
       progressBar.style.width = '100%';
       progressPct.textContent = '100%';
-      progressStatus.textContent = 'Submitted to Admin Review!';
+      progressStatus.textContent = 'Submitted to Admin Review Queue!';
       
       closeUserUploadModal();
-      alert('🎉 Video Submitted Successfully!\n\nYour video has been uploaded and queued in the DarkPAKI Admin Review Queue.\nOnce verified by Admin, it will be published live to all users!');
+      showToast('🎉 Video submitted for Admin review!', 'success');
       
       fileInput.value = '';
+      userGeneratedThumbDataUrl = null;
       document.getElementById('userSelectedFileInfo').classList.add('hidden');
       document.getElementById('userDetectedThumbBox').classList.add('hidden');
       document.getElementById('userUploadTitle').value = '';
+
+      // Immediately refresh creator profile & analytics
+      if (typeof loadProfilePosts === 'function') loadProfilePosts();
+      if (typeof loadCreatorAnalytics === 'function') loadCreatorAnalytics();
+      if (typeof refreshUserProfile === 'function') refreshUserProfile();
     } else {
-      showToast('Upload error: ' + xhr.responseText);
+      let errMsg = 'Upload failed';
+      try {
+        const errJson = JSON.parse(xhr.responseText);
+        errMsg = errJson.message || errMsg;
+      } catch (e) {
+        errMsg = `Upload failed (Status ${xhr.status}). Please check connection.`;
+      }
+      showToast(errMsg, 'error');
+      progressStatus.textContent = 'Upload failed. Try again.';
     }
     submitBtn.disabled = false;
   };
 
   xhr.onerror = () => {
-    showToast('Network error during upload');
+    showToast('Network error during upload. Please check connection.', 'error');
+    progressStatus.textContent = 'Network error.';
     submitBtn.disabled = false;
   };
 
@@ -2829,7 +2870,7 @@ async function loadCreatorAnalytics() {
             <div class="flex items-center gap-4 text-xs font-mono shrink-0">
               <span class="text-[#F8FAFC] flex items-center gap-1">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="text-[#7C3AED]">
-                  <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
                 ${(vid.views_count || 0).toLocaleString()}
@@ -2840,6 +2881,35 @@ async function loadCreatorAnalytics() {
                 </svg>
                 ${(vid.likes_count || 0).toLocaleString()}
               </span>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Render authentic traffic sources (Zero mock/fake data)
+    const trafficContainer = document.getElementById('analyticsTrafficSourcesContainer');
+    const trafficTotal = document.getElementById('analyticsTrafficTotalViews');
+    if (trafficTotal) {
+      trafficTotal.textContent = `${(summary.total_views || 0).toLocaleString()} Views`;
+    }
+
+    if (trafficContainer) {
+      if (!traffic_sources || traffic_sources.length === 0 || (summary.total_views || 0) === 0) {
+        trafficContainer.innerHTML = `
+          <div class="py-3 text-center text-[10px] text-[#94A3B8]">
+            No traffic recorded yet. Publish videos and get views to see distribution.
+          </div>
+        `;
+      } else {
+        trafficContainer.innerHTML = traffic_sources.map(src => `
+          <div>
+            <div class="flex justify-between text-[10px] mb-0.5">
+              <span class="text-[#94A3B8]">${escapeHtml(src.name)}</span>
+              <span class="font-mono" style="color: ${src.color || '#7C3AED'}">${src.percentage}% (${(src.views || 0).toLocaleString()})</span>
+            </div>
+            <div class="w-full bg-[#0B0E14] h-1.5 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" style="width: ${src.percentage}%; background-color: ${src.color || '#7C3AED'};"></div>
             </div>
           </div>
         `).join('');
@@ -3034,11 +3104,19 @@ function renderProfileHeaderUI(data) {
     }
   }
 
-  // Creator Studio: Overview Sub-View
+  // Creator Studio: Overview Sub-View (Coins & Real Balance)
+  const coinsVal = data.coins !== undefined ? data.coins : (CURRENT_USER && CURRENT_USER.coins !== undefined ? CURRENT_USER.coins : 50);
+  const balVal = data.balance !== undefined ? data.balance : (CURRENT_USER && CURRENT_USER.balance !== undefined ? CURRENT_USER.balance : 0);
+
   const overBal = document.getElementById('overviewWalletBalance');
-  if (overBal && CURRENT_USER) overBal.textContent = `$${CURRENT_USER.balance.toFixed(CURRENT_USER.balance < 1 ? 3 : 2)}`;
+  if (overBal) overBal.textContent = `$${balVal.toFixed(balVal < 1 ? 3 : 2)}`;
   const overCoins = document.getElementById('overviewCoinsBalance');
-  if (overCoins && CURRENT_USER) overCoins.textContent = (CURRENT_USER.coins !== undefined ? CURRENT_USER.coins : 50).toLocaleString();
+  if (overCoins) overCoins.textContent = (coinsVal || 0).toLocaleString();
+  const uCoins = document.getElementById('userCoinsBalance');
+  if (uCoins) uCoins.textContent = (coinsVal || 0).toLocaleString();
+  const uBal = document.getElementById('userWalletBalance');
+  if (uBal) uBal.textContent = `$${balVal.toFixed(balVal < 1 ? 3 : 2)}`;
+
   const overViews = document.getElementById('overviewViewsCount');
   if (overViews) overViews.textContent = (data.dashboard?.views || 0).toLocaleString();
 
@@ -3185,7 +3263,7 @@ async function loadProfileGridPosts(tab) {
               <div class="flex items-center justify-between text-[11px] text-[#94A3B8]">
                 <span class="flex items-center gap-1">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
                   <span class="font-mono">${viewsCount}</span>

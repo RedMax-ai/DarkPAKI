@@ -6,6 +6,7 @@ router.get('/', videoController.getVideos);
 router.get('/config', videoController.getAdConfig);
 router.get('/:id', videoController.getVideoById);
 router.post('/:id/view', videoController.incrementView);
+router.post('/upload-thumbnail', videoController.uploadThumbnail);
 router.post('/user-upload', videoController.submitUserVideo);
 
 module.exports = router;

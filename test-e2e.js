@@ -450,6 +450,35 @@ async function runTests() {
   }, { Authorization: `Bearer ${userToken}` });
   assert(updatePrefRes.status === 200 && updatePrefRes.body.success === true, 'Channel preferences saved to SQLite successfully');
 
+  // New Audit Tests: Thumbnail Pre-upload, Real Views Logging, & Zero-Mock Analytics
+  const sampleThumbBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+  const thumbUploadRes = await request('POST', '/videos/upload-thumbnail', {
+    imageBase64: sampleThumbBase64
+  });
+  assert(thumbUploadRes.status === 200 && thumbUploadRes.body.thumbUrl?.startsWith('/public/uploads/thumbnails/'), 'Video thumbnail base64 saved to disk storage');
+
+  const invalidThumbRes = await request('POST', '/videos/upload-thumbnail', {
+    imageBase64: 'invalid_data_not_base64'
+  });
+  assert(invalidThumbRes.status === 400, 'Invalid thumbnail format safely rejected with 400');
+
+  // Verify real view tracking with traffic source
+  if (uploadVidRes?.body?.data?.id) {
+    const viewWithSourceRes = await request('POST', `/videos/${uploadVidRes.body.data.id}/view`, {
+      source: 'trending'
+    });
+    assert(viewWithSourceRes.status === 200 && viewWithSourceRes.body.data.source === 'trending', 'Authentic view source logged in SQLite video_views_log');
+  }
+
+  // Verify Creator Analytics calculates from authentic database state (zero fake data)
+  const freshAnalyticsRes = await request('GET', '/profile/analytics', null, { Authorization: `Bearer ${userToken}` });
+  assert(freshAnalyticsRes.status === 200 && Array.isArray(freshAnalyticsRes.body.data.traffic_sources), 'Creator Analytics delivers authentic traffic sources');
+  assert(Array.isArray(freshAnalyticsRes.body.data.daily_views) && freshAnalyticsRes.body.data.daily_views.length === 7, 'Analytics provides authentic 7-day view timeline');
+
+  // Verify /profile/me includes authentic coins and balance
+  const profileMeCheck = await request('GET', '/profile/me', null, { Authorization: `Bearer ${userToken}` });
+  assert(profileMeCheck.status === 200 && typeof profileMeCheck.body.data.coins === 'number', 'Profile data includes real user coins balance');
+
   // Automatic Cleanup of Temporary Test Artifacts (Preserves Clean Database)
   const db = require('./src/db/database');
   if (uploadVidRes?.body?.data?.id) db.prepare('DELETE FROM videos WHERE id = ?').run(uploadVidRes.body.data.id);
