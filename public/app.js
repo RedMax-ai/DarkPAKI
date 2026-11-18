@@ -970,6 +970,8 @@ function highlightTermsCard() {
 }
 
 // Google reCAPTCHA v2 Invisible Integration (Official dark.anizon.watch)
+let captchaPromiseResolver = null;
+
 async function renderGoogleRecaptcha() {
   const container = document.getElementById('googleRecaptchaWidget');
   if (!container) return;
@@ -980,10 +982,6 @@ async function renderGoogleRecaptcha() {
   }
 
   if (RECAPTCHA_WIDGET_ID !== null) {
-    try {
-      grecaptcha.reset(RECAPTCHA_WIDGET_ID);
-      GOOGLE_RECAPTCHA_TOKEN = '';
-    } catch (e) {}
     return;
   }
 
@@ -1015,6 +1013,10 @@ async function renderGoogleRecaptcha() {
         if (statusLabel) {
           statusLabel.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Google reCAPTCHA Verified';
         }
+        if (typeof captchaPromiseResolver === 'function') {
+          captchaPromiseResolver(token);
+          captchaPromiseResolver = null;
+        }
       },
       'expired-callback': function() {
         GOOGLE_RECAPTCHA_TOKEN = '';
@@ -1023,82 +1025,86 @@ async function renderGoogleRecaptcha() {
         if (statusLabel) {
           statusLabel.innerHTML = '<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Security token refreshed';
         }
+        try {
+          if (RECAPTCHA_WIDGET_ID !== null) grecaptcha.reset(RECAPTCHA_WIDGET_ID);
+        } catch(e) {}
       },
       'error-callback': function() {
         const statusLabel = document.getElementById('recaptchaStatusLabel');
         if (statusLabel) {
           statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Google reCAPTCHA Protection Active';
         }
+        if (typeof captchaPromiseResolver === 'function') {
+          captchaPromiseResolver('');
+          captchaPromiseResolver = null;
+        }
       }
     });
 
-    // Warm up invisible verification so token is prepared
-    try {
-      grecaptcha.execute(RECAPTCHA_WIDGET_ID);
-    } catch (e) {}
+    const statusLabel = document.getElementById('recaptchaStatusLabel');
+    if (statusLabel) {
+      statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Google reCAPTCHA Protection Active';
+    }
   } catch (err) {
     console.debug('reCAPTCHA render:', err.message);
   }
 }
 
-// Automatically executes invisible reCAPTCHA if token not yet acquired
+// Dynamically executes invisible reCAPTCHA on form submission with 30s timeout
 async function acquireRecaptchaToken() {
-  if (GOOGLE_RECAPTCHA_TOKEN) return GOOGLE_RECAPTCHA_TOKEN;
   if (typeof grecaptcha === 'undefined' || RECAPTCHA_WIDGET_ID === null) {
-    return CF_TURNSTILE_TOKEN || '';
+    return GOOGLE_RECAPTCHA_TOKEN || CF_TURNSTILE_TOKEN || '';
   }
 
+  // Check if we already have an active non-empty token
   try {
     const existing = grecaptcha.getResponse(RECAPTCHA_WIDGET_ID);
-    if (existing) {
+    if (existing && existing.length > 20) {
       GOOGLE_RECAPTCHA_TOKEN = existing;
       return existing;
     }
   } catch (e) {}
 
+  const statusLabel = document.getElementById('recaptchaStatusLabel');
+  if (statusLabel) {
+    statusLabel.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-purple-400"></i> Verifying Google Security Shield...';
+  }
+
   return new Promise((resolve) => {
-    let finished = false;
+    let resolved = false;
+
+    // 30s timeout allows user to solve interactive picture puzzles if triggered
     const timer = setTimeout(() => {
-      if (!finished) {
-        finished = true;
-        resolve(GOOGLE_RECAPTCHA_TOKEN || '');
+      if (!resolved) {
+        resolved = true;
+        captchaPromiseResolver = null;
+        let t = GOOGLE_RECAPTCHA_TOKEN;
+        try {
+          if (!t && RECAPTCHA_WIDGET_ID !== null) {
+            t = grecaptcha.getResponse(RECAPTCHA_WIDGET_ID);
+          }
+        } catch (e) {}
+        resolve(t || '');
       }
-    }, 3000);
+    }, 30000);
+
+    captchaPromiseResolver = function(token) {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timer);
+        resolve(token || '');
+      }
+    };
 
     try {
-      const res = grecaptcha.execute(RECAPTCHA_WIDGET_ID);
-      if (res && typeof res.then === 'function') {
-        res.then(token => {
-          if (!finished) {
-            finished = true;
-            clearTimeout(timer);
-            GOOGLE_RECAPTCHA_TOKEN = token || '';
-            resolve(token || '');
-          }
-        }).catch(() => {
-          if (!finished) {
-            finished = true;
-            clearTimeout(timer);
-            resolve(GOOGLE_RECAPTCHA_TOKEN || '');
-          }
-        });
-        return;
+      grecaptcha.execute(RECAPTCHA_WIDGET_ID);
+    } catch (e) {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timer);
+        resolve(GOOGLE_RECAPTCHA_TOKEN || '');
       }
-    } catch (e) {}
-
-    const poll = setInterval(() => {
-      let t = '';
-      try { t = GOOGLE_RECAPTCHA_TOKEN || grecaptcha.getResponse(RECAPTCHA_WIDGET_ID); } catch (e) {}
-      if (t) {
-        if (!finished) {
-          finished = true;
-          clearInterval(poll);
-          clearTimeout(timer);
-          GOOGLE_RECAPTCHA_TOKEN = t;
-          resolve(t);
-        }
-      }
-    }, 100);
+    }
   });
 }
 
@@ -1522,11 +1528,18 @@ async function handleSecureUserLogin(e) {
   const submitBtnIcon = document.getElementById('submitBtnIcon');
 
   if (submitBtn) submitBtn.disabled = true;
-  if (submitBtnText) submitBtnText.textContent = AUTH_MODE === 'login' ? 'Logging in...' : 'Creating account & generating OTP...';
-  if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-spinner fa-spin';
+  if (submitBtnText) submitBtnText.textContent = 'Verifying security check...';
+  if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-shield-halved fa-spin';
 
   try {
     const recaptchaToken = await acquireRecaptchaToken();
+
+    if (submitBtnText) {
+      submitBtnText.textContent = AUTH_MODE === 'login' ? 'Logging in...' : 'Creating account & generating OTP...';
+    }
+    if (submitBtnIcon) {
+      submitBtnIcon.className = 'fa-solid fa-spinner fa-spin';
+    }
 
     const payload = {
       mode: AUTH_MODE,
@@ -1546,6 +1559,14 @@ async function handleSecureUserLogin(e) {
       method: 'POST',
       body: JSON.stringify(payload)
     });
+
+    // Reset Google reCAPTCHA so any future submission obtains a fresh token
+    try {
+      if (typeof grecaptcha !== 'undefined' && RECAPTCHA_WIDGET_ID !== null) {
+        grecaptcha.reset(RECAPTCHA_WIDGET_ID);
+      }
+      GOOGLE_RECAPTCHA_TOKEN = '';
+    } catch(e) {}
 
     if (res.requireOtp) {
       openOtpVerificationModal(res.gmail, res.devOtp);
@@ -1589,6 +1610,10 @@ async function handleSecureUserLogin(e) {
     }
     if (typeof turnstile !== 'undefined' && CF_WIDGET_ID !== null) {
       try { turnstile.reset(CF_WIDGET_ID); } catch(e){}
+    }
+    const statusLabel = document.getElementById('recaptchaStatusLabel');
+    if (statusLabel) {
+      statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Google reCAPTCHA Protection Active';
     }
   } finally {
     if (submitBtn) submitBtn.disabled = false;

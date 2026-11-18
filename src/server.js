@@ -12,6 +12,9 @@ const errorHandler = require('./middleware/errorHandler');
 // Initialize Express App
 const app = express();
 
+// Trust reverse proxy (Cloudflare & Render load balancers)
+app.set('trust proxy', 1);
+
 // Auto-seed database with default content if needed
 seedDatabase();
 

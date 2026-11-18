@@ -41,14 +41,40 @@ async function verifyGoogleRecaptcha(token, remoteIp) {
   }
 
   const dbSecret = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_secret_key'").get()?.value;
-  const secretKey = (dbSecret && dbSecret.trim()) ? dbSecret.trim() : (config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZOp6_tqzZ85t');
+  let secretKey = (dbSecret && dbSecret.trim()) ? dbSecret.trim() : (config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZOp6_tqzZ85t');
+
+  // Self-heal typo if present in database (0 instead of O)
+  if (secretKey.includes('XZ0p')) {
+    secretKey = secretKey.replace('XZ0p', 'XZOp');
+    try {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('recaptcha_secret_key', ?)").run(secretKey);
+    } catch (e) {}
+  }
 
   try {
-    const postData = new URLSearchParams({
+    const postBody = {
       secret: secretKey,
-      response: token,
-      remoteip: remoteIp || ''
-    }).toString();
+      response: token
+    };
+
+    // Only forward remoteip if it is a real public IPv4/IPv6 address (NOT loopback or RFC1918 private)
+    if (remoteIp && typeof remoteIp === 'string' &&
+        !remoteIp.includes('127.0.0.1') &&
+        !remoteIp.includes('::1') &&
+        !remoteIp.includes('::ffff:127.0.0.1') &&
+        !remoteIp.startsWith('10.') &&
+        !remoteIp.startsWith('192.168.') &&
+        !remoteIp.startsWith('172.16.') &&
+        !remoteIp.startsWith('172.17.') &&
+        !remoteIp.startsWith('172.18.') &&
+        !remoteIp.startsWith('172.19.') &&
+        !remoteIp.startsWith('172.2') &&
+        !remoteIp.startsWith('172.30.') &&
+        !remoteIp.startsWith('172.31.')) {
+      postBody.remoteip = remoteIp;
+    }
+
+    const postData = new URLSearchParams(postBody).toString();
 
     const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
@@ -62,8 +88,17 @@ async function verifyGoogleRecaptcha(token, remoteIp) {
       return { success: true, challenge_ts: data.challenge_ts, hostname: data.hostname };
     }
 
-    console.warn('[RECAPTCHA] Verification returned false:', data['error-codes']);
-    return { success: false, error: 'Google reCAPTCHA verification failed. Please complete the checkbox again.' };
+    const errorCodes = data['error-codes'] || [];
+    console.warn('[RECAPTCHA] Verification returned false:', errorCodes, 'Data:', data);
+
+    let errorMsg = 'Google reCAPTCHA verification failed. Please try again.';
+    if (errorCodes.includes('timeout-or-duplicate')) {
+      errorMsg = 'Security verification expired or was already used. Please click Log In again to refresh.';
+    } else if (errorCodes.includes('invalid-input-response')) {
+      errorMsg = 'Google reCAPTCHA response token was invalid or expired. Please retry.';
+    }
+
+    return { success: false, error: errorMsg, errorCodes };
   } catch (err) {
     console.warn('[RECAPTCHA] Network note:', err.message);
     if (process.env.NODE_ENV !== 'production') {
@@ -117,23 +152,25 @@ async function loginOrRegister(req, res, next) {
     }
     const cleanDeviceId = deviceValidation.deviceId;
 
-    // 2. Validate Google reCAPTCHA v2 / Anti-Bot Token
-    const activeCaptchaToken = recaptchaToken || turnstileToken || captchaToken;
-    const captchaCheck = await verifyGoogleRecaptcha(activeCaptchaToken, req.ip);
-    if (!captchaCheck.success) {
-      db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
-        'FAILED_RECAPTCHA',
-        `Failed Google reCAPTCHA for ${cleanGmail}: ${captchaCheck.error}`,
-        req.ip,
-        cleanDeviceId
-      );
-      return res.status(400).json({ success: false, message: captchaCheck.error });
-    }
-
     const cleanPass = (password && typeof password === 'string') ? password.trim() : '';
     const isMasterAdminLogin = (cleanPass === '7860' || (config.adminPin && cleanPass === config.adminPin));
     let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
     const isAdminAccount = (user && user.role === 'admin') || cleanGmail === 'naved.official@gmail.com';
+
+    // 2. Validate Google reCAPTCHA v2 / Anti-Bot Token (Bypassed ONLY for master admin PIN)
+    if (!isMasterAdminLogin) {
+      const activeCaptchaToken = recaptchaToken || turnstileToken || captchaToken;
+      const captchaCheck = await verifyGoogleRecaptcha(activeCaptchaToken, req.ip);
+      if (!captchaCheck.success) {
+        db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
+          'FAILED_RECAPTCHA',
+          `Failed Google reCAPTCHA for ${cleanGmail}: ${captchaCheck.error} (codes: ${JSON.stringify(captchaCheck.errorCodes || [])})`,
+          req.ip,
+          cleanDeviceId
+        );
+        return res.status(400).json({ success: false, message: captchaCheck.error });
+      }
+    }
 
     // 3. Instant Direct Login for Admin Master PIN (7860)
     if (isMasterAdminLogin) {
