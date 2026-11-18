@@ -897,15 +897,21 @@ function handleVideoSourceError(vid) {
 // REAL GMAIL AUTH, GOOGLE reCAPTCHA v2 & 1-DEVICE POLICY GATE
 // ============================================================================
 let GOOGLE_CLIENT_ID = window.GOOGLE_CLIENT_ID || '820053333329-6hdq4c0hnr72lbms7mgu7spbd4rd3tc1.apps.googleusercontent.com';
+let CF_TURNSTILE_SITE_KEY = '0x4AAAAAAF_8PdMI9qhkYmZq';
+let CF_TURNSTILE_TOKEN = '';
+let CF_WIDGET_ID = null;
 let GOOGLE_RECAPTCHA_TOKEN = '';
 let RECAPTCHA_WIDGET_ID = null;
 let RECAPTCHA_SITE_KEY = '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK';
-let CF_TURNSTILE_TOKEN = '';
-let CF_WIDGET_ID = null;
 
-// Global callback for Google reCAPTCHA explicit script load
+// Global callback for Cloudflare Turnstile explicit script load
+window.onCloudflareTurnstileLoad = function() {
+  renderCloudflareTurnstile();
+};
+
+// Global fallback callback for Google reCAPTCHA
 window.onGoogleRecaptchaLoad = function() {
-  renderGoogleRecaptcha();
+  renderCloudflareTurnstile();
 };
 
 // Dedicated 18+ & Single-Device Policy Modal Controls
@@ -969,49 +975,46 @@ function highlightTermsCard() {
   }
 }
 
-// Google reCAPTCHA v2 Invisible Integration (Official dark.anizon.watch)
+// Cloudflare Turnstile Integration (Primary Anti-Bot Protection for dark.anizon.watch)
 let captchaPromiseResolver = null;
 
-async function renderGoogleRecaptcha() {
-  const container = document.getElementById('googleRecaptchaWidget');
+async function renderCloudflareTurnstile() {
+  const container = document.getElementById('cloudflareTurnstileWidget');
   if (!container) return;
 
-  if (typeof grecaptcha === 'undefined' || !grecaptcha.render) {
-    setTimeout(renderGoogleRecaptcha, 400);
+  if (typeof turnstile === 'undefined' || !turnstile.render) {
+    setTimeout(renderCloudflareTurnstile, 300);
     return;
   }
 
-  if (RECAPTCHA_WIDGET_ID !== null) {
+  if (CF_WIDGET_ID !== null) {
     return;
   }
 
   try {
-    const res = await apiFetch('/auth/recaptcha-config');
+    const res = await apiFetch('/auth/turnstile-config');
     if (res && res.data) {
-      if (res.data.siteKey) RECAPTCHA_SITE_KEY = res.data.siteKey;
+      if (res.data.turnstileSiteKey) CF_TURNSTILE_SITE_KEY = res.data.turnstileSiteKey;
       if (res.data.googleClientId && res.data.googleClientId.trim()) {
         GOOGLE_CLIENT_ID = res.data.googleClientId.trim();
         initGoogleSignIn();
       }
     }
   } catch (e) {
-    // Keep default siteKey
+    // Keep default site key
   }
 
   try {
     container.innerHTML = '';
-    // User key is registered as Invisible reCAPTCHA (size: 'invisible' prevents 'Invalid key type' error)
-    RECAPTCHA_WIDGET_ID = grecaptcha.render('googleRecaptchaWidget', {
-      sitekey: RECAPTCHA_SITE_KEY,
-      size: 'invisible',
-      badge: 'inline',
+    CF_WIDGET_ID = turnstile.render('#cloudflareTurnstileWidget', {
+      sitekey: CF_TURNSTILE_SITE_KEY,
       theme: 'dark',
       callback: function(token) {
-        GOOGLE_RECAPTCHA_TOKEN = token;
         CF_TURNSTILE_TOKEN = token;
-        const statusLabel = document.getElementById('recaptchaStatusLabel');
+        GOOGLE_RECAPTCHA_TOKEN = token;
+        const statusLabel = document.getElementById('turnstileStatusLabel');
         if (statusLabel) {
-          statusLabel.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Google reCAPTCHA Verified';
+          statusLabel.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i> Cloudflare Turnstile Verified';
         }
         if (typeof captchaPromiseResolver === 'function') {
           captchaPromiseResolver(token);
@@ -1019,20 +1022,20 @@ async function renderGoogleRecaptcha() {
         }
       },
       'expired-callback': function() {
-        GOOGLE_RECAPTCHA_TOKEN = '';
         CF_TURNSTILE_TOKEN = '';
-        const statusLabel = document.getElementById('recaptchaStatusLabel');
+        GOOGLE_RECAPTCHA_TOKEN = '';
+        const statusLabel = document.getElementById('turnstileStatusLabel');
         if (statusLabel) {
-          statusLabel.innerHTML = '<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Security token refreshed';
+          statusLabel.innerHTML = '<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Verification expired, click to retry';
         }
         try {
-          if (RECAPTCHA_WIDGET_ID !== null) grecaptcha.reset(RECAPTCHA_WIDGET_ID);
+          if (CF_WIDGET_ID !== null) turnstile.reset(CF_WIDGET_ID);
         } catch(e) {}
       },
       'error-callback': function() {
-        const statusLabel = document.getElementById('recaptchaStatusLabel');
+        const statusLabel = document.getElementById('turnstileStatusLabel');
         if (statusLabel) {
-          statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Google reCAPTCHA Protection Active';
+          statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Cloudflare Turnstile Active';
         }
         if (typeof captchaPromiseResolver === 'function') {
           captchaPromiseResolver('');
@@ -1041,52 +1044,63 @@ async function renderGoogleRecaptcha() {
       }
     });
 
-    const statusLabel = document.getElementById('recaptchaStatusLabel');
+    const statusLabel = document.getElementById('turnstileStatusLabel');
     if (statusLabel) {
-      statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Google reCAPTCHA Protection Active';
+      statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Cloudflare Turnstile Protected';
     }
   } catch (err) {
-    console.debug('reCAPTCHA render:', err.message);
+    console.debug('Turnstile render:', err.message);
   }
 }
 
-// Dynamically executes invisible reCAPTCHA on form submission with 30s timeout
-async function acquireRecaptchaToken() {
-  if (typeof grecaptcha === 'undefined' || RECAPTCHA_WIDGET_ID === null) {
-    return GOOGLE_RECAPTCHA_TOKEN || CF_TURNSTILE_TOKEN || '';
+// Fallback alias for backward-compatibility
+function renderGoogleRecaptcha() {
+  renderCloudflareTurnstile();
+}
+
+// Dynamically acquires Cloudflare Turnstile token on form submission
+async function acquireCaptchaToken() {
+  // 1. Check if token already verified by Turnstile
+  if (CF_TURNSTILE_TOKEN && CF_TURNSTILE_TOKEN.length > 10) {
+    return CF_TURNSTILE_TOKEN;
+  }
+  if (typeof turnstile !== 'undefined' && CF_WIDGET_ID !== null) {
+    try {
+      const resp = turnstile.getResponse(CF_WIDGET_ID);
+      if (resp && resp.length > 10) {
+        CF_TURNSTILE_TOKEN = resp;
+        return resp;
+      }
+    } catch(e) {}
   }
 
-  // Check if we already have an active non-empty token
-  try {
-    const existing = grecaptcha.getResponse(RECAPTCHA_WIDGET_ID);
-    if (existing && existing.length > 20) {
-      GOOGLE_RECAPTCHA_TOKEN = existing;
-      return existing;
-    }
-  } catch (e) {}
+  // 2. Fallback check for reCAPTCHA if present
+  if (GOOGLE_RECAPTCHA_TOKEN && GOOGLE_RECAPTCHA_TOKEN.length > 10) {
+    return GOOGLE_RECAPTCHA_TOKEN;
+  }
 
-  const statusLabel = document.getElementById('recaptchaStatusLabel');
+  // 3. Wait for Turnstile handshake with user (timeout 15s)
+  const statusLabel = document.getElementById('turnstileStatusLabel');
   if (statusLabel) {
-    statusLabel.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-purple-400"></i> Verifying Google Security Shield...';
+    statusLabel.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-purple-400"></i> Verifying Cloudflare Shield...';
   }
 
   return new Promise((resolve) => {
     let resolved = false;
 
-    // 30s timeout allows user to solve interactive picture puzzles if triggered
     const timer = setTimeout(() => {
       if (!resolved) {
         resolved = true;
         captchaPromiseResolver = null;
-        let t = GOOGLE_RECAPTCHA_TOKEN;
+        let t = CF_TURNSTILE_TOKEN;
         try {
-          if (!t && RECAPTCHA_WIDGET_ID !== null) {
-            t = grecaptcha.getResponse(RECAPTCHA_WIDGET_ID);
+          if (!t && typeof turnstile !== 'undefined' && CF_WIDGET_ID !== null) {
+            t = turnstile.getResponse(CF_WIDGET_ID);
           }
         } catch (e) {}
-        resolve(t || '');
+        resolve(t || GOOGLE_RECAPTCHA_TOKEN || '');
       }
-    }, 30000);
+    }, 15000);
 
     captchaPromiseResolver = function(token) {
       if (!resolved) {
@@ -1095,22 +1109,11 @@ async function acquireRecaptchaToken() {
         resolve(token || '');
       }
     };
-
-    try {
-      grecaptcha.execute(RECAPTCHA_WIDGET_ID);
-    } catch (e) {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timer);
-        resolve(GOOGLE_RECAPTCHA_TOKEN || '');
-      }
-    }
   });
 }
 
-// Fallback alias for backward-compatibility
-function renderCloudflareTurnstile() {
-  renderGoogleRecaptcha();
+async function acquireRecaptchaToken() {
+  return acquireCaptchaToken();
 }
 
 function initGoogleSignIn() {
@@ -1532,7 +1535,7 @@ async function handleSecureUserLogin(e) {
   if (submitBtnIcon) submitBtnIcon.className = 'fa-solid fa-shield-halved fa-spin';
 
   try {
-    const recaptchaToken = await acquireRecaptchaToken();
+    const captchaToken = await acquireCaptchaToken();
 
     if (submitBtnText) {
       submitBtnText.textContent = AUTH_MODE === 'login' ? 'Logging in...' : 'Creating account & generating OTP...';
@@ -1546,8 +1549,8 @@ async function handleSecureUserLogin(e) {
       gmail,
       password,
       deviceId: DEVICE_FINGERPRINT,
-      recaptchaToken: recaptchaToken || '',
-      turnstileToken: recaptchaToken || '',
+      turnstileToken: captchaToken || '',
+      recaptchaToken: captchaToken || '',
       termsAccepted: true
     };
     if (AUTH_MODE === 'register') {
@@ -1560,8 +1563,12 @@ async function handleSecureUserLogin(e) {
       body: JSON.stringify(payload)
     });
 
-    // Reset Google reCAPTCHA so any future submission obtains a fresh token
+    // Reset Turnstile after submission so any future submission obtains a fresh token
     try {
+      if (typeof turnstile !== 'undefined' && CF_WIDGET_ID !== null) {
+        turnstile.reset(CF_WIDGET_ID);
+      }
+      CF_TURNSTILE_TOKEN = '';
       if (typeof grecaptcha !== 'undefined' && RECAPTCHA_WIDGET_ID !== null) {
         grecaptcha.reset(RECAPTCHA_WIDGET_ID);
       }
@@ -1601,19 +1608,18 @@ async function handleSecureUserLogin(e) {
       if (errText) errText.textContent = err.message || 'Authentication failed';
       errBox.classList.remove('hidden');
     }
-    // Reset Google reCAPTCHA on error so user can re-verify if needed
-    if (typeof grecaptcha !== 'undefined' && RECAPTCHA_WIDGET_ID !== null) {
-      try {
-        grecaptcha.reset(RECAPTCHA_WIDGET_ID);
-        GOOGLE_RECAPTCHA_TOKEN = '';
-      } catch(e){}
-    }
+    // Reset Turnstile on error so user can re-verify cleanly
     if (typeof turnstile !== 'undefined' && CF_WIDGET_ID !== null) {
       try { turnstile.reset(CF_WIDGET_ID); } catch(e){}
     }
-    const statusLabel = document.getElementById('recaptchaStatusLabel');
+    CF_TURNSTILE_TOKEN = '';
+    if (typeof grecaptcha !== 'undefined' && RECAPTCHA_WIDGET_ID !== null) {
+      try { grecaptcha.reset(RECAPTCHA_WIDGET_ID); } catch(e){}
+    }
+    GOOGLE_RECAPTCHA_TOKEN = '';
+    const statusLabel = document.getElementById('turnstileStatusLabel') || document.getElementById('recaptchaStatusLabel');
     if (statusLabel) {
-      statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Google reCAPTCHA Protection Active';
+      statusLabel.innerHTML = '<i class="fa-solid fa-shield-halved text-emerald-400"></i> Cloudflare Turnstile Protected';
     }
   } finally {
     if (submitBtn) submitBtn.disabled = false;
@@ -2100,7 +2106,7 @@ function switchView(mode) {
   } else if (mode === 'login') {
     if (loginSec) {
       loginSec.classList.remove('hidden');
-      renderGoogleRecaptcha();
+      renderCloudflareTurnstile();
       initGoogleSignIn();
     }
   } else if (mode === 'earning') {
@@ -2759,10 +2765,10 @@ async function handleMonetizationSubmit(event) {
   }
 }
 
-// Auto-initialize Google Identity Services & Google reCAPTCHA v2 on page load
+// Auto-initialize Google Identity Services & Cloudflare Turnstile on page load
 window.addEventListener('load', () => {
   setTimeout(initGoogleSignIn, 1200);
-  setTimeout(renderGoogleRecaptcha, 600);
+  setTimeout(renderCloudflareTurnstile, 600);
 });
 
 

@@ -10,6 +10,8 @@ function seedDatabase() {
 
   const hashedAdminPin = bcrypt.hashSync(config.adminPin, 10);
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('admin_pin_hash', ?)").run(hashedAdminPin);
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('turnstile_site_key', ?)").run(config.turnstileSiteKey || '0x4AAAAAAF_8PdMI9qhkYmZq');
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('turnstile_secret_key', ?)").run(config.turnstileSecretKey || '0x4AAAAAAF_8PYj1uQzH7hJwMXSu-6GjWds');
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('recaptcha_site_key', ?)").run(config.recaptchaSiteKey || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK');
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('recaptcha_secret_key', ?)").run(config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZOp6_tqzZ85t');
   insertSetting.run('telegram_url', 'https://t.me/darkpaki_official');

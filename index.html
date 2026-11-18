@@ -52,8 +52,8 @@
     </script>
     <!-- Google Identity Services (Sign in with Google - 100% Free & Secure) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!-- Google reCAPTCHA v2 (Official dark.anizon.watch Registered) -->
-    <script src="https://www.google.com/recaptcha/api.js?onload=onGoogleRecaptchaLoad&render=explicit" async defer></script>
+    <!-- Cloudflare Turnstile CAPTCHA (Official dark.anizon.watch Registered) -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onCloudflareTurnstileLoad&render=explicit" async defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -823,12 +823,14 @@
                     </div>
                 </div>
 
-                <!-- GOOGLE reCAPTCHA v2 CONTAINER -->
+                <!-- CLOUDFLARE TURNSTILE CAPTCHA CONTAINER -->
                 <div class="bg-black/60 border border-neutral-700/80 rounded-2xl p-2.5 flex flex-col items-center justify-center gap-1.5 transition overflow-hidden">
-                    <div id="googleRecaptchaWidget" class="my-0.5 flex justify-center"></div>
-                    <span id="recaptchaStatusLabel" class="text-[10px] text-neutral-400 flex items-center gap-1.5 font-mono">
-                        <i class="fa-solid fa-shield-halved text-emerald-400"></i> Google reCAPTCHA v2 Protected
+                    <div id="cloudflareTurnstileWidget" class="my-0.5 flex justify-center"></div>
+                    <div id="googleRecaptchaWidget" class="hidden"></div>
+                    <span id="turnstileStatusLabel" class="text-[10px] text-neutral-400 flex items-center gap-1.5 font-mono">
+                        <i class="fa-solid fa-shield-halved text-emerald-400"></i> Cloudflare Turnstile Protected
                     </span>
+                    <span id="recaptchaStatusLabel" class="hidden"></span>
                 </div>
 
                 <!-- COMPACT 18+ AGREEMENT (Placed directly above the Submit button) -->
