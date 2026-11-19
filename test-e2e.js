@@ -479,8 +479,32 @@ async function runTests() {
   const profileMeCheck = await request('GET', '/profile/me', null, { Authorization: `Bearer ${userToken}` });
   assert(profileMeCheck.status === 200 && typeof profileMeCheck.body.data.coins === 'number', 'Profile data includes real user coins balance');
 
-  // Automatic Cleanup of Temporary Test Artifacts (Preserves Clean Database)
   const db = require('./src/db/database');
+
+  // Video Reactions (YouTube style Like/Dislike) & Creator Earnings
+  const testVid = db.prepare("SELECT id FROM videos WHERE status = 'APPROVED' LIMIT 1").get();
+  if (testVid) {
+    const reactLikeRes = await request('POST', `/videos/${testVid.id}/react`, {
+      reaction: 'like',
+      deviceId: 'TEST-YOUTUBE-DEVICE-1'
+    });
+    assert(reactLikeRes.status === 200 && reactLikeRes.body.data.userReaction === 'like', 'Video like registered and persisted in SQLite');
+
+    const getReactionsRes = await request('GET', `/videos/${testVid.id}/reactions?deviceId=TEST-YOUTUBE-DEVICE-1`);
+    assert(getReactionsRes.status === 200 && getReactionsRes.body.data.earnings && typeof getReactionsRes.body.data.earnings.usd === 'string', 'Video reactions query returns YouTube stats and real creator earnings');
+
+    const followCreatorRes = await request('POST', '/earning/follow', {
+      creatorName: 'Test YouTube Creator',
+      deviceId: 'TEST-YOUTUBE-DEVICE-1'
+    });
+    assert(followCreatorRes.status === 200 && followCreatorRes.body.isFollowing === true, 'Creator follow toggles and syncs followers in database');
+
+    // Cleanup reaction & follow
+    db.prepare('DELETE FROM video_reactions WHERE device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
+    db.prepare('DELETE FROM follows WHERE follower_device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
+  }
+
+  // Automatic Cleanup of Temporary Test Artifacts (Preserves Clean Database)
   if (uploadVidRes?.body?.data?.id) db.prepare('DELETE FROM videos WHERE id = ?').run(uploadVidRes.body.data.id);
   if (newCommentRes?.body?.data?.commentId) {
     db.prepare('DELETE FROM comments WHERE id = ?').run(newCommentRes.body.data.commentId);

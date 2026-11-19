@@ -48,16 +48,26 @@ function getVideos(req, res, next) {
 
     const videos = db.prepare(query).all(...params);
 
-    // Enrich videos with creator monetization and followers count
+    // Enrich videos with creator monetization, followers count, and video earnings
     const enrichedVideos = videos.map(v => {
       const creatorName = v.creator || v.owner_name || 'DarkPAKI Creator';
-      const user = db.prepare('SELECT is_monetized, followers_count FROM users WHERE name = ? COLLATE NOCASE LIMIT 1').get(creatorName);
+      const user = db.prepare('SELECT is_monetized, followers_count, avatar_url FROM users WHERE name = ? COLLATE NOCASE LIMIT 1').get(creatorName);
       const followCount = db.prepare('SELECT COUNT(*) as count FROM follows WHERE creator_name = ? COLLATE NOCASE').get(creatorName)?.count || 0;
+      const viewsCount = v.views_count || 0;
+      const coinsEarned = viewsCount * 25;
+      const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
 
       return {
         ...v,
+        likes_count: v.likes_count || 0,
+        dislikes_count: v.dislikes_count || 0,
         is_monetized: Boolean(user?.is_monetized),
-        followers_count: Math.max(user?.followers_count || 0, followCount)
+        followers_count: Math.max(user?.followers_count || 0, followCount),
+        creator_avatar: user?.avatar_url || null,
+        earnings: {
+          coins: coinsEarned,
+          usd: usdEarned
+        }
       };
     });
 
@@ -83,15 +93,25 @@ function getVideoById(req, res, next) {
     }
 
     const creatorName = video.creator || video.owner_name || 'DarkPAKI Creator';
-    const user = db.prepare('SELECT is_monetized, followers_count FROM users WHERE name = ? COLLATE NOCASE LIMIT 1').get(creatorName);
+    const user = db.prepare('SELECT is_monetized, followers_count, avatar_url FROM users WHERE name = ? COLLATE NOCASE LIMIT 1').get(creatorName);
     const followCount = db.prepare('SELECT COUNT(*) as count FROM follows WHERE creator_name = ? COLLATE NOCASE').get(creatorName)?.count || 0;
+    const viewsCount = video.views_count || 0;
+    const coinsEarned = viewsCount * 25;
+    const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
 
     res.json({
       success: true,
       data: {
         ...video,
+        likes_count: video.likes_count || 0,
+        dislikes_count: video.dislikes_count || 0,
         is_monetized: Boolean(user?.is_monetized),
-        followers_count: Math.max(user?.followers_count || 0, followCount)
+        followers_count: Math.max(user?.followers_count || 0, followCount),
+        creator_avatar: user?.avatar_url || null,
+        earnings: {
+          coins: coinsEarned,
+          usd: usdEarned
+        }
       }
     });
   } catch (err) {
@@ -347,11 +367,120 @@ function getAdConfig(req, res, next) {
   }
 }
 
+function reactToVideo(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { reaction, deviceId } = req.body;
+    if (isNaN(id) || !['like', 'dislike'].includes(reaction)) {
+      return res.status(400).json({ success: false, message: 'Valid reaction (like or dislike) is required.' });
+    }
+
+    const cleanDevice = sanitizeString(deviceId) || req.user?.device_id || req.ip || 'anonymous';
+    const video = db.prepare('SELECT id, likes_count, dislikes_count, views_count FROM videos WHERE id = ?').get(id);
+    if (!video) {
+      return res.status(404).json({ success: false, message: 'Video not found.' });
+    }
+
+    const existing = db.prepare('SELECT id, reaction FROM video_reactions WHERE video_id = ? AND device_id = ?').get(id, cleanDevice);
+
+    let userReaction = null;
+    let likes = video.likes_count || 0;
+    let dislikes = video.dislikes_count || 0;
+
+    if (existing) {
+      if (existing.reaction === reaction) {
+        // Toggle off
+        db.prepare('DELETE FROM video_reactions WHERE id = ?').run(existing.id);
+        if (reaction === 'like') likes = Math.max(0, likes - 1);
+        if (reaction === 'dislike') dislikes = Math.max(0, dislikes - 1);
+        userReaction = null;
+      } else {
+        // Switch reaction
+        db.prepare('UPDATE video_reactions SET reaction = ? WHERE id = ?').run(reaction, existing.id);
+        if (reaction === 'like') {
+          likes += 1;
+          dislikes = Math.max(0, dislikes - 1);
+        } else {
+          dislikes += 1;
+          likes = Math.max(0, likes - 1);
+        }
+        userReaction = reaction;
+      }
+    } else {
+      // New reaction
+      db.prepare('INSERT INTO video_reactions (video_id, device_id, reaction) VALUES (?, ?, ?)').run(id, cleanDevice, reaction);
+      if (reaction === 'like') likes += 1;
+      if (reaction === 'dislike') dislikes += 1;
+      userReaction = reaction;
+    }
+
+    db.prepare('UPDATE videos SET likes_count = ?, dislikes_count = ? WHERE id = ?').run(likes, dislikes, id);
+
+    const viewsCount = video.views_count || 0;
+    const coinsEarned = viewsCount * 25;
+    const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
+
+    res.json({
+      success: true,
+      data: {
+        id,
+        likesCount: likes,
+        dislikesCount: dislikes,
+        userReaction,
+        earnings: {
+          coins: coinsEarned,
+          usd: usdEarned
+        }
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function getVideoReactions(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const deviceId = req.query.deviceId || req.user?.device_id || req.ip || 'anonymous';
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid video ID.' });
+    }
+
+    const video = db.prepare('SELECT id, likes_count, dislikes_count, views_count FROM videos WHERE id = ?').get(id);
+    if (!video) {
+      return res.status(404).json({ success: false, message: 'Video not found.' });
+    }
+
+    const existing = db.prepare('SELECT reaction FROM video_reactions WHERE video_id = ? AND device_id = ?').get(id, sanitizeString(deviceId));
+    const viewsCount = video.views_count || 0;
+    const coinsEarned = viewsCount * 25;
+    const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
+
+    res.json({
+      success: true,
+      data: {
+        id,
+        likesCount: video.likes_count || 0,
+        dislikesCount: video.dislikes_count || 0,
+        userReaction: existing ? existing.reaction : null,
+        earnings: {
+          coins: coinsEarned,
+          usd: usdEarned
+        }
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getVideos,
   getVideoById,
   incrementView,
   uploadThumbnail,
   submitUserVideo,
-  getAdConfig
+  getAdConfig,
+  reactToVideo,
+  getVideoReactions
 };

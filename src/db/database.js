@@ -329,6 +329,7 @@ function initializeSchema() {
   runMigration('ALTER TABLE videos ADD COLUMN grid_order INTEGER DEFAULT 0;');
   runMigration('ALTER TABLE videos ADD COLUMN views_count INTEGER NOT NULL DEFAULT 0;');
   runMigration('ALTER TABLE videos ADD COLUMN likes_count INTEGER NOT NULL DEFAULT 0;');
+  runMigration('ALTER TABLE videos ADD COLUMN dislikes_count INTEGER NOT NULL DEFAULT 0;');
   runMigration('ALTER TABLE videos ADD COLUMN is_short INTEGER NOT NULL DEFAULT 0;');
   runMigration('ALTER TABLE videos ADD COLUMN rejection_reason TEXT;');
   runMigration('ALTER TABLE videos ADD COLUMN storage_key TEXT;');
@@ -379,6 +380,21 @@ function initializeSchema() {
   runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_creator ON video_views_log(creator_name);");
   runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_user ON video_views_log(user_id);");
   runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_created ON video_views_log(created_at);");
+
+  // Video Likes & Dislikes Reactions Table Migration
+  runMigration(`
+    CREATE TABLE IF NOT EXISTS video_reactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      video_id INTEGER NOT NULL,
+      device_id TEXT NOT NULL,
+      reaction TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(video_id, device_id),
+      FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+    );
+  `);
+  runMigration("CREATE INDEX IF NOT EXISTS idx_video_reactions_vid ON video_reactions(video_id);");
+  runMigration("CREATE INDEX IF NOT EXISTS idx_video_reactions_device ON video_reactions(device_id);");
 
   // Sync existing videos' views_count from views string if 0
   try {

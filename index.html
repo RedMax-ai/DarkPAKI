@@ -532,24 +532,6 @@
             </button>
         </div>
 
-        <!-- Video Title & Category -->
-        <div class="flex flex-col items-start gap-2">
-            <h1 id="videoTitle" class="text-lg sm:text-2xl font-black text-white leading-snug">
-                DarkPAKI 4K VIP Cinema Player
-            </h1>
-            <div class="flex flex-wrap items-center gap-2">
-                <span id="videoCategoryPill" class="bg-rose-600 text-white text-xs font-bold px-3.5 py-0.5 rounded-full shadow">
-                    VIP 4K STREAM
-                </span>
-                <span id="videoDemandTag" class="text-xs text-amber-400 font-semibold">
-                    🎬 Ultra HD Cinema Quality
-                </span>
-                <span class="text-xs text-emerald-400 font-mono font-bold bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">
-                    4K Ultra HD
-                </span>
-            </div>
-        </div>
-
         <!-- Cinema Dark Video Player Container with Ambient Halo -->
         <div id="playerContainer" class="relative w-full aspect-square sm:aspect-video bg-[#09090e] rounded-3xl overflow-hidden border border-white/15 shadow-2xl select-none transition-all duration-300">
             <!-- Core HTML5 Video Element -->
@@ -656,16 +638,101 @@
             </div>
         </div>
 
-        <!-- Stacked Dual Pill-Shaped 4K Download Buttons -->
-        <div class="flex flex-col items-center gap-3 pt-2">
-            <button onclick="handleDownloadClick('Download Server 1 (4K HDR • 180MB/s)', this)" class="w-full sm:w-3/4 bg-gradient-to-r from-rose-600 via-rose-500 to-red-600 hover:brightness-110 active:scale-95 text-white font-bold text-base sm:text-lg py-3.5 rounded-full shadow-xl shadow-rose-600/30 transition flex items-center justify-center gap-2.5">
-                <i class="fa-solid fa-download"></i>
-                <span>Download Server 1 (4K Ultra HD)</span>
-            </button>
-            <button onclick="handleDownloadClick('Download Server 2 (High-Speed Mirror • 240MB/s)', this)" class="w-full sm:w-3/4 bg-[#111118] hover:bg-[#181822] active:scale-95 text-white font-bold text-base sm:text-lg py-3.5 rounded-full border border-white/20 shadow-lg transition flex items-center justify-center gap-2.5">
-                <i class="fa-solid fa-bolt text-amber-400"></i>
-                <span>Download Server 2 (High-Speed Mirror 1080p)</span>
-            </button>
+        <!-- YouTube-Style Video Details, Channel Info & Action Bar -->
+        <div class="flex flex-col gap-3 pt-2">
+            <!-- Video Title -->
+            <h1 id="videoTitle" class="text-base sm:text-xl font-bold text-[#F8FAFC] leading-snug">
+                DarkPAKI 4K VIP Cinema Player
+            </h1>
+
+            <!-- YouTube-Style Creator Channel Bar + Action Buttons -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-white/[0.08]">
+                <!-- Channel Info & Follow Button (Left) -->
+                <div class="flex items-center gap-3">
+                    <img id="watchChannelAvatar" src="/public/darkpaki-logo.png" alt="Channel" class="w-10 h-10 rounded-full object-cover border border-white/10 shrink-0 bg-[#131822]">
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-1.5">
+                            <span id="watchChannelName" class="text-xs sm:text-sm font-bold text-[#F8FAFC] hover:text-[#7C3AED] transition cursor-pointer">DarkPAKI VIP</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="#7C3AED" class="text-[#7C3AED] shrink-0"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        </div>
+                        <span id="watchChannelSubs" class="text-[11px] text-[#94A3B8]">0 followers</span>
+                    </div>
+                    <button id="watchFollowBtn" onclick="toggleWatchCreatorFollow()" class="ml-1 sm:ml-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-[#F8FAFC] text-[#0B0E14] hover:bg-neutral-200 active:scale-95 transition shadow-sm flex items-center gap-1">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span id="watchFollowBtnText">Follow</span>
+                    </button>
+                </div>
+
+                <!-- Action Pills: Like/Dislike, Video Earnings, Share, Save (Right) -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Combined Like / Dislike Pill -->
+                    <div class="flex items-center bg-[#131822] border border-white/[0.08] rounded-full overflow-hidden text-xs">
+                        <!-- Like Button -->
+                        <button id="watchLikeBtn" onclick="handleVideoReaction('like')" class="flex items-center gap-1.5 px-3.5 py-1.5 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.04] transition active:scale-95" title="Like">
+                            <svg id="watchLikeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                            </svg>
+                            <span id="watchLikesCount" class="font-mono text-[11px]">0</span>
+                        </button>
+                        <!-- Divider -->
+                        <div class="w-[1px] h-4 bg-white/10"></div>
+                        <!-- Dislike Button -->
+                        <button id="watchDislikeBtn" onclick="handleVideoReaction('dislike')" class="flex items-center px-3 py-1.5 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.04] transition active:scale-95" title="Dislike">
+                            <svg id="watchDislikeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Creator Video Earnings Badge / Pill -->
+                    <div id="watchVideoEarningsBadge" class="flex items-center gap-1.5 px-3 py-1.5 bg-[#131822] border border-emerald-500/30 rounded-full text-xs font-semibold text-emerald-400 shadow-sm" title="Total revenue generated by this video for creator">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                            <line x1="12" y1="6" x2="12" y2="8"></line>
+                            <line x1="12" y1="16" x2="12" y2="18"></line>
+                        </svg>
+                        <span>Earned: <span id="watchVideoEarningsText" class="font-mono font-bold">$0.00</span></span>
+                    </div>
+
+                    <!-- Share Button -->
+                    <button onclick="shareCurrentVideo()" class="flex items-center gap-1.5 px-3 py-1.5 bg-[#131822] hover:bg-[#18202d] border border-white/[0.08] hover:border-white/20 rounded-full text-xs font-semibold text-[#F8FAFC] transition active:scale-95">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                        <span>Share</span>
+                    </button>
+
+                    <!-- Save / Bookmark Button -->
+                    <button id="watchSaveBtn" onclick="toggleSaveCurrentVideo()" class="flex items-center gap-1.5 px-3 py-1.5 bg-[#131822] hover:bg-[#18202d] border border-white/[0.08] hover:border-white/20 rounded-full text-xs font-semibold text-[#F8FAFC] transition active:scale-95">
+                        <svg id="watchSaveIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
+                        </svg>
+                        <span id="watchSaveText">Save</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- YouTube-Style Description Card -->
+            <div class="bg-[#131822] border border-white/[0.06] rounded-2xl p-3 sm:p-4 text-xs text-[#94A3B8] flex flex-col gap-1.5">
+                <div class="flex flex-wrap items-center gap-2 text-[#F8FAFC] font-semibold text-xs">
+                    <span id="watchViewCountDesc">0 views</span>
+                    <span>•</span>
+                    <span id="videoCategoryPill" class="bg-[#7C3AED]/20 text-[#7C3AED] border border-[#7C3AED]/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                        VIP 4K STREAM
+                    </span>
+                    <span id="videoDemandTag" class="text-amber-400 text-[11px] font-medium">
+                        🎬 Ultra HD Cinema Quality
+                    </span>
+                </div>
+                <p id="watchVideoDesc" class="text-[#94A3B8] leading-relaxed mt-1">
+                    Watch high-definition uncut 4K video stream on DarkPAKI VIP Cinema Hub.
+                </p>
+            </div>
         </div>
 
         <!-- Monetization In-Page Native Banner Slot (Monetag Zone 12223945) -->

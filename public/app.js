@@ -867,11 +867,8 @@ function launchFeaturedFromHome(index) {
   const selected = MEDIA_SOURCES.mainVideos[index];
   if (!selected) return;
 
-  document.getElementById('videoTitle').textContent = selected.title;
-  const pillEl = document.getElementById('videoCategoryPill');
-  if (pillEl) pillEl.textContent = selected.tag;
-  const demandTagEl = document.getElementById('videoDemandTag');
-  if (demandTagEl) demandTagEl.textContent = `🔥 ${selected.requestedBy}`;
+  updateWatchPlayerDetails(selected);
+
   const posterImg = document.getElementById('playerPosterImg');
   if (posterImg) posterImg.src = selected.thumbImg;
   const posterDur = document.getElementById('posterTotalDuration');
@@ -883,6 +880,227 @@ function launchFeaturedFromHome(index) {
   resetToAdFlow();
   if (selected && selected.id) {
     fetch('/api/videos/' + selected.id + '/view', { method: 'POST' }).catch(() => {});
+  }
+}
+
+async function updateWatchPlayerDetails(selected) {
+  if (!selected) return;
+
+  const titleEl = document.getElementById('videoTitle');
+  if (titleEl) titleEl.textContent = selected.title || 'DarkPAKI 4K VIP Cinema Player';
+
+  const catEl = document.getElementById('videoCategoryPill');
+  if (catEl) catEl.textContent = selected.tag || 'VIP 4K STREAM';
+
+  const demandEl = document.getElementById('videoDemandTag');
+  if (demandEl) demandEl.textContent = `🎬 Ultra HD Cinema Quality`;
+
+  const viewDesc = document.getElementById('watchViewCountDesc');
+  if (viewDesc) {
+    const rawViews = selected.views_count || selected.views || 0;
+    viewDesc.textContent = `${formatViewCount(rawViews)} views`;
+  }
+
+  const channelName = document.getElementById('watchChannelName');
+  const chName = selected.creator || selected.owner_name || 'DarkPAKI VIP';
+  if (channelName) channelName.textContent = chName;
+
+  const channelSubs = document.getElementById('watchChannelSubs');
+  if (channelSubs) {
+    channelSubs.textContent = `${formatViewCount(selected.followers_count || 0)} followers`;
+  }
+
+  const channelAvatar = document.getElementById('watchChannelAvatar');
+  if (channelAvatar) {
+    channelAvatar.src = selected.creator_avatar || '/public/darkpaki-logo.png';
+  }
+
+  // Earnings calculation: 25 coins per view, 1000 coins = $0.11 USD
+  const viewsNum = parseInt(selected.views_count, 10) || parseInt(selected.views, 10) || 0;
+  const coins = selected.earnings?.coins !== undefined ? selected.earnings.coins : (viewsNum * 25);
+  const usd = selected.earnings?.usd !== undefined ? selected.earnings.usd : ((coins / 1000) * 0.11).toFixed(2);
+
+  const earningsText = document.getElementById('watchVideoEarningsText');
+  if (earningsText) {
+    earningsText.textContent = `$${usd} (${formatViewCount(coins)} Coins)`;
+  }
+
+  const likesCount = document.getElementById('watchLikesCount');
+  if (likesCount) {
+    likesCount.textContent = formatViewCount(selected.likes_count || 0);
+  }
+
+  // Fetch reactions & follow status from backend
+  if (selected.id) {
+    try {
+      const res = await apiFetch(`/api/videos/${selected.id}/reactions?deviceId=${encodeURIComponent(DEVICE_FINGERPRINT)}`);
+      if (res && res.success && res.data) {
+        updateReactionButtonsUI(res.data.userReaction, res.data.likesCount, res.data.dislikesCount);
+        if (res.data.earnings && earningsText) {
+          earningsText.textContent = `$${res.data.earnings.usd} (${formatViewCount(res.data.earnings.coins)} Coins)`;
+        }
+      }
+    } catch (e) {}
+  }
+}
+
+async function handleVideoReaction(type) {
+  const selected = MEDIA_SOURCES.mainVideos[currentVideoIndex];
+  if (!selected || !selected.id) return;
+
+  try {
+    const res = await apiFetch(`/api/videos/${selected.id}/react`, {
+      method: 'POST',
+      body: JSON.stringify({ reaction: type, deviceId: DEVICE_FINGERPRINT })
+    });
+    if (res && res.success && res.data) {
+      selected.likes_count = res.data.likesCount;
+      selected.dislikes_count = res.data.dislikesCount;
+      if (res.data.earnings) {
+        selected.earnings = res.data.earnings;
+      }
+      updateReactionButtonsUI(res.data.userReaction, res.data.likesCount, res.data.dislikesCount);
+      if (res.data.earnings) {
+        const earnEl = document.getElementById('watchVideoEarningsText');
+        if (earnEl) earnEl.textContent = `$${res.data.earnings.usd} (${formatViewCount(res.data.earnings.coins)} Coins)`;
+      }
+    }
+  } catch (err) {
+    showToast(err.message || 'Failed to update reaction');
+  }
+}
+
+function updateReactionButtonsUI(userReaction, likesCount, dislikesCount) {
+  const likeBtn = document.getElementById('watchLikeBtn');
+  const dislikeBtn = document.getElementById('watchDislikeBtn');
+  const likesCountEl = document.getElementById('watchLikesCount');
+  const likeIcon = document.getElementById('watchLikeIcon');
+  const dislikeIcon = document.getElementById('watchDislikeIcon');
+
+  if (likesCountEl && likesCount !== undefined) {
+    likesCountEl.textContent = formatViewCount(likesCount);
+  }
+
+  if (likeBtn && likeIcon) {
+    if (userReaction === 'like') {
+      likeBtn.classList.add('text-[#7C3AED]', 'bg-[#7C3AED]/20');
+      likeBtn.classList.remove('text-[#94A3B8]');
+      likeIcon.setAttribute('fill', 'currentColor');
+    } else {
+      likeBtn.classList.remove('text-[#7C3AED]', 'bg-[#7C3AED]/20');
+      likeBtn.classList.add('text-[#94A3B8]');
+      likeIcon.setAttribute('fill', 'none');
+    }
+  }
+
+  if (dislikeBtn && dislikeIcon) {
+    if (userReaction === 'dislike') {
+      dislikeBtn.classList.add('text-[#7C3AED]', 'bg-[#7C3AED]/20');
+      dislikeBtn.classList.remove('text-[#94A3B8]');
+      dislikeIcon.setAttribute('fill', 'currentColor');
+    } else {
+      dislikeBtn.classList.remove('text-[#7C3AED]', 'bg-[#7C3AED]/20');
+      dislikeBtn.classList.add('text-[#94A3B8]');
+      dislikeIcon.setAttribute('fill', 'none');
+    }
+  }
+}
+
+async function toggleWatchCreatorFollow() {
+  const selected = MEDIA_SOURCES.mainVideos[currentVideoIndex];
+  if (!selected) return;
+  const creatorName = selected.creator || selected.owner_name || 'DarkPAKI VIP';
+  try {
+    const res = await apiFetch('/api/earning/follow', {
+      method: 'POST',
+      body: JSON.stringify({ creatorName, deviceId: DEVICE_FINGERPRINT })
+    });
+    if (res && res.success) {
+      selected.followers_count = res.followersCount;
+      updateWatchFollowButton(res.isFollowing, res.followersCount);
+      showToast(res.message);
+    }
+  } catch (err) {
+    showToast(err.message || 'Error updating follow status');
+  }
+}
+
+function updateWatchFollowButton(isFollowing, count) {
+  const btn = document.getElementById('watchFollowBtn');
+  const subsEl = document.getElementById('watchChannelSubs');
+  if (subsEl && count !== undefined) {
+    subsEl.textContent = `${formatViewCount(count)} followers`;
+  }
+  if (!btn) return;
+  if (isFollowing) {
+    btn.className = "ml-1 sm:ml-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-[#1F2430] text-[#94A3B8] border border-white/10 hover:border-white/20 active:scale-95 transition shadow-sm flex items-center gap-1";
+    btn.innerHTML = `
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span id="watchFollowBtnText">Following</span>
+    `;
+  } else {
+    btn.className = "ml-1 sm:ml-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-[#F8FAFC] text-[#0B0E14] hover:bg-neutral-200 active:scale-95 transition shadow-sm flex items-center gap-1";
+    btn.innerHTML = `
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      <span id="watchFollowBtnText">Follow</span>
+    `;
+  }
+}
+
+function shareCurrentVideo() {
+  const selected = MEDIA_SOURCES.mainVideos[currentVideoIndex];
+  const url = window.location.origin + (selected && selected.id ? `?v=${selected.id}` : '');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast("Video link copied to clipboard!");
+    }).catch(() => {
+      showToast(url);
+    });
+  } else {
+    showToast("Share URL: " + url);
+  }
+}
+
+async function toggleSaveCurrentVideo() {
+  const token = localStorage.getItem('darkpaki_auth_token');
+  if (!token) {
+    showToast("Please log in to save videos to your collection.");
+    switchView('login');
+    return;
+  }
+  const selected = MEDIA_SOURCES.mainVideos[currentVideoIndex];
+  if (!selected || !selected.id) return;
+
+  const saveText = document.getElementById('watchSaveText');
+  const saveIcon = document.getElementById('watchSaveIcon');
+  const isCurrentlySaved = saveText && saveText.textContent === 'Saved';
+
+  try {
+    if (isCurrentlySaved) {
+      const res = await apiFetch(`/api/profile/save-video/${selected.id}`, { method: 'DELETE' });
+      if (res && res.success) {
+        if (saveText) saveText.textContent = 'Save';
+        if (saveIcon) saveIcon.setAttribute('fill', 'none');
+        showToast(res.message || "Video removed from saved collection.");
+      }
+    } else {
+      const res = await apiFetch('/api/profile/save-video', {
+        method: 'POST',
+        body: JSON.stringify({ videoId: selected.id })
+      });
+      if (res && res.success) {
+        if (saveText) saveText.textContent = 'Saved';
+        if (saveIcon) saveIcon.setAttribute('fill', 'currentColor');
+        showToast(res.message || "Video saved to your collection!");
+      }
+    }
+  } catch (err) {
+    showToast(err.message || "Error updating saved collection.");
   }
 }
 
@@ -2710,6 +2928,13 @@ window.onload = async function() {
 let userGeneratedThumbDataUrl = null;
 
 function openUserUploadModal() {
+  const token = localStorage.getItem('darkpaki_auth_token');
+  if (!CURRENT_USER && !token) {
+    showToast("Please log in with your Gmail account to upload videos.");
+    switchView('login');
+    return;
+  }
+
   document.getElementById('userUploadModal').classList.remove('hidden');
   if (CURRENT_USER) {
     const creatorInput = document.getElementById('userUploadCreator');

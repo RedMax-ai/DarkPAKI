@@ -5,6 +5,8 @@ const videoController = require('../controllers/videoController');
 router.get('/', videoController.getVideos);
 router.get('/config', videoController.getAdConfig);
 router.get('/:id', videoController.getVideoById);
+router.get('/:id/reactions', videoController.getVideoReactions);
+router.post('/:id/react', videoController.reactToVideo);
 router.post('/:id/view', videoController.incrementView);
 router.post('/upload-thumbnail', videoController.uploadThumbnail);
 router.post('/user-upload', videoController.submitUserVideo);
