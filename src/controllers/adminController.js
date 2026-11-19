@@ -106,7 +106,7 @@ function getStats(req, res, next) {
     const telegramUrl = db.prepare("SELECT value FROM settings WHERE key = 'telegram_url'").get()?.value || 'https://t.me/darkpaki_official';
     const allowInstantSkip = db.prepare("SELECT value FROM settings WHERE key = 'allow_instant_skip'").get()?.value === 'true';
     const cdnStreamUrl = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get()?.value || config.cdnStreamUrl;
-    const adVideoUrl = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get()?.value || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4';
+    const adVideoUrl = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get()?.value || 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
     const popunderUrl = db.prepare("SELECT value FROM settings WHERE key = 'popunder_url'").get()?.value || '';
     const bannerAdHtml = db.prepare("SELECT value FROM settings WHERE key = 'banner_ad_html'").get()?.value || '';
     const monetagMetaTag = db.prepare("SELECT value FROM settings WHERE key = 'monetag_meta_tag'").get()?.value || '';
@@ -455,7 +455,7 @@ function getSettings(req, res, next) {
   try {
     const telegramUrl = db.prepare("SELECT value FROM settings WHERE key = 'telegram_url'").get()?.value || 'https://t.me/darkpaki_official';
     const allowInstantSkip = db.prepare("SELECT value FROM settings WHERE key = 'allow_instant_skip'").get()?.value === 'true';
-    const adVideoUrl = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get()?.value || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4';
+    const adVideoUrl = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get()?.value || 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
     const cdnStreamUrl = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get()?.value || config.cdnStreamUrl;
     const popunderUrl = db.prepare("SELECT value FROM settings WHERE key = 'popunder_url'").get()?.value || '';
     const bannerAdHtml = db.prepare("SELECT value FROM settings WHERE key = 'banner_ad_html'").get()?.value || '';

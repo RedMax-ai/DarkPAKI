@@ -353,7 +353,7 @@ function getAdConfig(req, res, next) {
     res.json({
       success: true,
       data: {
-        adVideoUrl: adVideoSetting ? adVideoSetting.value : 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+        adVideoUrl: (adVideoSetting && adVideoSetting.value) ? adVideoSetting.value : 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
         allowInstantSkip: instantSkipSetting ? instantSkipSetting.value === 'true' : false,
         telegramUrl: telegramSetting ? telegramSetting.value : 'https://t.me/darkpaki_official',
         popunderUrl: popunderSetting ? popunderSetting.value : '',

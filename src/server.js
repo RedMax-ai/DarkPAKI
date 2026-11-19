@@ -30,7 +30,8 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https:", "http:", "blob:"],
       mediaSrc: ["'self'", "https:", "http:", "blob:"],
       connectSrc: ["'self'", "*", "https:", "http:", "data:"],
-      frameSrc: ["'self'", "*", "https:", "http:"],
+      frameSrc: ["'self'", "*", "https:", "http:", "about:", "data:"],
+      childSrc: ["'self'", "*", "https:", "http:", "blob:", "data:"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: null
     }

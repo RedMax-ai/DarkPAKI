@@ -15,8 +15,16 @@ function seedDatabase() {
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('recaptcha_site_key', ?)").run(config.recaptchaSiteKey || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK');
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('recaptcha_secret_key', ?)").run(config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZOp6_tqzZ85t');
   insertSetting.run('telegram_url', 'https://t.me/darkpaki_official');
-  insertSetting.run('ad_video_url', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4');
+  insertSetting.run('ad_video_url', 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4');
   insertSetting.run('allow_instant_skip', 'false');
+
+  // Replace dead Google sample ad URLs with working fallback stream
+  try {
+    const adRow = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get();
+    if (!adRow || !adRow.value || adRow.value.includes('commondatastorage.googleapis.com')) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('ad_video_url', ?)").run('https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4');
+    }
+  } catch (e) {}
 
   // Self-heal CDN Stream URL to ensure it never self-references dark.anizon.watch
   try {

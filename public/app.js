@@ -16,7 +16,7 @@ let CAPTCHA_CHALLENGE_TOKEN = '';
 
 // Application State
 let MEDIA_SOURCES = {
-  adVideo: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+  adVideo: "",
   mainVideos: []
 };
 
@@ -748,6 +748,13 @@ let isFullRewardAdMode = false;
 
 function startAdExperience(isFullReward = false) {
   clearInterval(adCountdownInterval);
+
+  // If no ad configured or dead sample URL, transition directly to the main video
+  if (!MEDIA_SOURCES.adVideo || !MEDIA_SOURCES.adVideo.trim() || MEDIA_SOURCES.adVideo.includes('commondatastorage.googleapis.com')) {
+    transitionToMainVideo("Playing 4K stream...");
+    return;
+  }
+
   currentState = 'AD_PLAYING';
   isFullRewardAdMode = isFullReward;
   updateStepperUI('AD_PLAYING');
