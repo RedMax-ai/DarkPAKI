@@ -1148,11 +1148,11 @@ function triggerGoogleSignIn() {
   // Strict 18+ and Single-Device Verification Gate: MUST tick before Google Sign-In
   const checkbox = document.getElementById('humanConfirmCheckbox');
   if (!checkbox || !checkbox.checked) {
-    showToast('⚠️ Pehle 18+ aur Single-Device terms ko read karke confirm tick karein, tabhi Google Login hoga!', 'error');
+    showToast('Please confirm 18+ age and Single-Device policy to continue with Google Login.', 'error');
     highlightTermsCard();
     if (errBox) {
       const errText = document.getElementById('loginErrorAlertText');
-      if (errText) errText.textContent = 'Pehle "I confirm I am 18+ & agree to the Single-Device Anti-Cheat Bond" ko tick karein!';
+      if (errText) errText.textContent = 'Please check "I confirm I am 18+ & agree to the Single-Device Policy" to continue.';
       errBox.classList.remove('hidden');
     }
     return;
@@ -1203,7 +1203,7 @@ async function handleGoogleCredentialResponse(response) {
 
   const checkbox = document.getElementById('humanConfirmCheckbox');
   if (!checkbox || !checkbox.checked) {
-    showToast('⚠️ Pehle 18+ aur Single-Device terms ko read karke confirm tick karein!', 'error');
+    showToast('Please confirm 18+ age and Single-Device policy to continue.', 'error');
     highlightTermsCard();
     return;
   }
@@ -1454,9 +1454,9 @@ function switchAuthMode(mode) {
     if (cardTitle) cardTitle.textContent = "Log In to DarkPAKI";
     if (cardSub) cardSub.textContent = "Sign in with your registered Gmail & password to access your vault";
     if (submitIcon) submitIcon.className = "fa-solid fa-right-to-bracket";
-    if (submitText) submitText.textContent = "Log In to Account (लॉग इन)";
+    if (submitText) submitText.textContent = "Log In to Account";
     if (promptText) promptText.textContent = "Don't have an account?";
-    if (actionBtn) actionBtn.textContent = "Create New Account (साइन अप)";
+    if (actionBtn) actionBtn.textContent = "Create New Account";
   } else {
     if (tabReg) {
       tabReg.className = "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg shadow-rose-600/30";
@@ -1470,9 +1470,9 @@ function switchAuthMode(mode) {
     if (cardTitle) cardTitle.textContent = "Create DarkPAKI Account";
     if (cardSub) cardSub.textContent = "Sign up to stream uncut 4K videos, earn coins & get $0.275 welcome bonus";
     if (submitIcon) submitIcon.className = "fa-solid fa-user-plus";
-    if (submitText) submitText.textContent = "Create Account & Get Bonus (रजिस्टर)";
+    if (submitText) submitText.textContent = "Create Account & Get Bonus";
     if (promptText) promptText.textContent = "Already have an account?";
-    if (actionBtn) actionBtn.textContent = "Log In (लॉग इन करें)";
+    if (actionBtn) actionBtn.textContent = "Log In";
   }
 }
 
@@ -1488,11 +1488,11 @@ async function handleSecureUserLogin(e) {
   // Mandatory 18+ and Single-Device Terms Gate
   const checkbox = document.getElementById('humanConfirmCheckbox');
   if (!checkbox || !checkbox.checked) {
-    showToast('⚠️ Pehle 18+ aur Single-Device terms ko read karke confirm tick karein!', 'error');
+    showToast('Please confirm 18+ age and Single-Device policy to continue.', 'error');
     highlightTermsCard();
     if (errBox) {
       const errText = document.getElementById('loginErrorAlertText');
-      if (errText) errText.textContent = 'Pehle "I confirm I am 18+ & agree to the Single-Device Anti-Cheat Bond" ko tick karein!';
+      if (errText) errText.textContent = 'Please check "I confirm I am 18+ & agree to the Single-Device Policy" to continue.';
       errBox.classList.remove('hidden');
     }
     return;
@@ -1624,7 +1624,7 @@ async function handleSecureUserLogin(e) {
   } finally {
     if (submitBtn) submitBtn.disabled = false;
     if (submitBtnText) {
-      submitBtnText.textContent = AUTH_MODE === 'login' ? 'Log In to Account (लॉग इन)' : 'Create Account & Get Bonus (रजिस्टर)';
+      submitBtnText.textContent = AUTH_MODE === 'login' ? 'Log In to Account' : 'Create Account & Get Bonus';
     }
     if (submitBtnIcon) {
       submitBtnIcon.className = AUTH_MODE === 'login' ? 'fa-solid fa-right-to-bracket' : 'fa-solid fa-user-plus';
@@ -2071,6 +2071,260 @@ async function submitUserDemand(e) {
 
 
 // ============================================================================
+// DEDICATED TRENDING EXPLORE SECTION (Mixed Aspect-Ratio 16:9 + 9:16 Dense Grid)
+// ============================================================================
+let TRENDING_VIDEOS_CACHE = [];
+let TRENDING_SEARCH_QUERY = '';
+let TRENDING_FORMAT_FILTER = 'all'; // 'all', 'videos', 'shorts'
+let TRENDING_SEARCH_DEBOUNCE_TIMER = null;
+
+function formatViewCount(views) {
+  const n = parseInt(views, 10);
+  if (isNaN(n) || n <= 0) {
+    if (typeof views === 'string' && views.trim().length > 0) return views;
+    return '0';
+  }
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+
+function formatDurationDisplay(dur) {
+  if (!dur) return 'HD';
+  if (typeof dur === 'string') return dur;
+  const s = parseInt(dur, 10);
+  if (isNaN(s)) return 'HD';
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}:${String(rem).padStart(2, '0')}`;
+}
+
+async function loadTrendingGrid(force = false) {
+  const grid = document.getElementById('trendingMediaGrid');
+  const emptyState = document.getElementById('trendingEmptyState');
+  if (!grid) return;
+
+  if (TRENDING_VIDEOS_CACHE.length === 0 || force) {
+    grid.innerHTML = `
+      <div class="col-span-full py-16 flex flex-col items-center justify-center text-[#7C3AED]">
+        <svg class="animate-spin h-8 w-8 text-[#7C3AED]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        <span class="mt-3 text-xs font-mono text-[#94A3B8]">Loading trending videos...</span>
+      </div>
+    `;
+    if (emptyState) emptyState.classList.add('hidden');
+
+    try {
+      const res = await apiFetch('/api/videos');
+      if (res && res.success && Array.isArray(res.data)) {
+        TRENDING_VIDEOS_CACHE = res.data;
+      } else {
+        TRENDING_VIDEOS_CACHE = [];
+      }
+    } catch (err) {
+      console.error('Error fetching trending catalog:', err);
+      TRENDING_VIDEOS_CACHE = [];
+    }
+  }
+
+  renderTrendingGrid();
+}
+
+function renderTrendingGrid() {
+  const grid = document.getElementById('trendingMediaGrid');
+  const emptyState = document.getElementById('trendingEmptyState');
+  const emptySubtext = document.getElementById('trendingEmptySubtext');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+
+  let list = Array.isArray(TRENDING_VIDEOS_CACHE) ? [...TRENDING_VIDEOS_CACHE] : [];
+
+  // 1. Filter by search query
+  if (TRENDING_SEARCH_QUERY) {
+    const q = TRENDING_SEARCH_QUERY.toLowerCase();
+    list = list.filter(v => {
+      const title = (v.title || '').toLowerCase();
+      const desc = (v.description || '').toLowerCase();
+      const tag = (v.tag || '').toLowerCase();
+      const creator = (v.creator || v.owner_name || '').toLowerCase();
+      const reqBy = (v.requested_by || '').toLowerCase();
+      return title.includes(q) || desc.includes(q) || tag.includes(q) || creator.includes(q) || reqBy.includes(q);
+    });
+  }
+
+  // 2. Filter by format (all, videos=16:9, shorts=9:16)
+  if (TRENDING_FORMAT_FILTER === 'videos') {
+    list = list.filter(v => {
+      const isPortrait = Boolean(v.is_short) ||
+        (typeof v.tag === 'string' && v.tag.toUpperCase().includes('SHORT')) ||
+        v.aspect_ratio === '9:16' ||
+        v.aspectRatio === '9/16';
+      return !isPortrait;
+    });
+  } else if (TRENDING_FORMAT_FILTER === 'shorts') {
+    list = list.filter(v => {
+      const isPortrait = Boolean(v.is_short) ||
+        (typeof v.tag === 'string' && v.tag.toUpperCase().includes('SHORT')) ||
+        v.aspect_ratio === '9:16' ||
+        v.aspectRatio === '9/16';
+      return isPortrait;
+    });
+  }
+
+  // 3. Render tiles or empty state
+  if (list.length === 0) {
+    if (emptyState) {
+      emptyState.classList.remove('hidden');
+      if (emptySubtext) {
+        if (TRENDING_SEARCH_QUERY) {
+          emptySubtext.textContent = `No videos matching "${TRENDING_SEARCH_QUERY}". Try another search term.`;
+        } else if (TRENDING_FORMAT_FILTER !== 'all') {
+          emptySubtext.textContent = `No ${TRENDING_FORMAT_FILTER === 'videos' ? '16:9 widescreen videos' : '9:16 shorts'} found. Switch to "All" to view all content.`;
+        } else {
+          emptySubtext.textContent = 'No videos found in the catalog right now.';
+        }
+      }
+    }
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+
+  list.forEach(video => {
+    const isPortrait = Boolean(video.is_short) ||
+      (typeof video.tag === 'string' && video.tag.toUpperCase().includes('SHORT')) ||
+      video.aspect_ratio === '9:16' ||
+      video.aspectRatio === '9/16';
+
+    const tile = document.createElement('div');
+    tile.className = `trending-tile ${isPortrait ? 'trending-tile-portrait' : 'trending-tile-landscape'} relative group cursor-pointer overflow-hidden rounded-[6px] bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/70 transition-all duration-300 shadow-md select-none`;
+    tile.onclick = () => playTrendingVideoById(video.id);
+
+    const thumbUrl = video.thumb_img || video.thumbnail_url || video.thumbImg || '/public/darkpaki-logo.png';
+    const durDisplay = formatDurationDisplay(video.duration);
+    const viewsDisplay = formatViewCount(video.views || video.views_count || 0);
+
+    tile.innerHTML = `
+      <img 
+        src="${escapeHtml(thumbUrl)}" 
+        alt="${escapeHtml(video.title || 'Video')}"
+        loading="lazy"
+        onerror="this.src='/public/darkpaki-logo.png'"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+      />
+
+      <!-- Top Right Badge: Inline SVG Format Icon + Duration -->
+      <div class="absolute top-1.5 right-1.5 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-white/95 text-[10px] font-mono font-medium shadow-md border border-white/10 pointer-events-none">
+        ${isPortrait ? `
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+          </svg>
+        ` : `
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+            <polygon points="10 8 16 12 10 16 10 8" fill="currentColor"></polygon>
+          </svg>
+        `}
+        <span>${escapeHtml(durDisplay)}</span>
+      </div>
+
+      <!-- Bottom Gradient Scrim: Views Icon + Count + Title -->
+      <div class="absolute inset-x-0 bottom-0 z-10 pt-8 pb-2 px-2 bg-gradient-to-t from-[#0B0E14]/95 via-[#0B0E14]/65 to-transparent flex flex-col justify-end pointer-events-none">
+        <div class="flex items-center gap-1 text-[10px] font-medium text-[#94A3B8]">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#94A3B8]">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <span class="font-mono text-[#F8FAFC]/90">${escapeHtml(viewsDisplay)}</span>
+        </div>
+        <p class="text-[11px] sm:text-xs font-semibold text-[#F8FAFC] truncate mt-0.5 drop-shadow-sm group-hover:text-purple-300 transition-colors">
+          ${escapeHtml(video.title || 'Untitled')}
+        </p>
+      </div>
+    `;
+
+    grid.appendChild(tile);
+  });
+}
+
+function handleTrendingSearchInput(val) {
+  const clearBtn = document.getElementById('trendingClearSearchBtn');
+  if (clearBtn) {
+    if (val && val.trim().length > 0) {
+      clearBtn.classList.remove('hidden');
+    } else {
+      clearBtn.classList.add('hidden');
+    }
+  }
+
+  if (TRENDING_SEARCH_DEBOUNCE_TIMER) {
+    clearTimeout(TRENDING_SEARCH_DEBOUNCE_TIMER);
+  }
+
+  TRENDING_SEARCH_DEBOUNCE_TIMER = setTimeout(() => {
+    TRENDING_SEARCH_QUERY = (val || '').trim().toLowerCase();
+    renderTrendingGrid();
+  }, 300);
+}
+
+function clearTrendingSearch() {
+  const input = document.getElementById('trendingSearchInput');
+  const clearBtn = document.getElementById('trendingClearSearchBtn');
+  if (input) input.value = '';
+  if (clearBtn) clearBtn.classList.add('hidden');
+  TRENDING_SEARCH_QUERY = '';
+  renderTrendingGrid();
+}
+
+function setTrendingFormatFilter(format) {
+  TRENDING_FORMAT_FILTER = format;
+  const activeClass = "trend-filter-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#7C3AED] text-[#F8FAFC] border border-[#7C3AED] flex items-center gap-1.5 transition shrink-0 shadow-md shadow-[#7C3AED]/20";
+  const inactiveClass = "trend-filter-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#131822] text-[#94A3B8] hover:text-[#F8FAFC] border border-white/[0.08] flex items-center gap-1.5 transition shrink-0";
+
+  const btnAll = document.getElementById('trendFilterAll');
+  const btnVideos = document.getElementById('trendFilterVideos');
+  const btnShorts = document.getElementById('trendFilterShorts');
+
+  if (btnAll) btnAll.className = format === 'all' ? activeClass : inactiveClass;
+  if (btnVideos) btnVideos.className = format === 'videos' ? activeClass : inactiveClass;
+  if (btnShorts) btnShorts.className = format === 'shorts' ? activeClass : inactiveClass;
+
+  renderTrendingGrid();
+}
+
+function playTrendingVideoById(id) {
+  const vid = TRENDING_VIDEOS_CACHE.find(v => v.id === id);
+  if (!vid) return;
+
+  const mapped = {
+    id: vid.id,
+    title: vid.title,
+    creator: vid.creator || vid.owner_name || 'DarkPAKI VIP',
+    views: vid.views || vid.views_count || 0,
+    duration: vid.duration || 'HD',
+    tag: vid.tag || '18+ TRENDING',
+    thumbImg: vid.thumb_img || vid.thumbnail_url || vid.thumbImg || '/public/darkpaki-logo.png',
+    src: vid.src || vid.video_url || vid.stream_url,
+    requestedBy: vid.requested_by || 'VIP Members',
+    is_short: vid.is_short
+  };
+
+  let idx = MEDIA_SOURCES.mainVideos.findIndex(v => v.id === id);
+  if (idx === -1) {
+    MEDIA_SOURCES.mainVideos.push(mapped);
+    idx = MEDIA_SOURCES.mainVideos.length - 1;
+  } else {
+    MEDIA_SOURCES.mainVideos[idx] = mapped;
+  }
+
+  launchFeaturedFromHome(idx);
+}
+
+// ============================================================================
 // NAVIGATION & UI UTILITIES
 // ============================================================================
 function switchView(mode) {
@@ -2079,8 +2333,9 @@ function switchView(mode) {
   const demandSec = document.getElementById('demandAndCommentHub');
   const loginSec = document.getElementById('authLoginSection');
   const profileSec = document.getElementById('userProfileSection');
+  const trendingSec = document.getElementById('trendingSection');
 
-  [homeSec, watchSec, demandSec, loginSec, profileSec].forEach(sec => {
+  [homeSec, watchSec, demandSec, loginSec, profileSec, trendingSec].forEach(sec => {
     if (sec) sec.classList.add('hidden');
   });
 
@@ -2122,10 +2377,8 @@ function switchView(mode) {
       loadInstagramUserProfile();
     }
   } else if (mode === 'trending') {
-    if (homeSec) homeSec.classList.remove('hidden');
-    currentCategoryFilter = 'TRENDING VIDEOS';
-    loadVideos();
-    showToast("Showing 18+ Trending Videos");
+    if (trendingSec) trendingSec.classList.remove('hidden');
+    loadTrendingGrid();
   } else {
     if (homeSec) homeSec.classList.remove('hidden');
     currentCategoryFilter = 'ALL';
@@ -2301,7 +2554,7 @@ async function handleGenerateAiImage(e) {
     showToast('❌ AI Generation failed. Please try again.');
   } finally {
     if (generateBtn) generateBtn.disabled = false;
-    if (btnText) btnText.textContent = 'Generate 18+ AI Image (इमेज बनाएं)';
+    if (btnText) btnText.textContent = 'Generate 18+ AI Image';
     if (loadingOverlay) loadingOverlay.classList.add('hidden');
   }
 }

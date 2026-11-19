@@ -188,6 +188,36 @@
                 grid-template-columns: repeat(1, minmax(0, 1fr));
             }
         }
+
+        /* Intelligent Mixed Aspect-Ratio Dense Grid */
+        .trending-dense-grid {
+            display: grid;
+            grid-auto-flow: dense;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 3px;
+        }
+        @media (min-width: 768px) {
+            .trending-dense-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 8px;
+            }
+        }
+        @media (min-width: 1024px) {
+            .trending-dense-grid {
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                gap: 8px;
+            }
+        }
+        .trending-tile-portrait {
+            grid-column: span 1;
+            grid-row: span 2;
+            aspect-ratio: 9 / 16;
+        }
+        .trending-tile-landscape {
+            grid-column: span 2;
+            grid-row: span 1;
+            aspect-ratio: 16 / 9;
+        }
     </style>
 </head>
 <body class="bg-[#0B0E14] text-[#F8FAFC] font-sans min-h-screen flex flex-col selection:bg-[#7C3AED] selection:text-white overflow-x-hidden pb-28">
@@ -225,10 +255,10 @@
             <div class="flex flex-col w-full gap-2.5 pt-2">
                 <button id="btnConfirmAgeGate" onclick="confirmAgeGate()" class="w-full bg-gradient-to-r from-rose-600 via-rose-500 to-red-600 hover:brightness-110 active:scale-95 text-white font-black text-sm sm:text-base py-3.5 rounded-2xl shadow-xl shadow-rose-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
                     <i class="fa-solid fa-check"></i>
-                    <span>I AM 18 OR OLDER - ENTER (प्रवेश)</span>
+                    <span>I AM 18 OR OLDER - ENTER</span>
                 </button>
                 <button id="btnRejectAgeGate" onclick="rejectAgeGate()" class="w-full bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white font-bold text-xs py-2.5 rounded-2xl border border-white/10 transition cursor-pointer">
-                    Under 18 - Exit (बाहर निकलें)
+                    Under 18 - Exit
                 </button>
             </div>
 
@@ -379,6 +409,105 @@
         <!-- 1000x Adaptive Video Grid (2-Cols Mobile, 3-Cols Desktop) -->
         <div id="homeVideoGrid" class="grid video-grid-adaptive">
             <!-- Dynamically populated from SQLite database -->
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         PAGE: DEDICATED TRENDING EXPLORE SECTION (Mixed 16:9 & 9:16 Dense Grid)
+         ============================================================================ -->
+    <section id="trendingSection" class="hidden relative z-10 max-w-6xl w-full mx-auto px-2 sm:px-4 pt-3 pb-28 min-h-screen text-[#F8FAFC]">
+        <!-- 1. Top Pill Search Bar (Live Debounced Search & Format Filtering) -->
+        <div class="sticky top-2 z-30 mb-3.5 bg-[#0B0E14]/90 backdrop-blur-md pt-1 pb-2">
+            <div class="relative w-full">
+                <!-- SVG Search Icon (Left) -->
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#94A3B8]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                
+                <!-- Search Input -->
+                <input 
+                    type="text" 
+                    id="trendingSearchInput" 
+                    placeholder="Search trending videos, titles, or creators..." 
+                    oninput="handleTrendingSearchInput(this.value)"
+                    class="w-full bg-[#131822] text-[#F8FAFC] text-xs sm:text-sm pl-10 pr-10 py-2.5 rounded-full border border-white/[0.08] focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] focus:outline-none placeholder-[#94A3B8]/60 transition-all shadow-lg"
+                    autocomplete="off"
+                >
+
+                <!-- Clear SVG Button (Right) -->
+                <button 
+                    type="button" 
+                    id="trendingClearSearchBtn" 
+                    onclick="clearTrendingSearch()" 
+                    class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#94A3B8] hover:text-[#F8FAFC] transition"
+                    title="Clear search"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Filter Pills (All, 16:9 Videos, 9:16 Shorts) - 100% Inline SVG Icons -->
+            <div class="flex items-center gap-2 mt-2.5 overflow-x-auto no-scrollbar">
+                <button 
+                    id="trendFilterAll" 
+                    onclick="setTrendingFormatFilter('all')" 
+                    class="trend-filter-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#7C3AED] text-[#F8FAFC] border border-[#7C3AED] flex items-center gap-1.5 transition shrink-0 shadow-md shadow-[#7C3AED]/20"
+                >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    <span>All</span>
+                </button>
+                <button 
+                    id="trendFilterVideos" 
+                    onclick="setTrendingFormatFilter('videos')" 
+                    class="trend-filter-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#131822] text-[#94A3B8] hover:text-[#F8FAFC] border border-white/[0.08] flex items-center gap-1.5 transition shrink-0"
+                >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                        <line x1="8" y1="4" x2="8" y2="20"></line>
+                        <line x1="16" y1="4" x2="16" y2="20"></line>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                    </svg>
+                    <span>16:9 Videos</span>
+                </button>
+                <button 
+                    id="trendFilterShorts" 
+                    onclick="setTrendingFormatFilter('shorts')" 
+                    class="trend-filter-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#131822] text-[#94A3B8] hover:text-[#F8FAFC] border border-white/[0.08] flex items-center gap-1.5 transition shrink-0"
+                >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                    </svg>
+                    <span>9:16 Shorts</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. Intelligent Mixed Media Dense Grid -->
+        <div id="trendingMediaGrid" class="trending-dense-grid w-full">
+            <!-- Dynamically populated from real SQLite videos -->
+        </div>
+
+        <!-- 3. Clean Dead-Center Empty State (Zero Dummy Data, 100% SVG) -->
+        <div id="trendingEmptyState" class="hidden flex flex-col items-center justify-center text-center py-20 px-4">
+            <div class="w-16 h-16 rounded-2xl bg-[#131822] border border-white/[0.08] flex items-center justify-center mb-4 text-[#7C3AED] shadow-xl">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+            </div>
+            <h3 class="text-base sm:text-lg font-bold text-[#F8FAFC] mb-1">No trending videos found</h3>
+            <p id="trendingEmptySubtext" class="text-xs text-[#94A3B8] max-w-sm">
+                Try adjusting your search query or format filter.
+            </p>
         </div>
     </section>
 
@@ -749,11 +878,11 @@
             <div class="grid grid-cols-2 p-1 bg-black/60 border border-white/10 rounded-2xl">
                 <button type="button" id="tabBtnLogin" onclick="switchAuthMode('login')" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg shadow-rose-600/30">
                     <i class="fa-solid fa-right-to-bracket"></i>
-                    <span>Log In (लॉग इन)</span>
+                    <span>Log In</span>
                 </button>
                 <button type="button" id="tabBtnRegister" onclick="switchAuthMode('register')" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold text-neutral-400 hover:text-white transition flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-user-plus"></i>
-                    <span>Sign Up (रजिस्टर)</span>
+                    <span>Sign Up</span>
                 </button>
             </div>
 
@@ -803,7 +932,7 @@
                 <!-- Password -->
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider">Account Password (पासवर्ड) *</label>
+                        <label class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider">Account Password *</label>
                     </div>
                     <div class="relative">
                         <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
@@ -847,14 +976,14 @@
                 <!-- Submit Button -->
                 <button type="submit" id="submitLoginBtn" class="mt-1 bg-gradient-to-r from-rose-600 via-rose-500 to-red-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-sm py-3.5 rounded-2xl shadow-xl shadow-rose-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                     <i id="submitBtnIcon" class="fa-solid fa-right-to-bracket"></i>
-                    <span id="submitBtnText">Log In to Account (लॉग इन)</span>
+                    <span id="submitBtnText">Log In to Account</span>
                 </button>
 
                 <!-- Mode Switcher Footer -->
                 <div class="text-center pt-2 text-xs text-neutral-400">
                     <span id="authSwitchPromptText">Don't have an account?</span>
                     <button type="button" id="authSwitchActionBtn" onclick="toggleAuthModeSwitch()" class="ml-1 text-rose-400 font-bold underline hover:text-rose-300 transition">
-                        Create New Account (साइन अप)
+                        Create New Account
                     </button>
                 </div>
             </form>
@@ -2140,7 +2269,7 @@
                     </div>
                     <div>
                         <h3 class="font-black text-base text-white">6-Digit OTP Verification</h3>
-                        <p class="text-[10px] text-rose-400 font-mono">ईमेल OTP व डिवाइस सत्यापन</p>
+                        <p class="text-[10px] text-rose-400 font-mono">Email OTP & Device Verification</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeOtpVerificationModal()" class="text-neutral-400 hover:text-white text-lg">

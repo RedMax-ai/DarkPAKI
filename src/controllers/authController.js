@@ -207,7 +207,7 @@ async function loginOrRegister(req, res, next) {
     if (!termsAccepted) {
       return res.status(400).json({
         success: false,
-        message: '⚠️ Pehle 18+ Age & Single-Device Anti-Cheat Bond ko confirm karein, tabhi Login/Signup hoga!'
+        message: 'Please confirm 18+ age & Single-Device Policy agreement before proceeding.'
       });
     }
 
@@ -854,7 +854,7 @@ async function googleLogin(req, res, next) {
     if (!termsAccepted) {
       return res.status(400).json({
         success: false,
-        message: '⚠️ Pehle 18+ Age & Single-Device Anti-Cheat Bond ko confirm karein, tabhi Google Login hoga!'
+        message: 'Please confirm 18+ age & Single-Device Policy agreement before proceeding with Google Login.'
       });
     }
 
