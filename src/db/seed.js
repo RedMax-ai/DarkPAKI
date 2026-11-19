@@ -26,19 +26,29 @@ function seedDatabase() {
     }
   } catch (e) {}
 
-  // Check Initial Verified User (Clean Zero-State, Zero Fake Data)
-  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-  if (userCount === 0) {
-    const insertUser = db.prepare(`
-      INSERT INTO users (name, gmail, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role, human_verified, account_status)
-      VALUES (?, ?, '', ?, 0.0, 50, 0, 0, 'DPK786', 'admin', 1, 'active')
-    `);
-    insertUser.run(
-      "Naved Master",
-      "naved.official@gmail.com",
-      "DPK-ADMIN-01"
-    );
-    console.log('[SEED] Inserted clean default admin user (0 balance, 0 refs, 0 ads).');
+  // Ensure Permanent Verified Admin Accounts (Clean Zero-Fake State)
+  const defaultAdminPassHash = bcrypt.hashSync('Admin@7860', 10);
+  
+  // 1. admin@darkpaki.com
+  const existingDarkpakiAdmin = db.prepare('SELECT id FROM users WHERE gmail = ? COLLATE NOCASE').get('admin@darkpaki.com');
+  if (!existingDarkpakiAdmin) {
+    db.prepare(`
+      INSERT INTO users (name, gmail, password, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role, human_verified, account_status)
+      VALUES ('DarkPAKI Admin', 'admin@darkpaki.com', ?, '', 'DPK-ADMIN-MAIN', 100.0, 10000, 0, 0, 'DPKADMIN786', 'admin', 1, 'active')
+    `).run(defaultAdminPassHash);
+  } else {
+    db.prepare("UPDATE users SET password = ?, role = 'admin', human_verified = 1 WHERE id = ?").run(defaultAdminPassHash, existingDarkpakiAdmin.id);
+  }
+
+  // 2. naved.official@gmail.com
+  const existingNaved = db.prepare('SELECT id FROM users WHERE gmail = ? COLLATE NOCASE').get('naved.official@gmail.com');
+  if (!existingNaved) {
+    db.prepare(`
+      INSERT INTO users (name, gmail, password, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role, human_verified, account_status)
+      VALUES ('Naved Master', 'naved.official@gmail.com', ?, '', 'DPK-ADMIN-01', 100.0, 10000, 0, 0, 'DPKNAVED786', 'admin', 1, 'active')
+    `).run(defaultAdminPassHash);
+  } else {
+    db.prepare("UPDATE users SET password = ?, role = 'admin', human_verified = 1 WHERE id = ?").run(defaultAdminPassHash, existingNaved.id);
   }
 
   console.log('[SEED] Database verification complete. Zero dummy/fake posts or items seeded.');

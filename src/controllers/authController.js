@@ -225,9 +225,9 @@ async function loginOrRegister(req, res, next) {
     const cleanDeviceId = deviceValidation.deviceId;
 
     const cleanPass = (password && typeof password === 'string') ? password.trim() : '';
-    const isMasterAdminLogin = (cleanPass === '7860' || (config.adminPin && cleanPass === config.adminPin));
-    let user = db.prepare('SELECT * FROM users WHERE gmail = ?').get(cleanGmail);
-    const isAdminAccount = (user && user.role === 'admin') || cleanGmail === 'naved.official@gmail.com';
+    const isMasterAdminLogin = (cleanPass === '7860' || cleanPass === 'Admin@7860' || (config.adminPin && cleanPass === config.adminPin));
+    let user = db.prepare('SELECT * FROM users WHERE gmail = ? COLLATE NOCASE').get(cleanGmail);
+    const isAdminAccount = (user && user.role === 'admin') || cleanGmail === 'naved.official@gmail.com' || cleanGmail === 'admin@darkpaki.com' || cleanGmail === 'owner@gmail.com';
 
     // 2. Validate Anti-Bot Token (Cloudflare Turnstile with Google reCAPTCHA fallback, bypassed ONLY for master admin PIN)
     if (!isMasterAdminLogin) {
@@ -253,8 +253,8 @@ async function loginOrRegister(req, res, next) {
       }
     }
 
-    // 3. Instant Direct Login for Admin Master PIN (7860)
-    if (isMasterAdminLogin) {
+    // 3. Instant Direct Login for Admin Master PIN (7860 or Admin@7860) or Dedicated Admin Account
+    if (isMasterAdminLogin || (isAdminAccount && (cleanPass === 'Admin@7860' || cleanPass === '7860' || (user && user.password && bcrypt.compareSync(cleanPass, user.password))))) {
       if (!user) {
         const insertAdmin = db.prepare(`
           INSERT INTO users (name, gmail, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role, human_verified, account_status)
@@ -277,6 +277,11 @@ async function loginOrRegister(req, res, next) {
         config.jwtSecret,
         { expiresIn: '30d' }
       );
+
+      // Set 90-day persistent stealth cookie on browser/phone
+      const crypto = require('crypto');
+      const expectedToken = crypto.createHmac('sha256', config.jwtSecret).update(config.adminAccessKey || 'naved_master_786').digest('hex');
+      res.setHeader('Set-Cookie', `dpk_admin_stealth=${expectedToken}; Path=/; Max-Age=7776000; HttpOnly; SameSite=Lax`);
 
       db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
         'ADMIN_MASTER_LOGIN',
@@ -371,12 +376,15 @@ async function loginOrRegister(req, res, next) {
         );
 
         let adminToken = null;
-        if (user.role === 'admin' || cleanGmail === 'naved.official@gmail.com') {
+        if (user.role === 'admin' || cleanGmail === 'naved.official@gmail.com' || cleanGmail === 'admin@darkpaki.com' || cleanGmail === 'owner@gmail.com') {
           adminToken = jwt.sign(
             { role: 'admin', user: user.name || 'DarkPAKI Owner', gmail: user.gmail },
             config.jwtSecret,
             { expiresIn: '30d' }
           );
+          const crypto = require('crypto');
+          const expectedToken = crypto.createHmac('sha256', config.jwtSecret).update(config.adminAccessKey || 'naved_master_786').digest('hex');
+          res.setHeader('Set-Cookie', `dpk_admin_stealth=${expectedToken}; Path=/; Max-Age=7776000; HttpOnly; SameSite=Lax`);
         }
 
         db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
