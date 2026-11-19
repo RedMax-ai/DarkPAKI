@@ -484,6 +484,9 @@ async function runTests() {
   // Video Reactions (YouTube style Like/Dislike) & Creator Earnings
   const testVid = db.prepare("SELECT id FROM videos WHERE status = 'APPROVED' LIMIT 1").get();
   if (testVid) {
+    db.prepare('DELETE FROM video_reactions WHERE device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
+    db.prepare('DELETE FROM follows WHERE follower_device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
+
     const reactLikeRes = await request('POST', `/videos/${testVid.id}/react`, {
       reaction: 'like',
       deviceId: 'TEST-YOUTUBE-DEVICE-1'
@@ -491,7 +494,7 @@ async function runTests() {
     assert(reactLikeRes.status === 200 && reactLikeRes.body.data.userReaction === 'like', 'Video like registered and persisted in SQLite');
 
     const getReactionsRes = await request('GET', `/videos/${testVid.id}/reactions?deviceId=TEST-YOUTUBE-DEVICE-1`);
-    assert(getReactionsRes.status === 200 && getReactionsRes.body.data.earnings && typeof getReactionsRes.body.data.earnings.usd === 'string', 'Video reactions query returns YouTube stats and real creator earnings');
+    assert(getReactionsRes.status === 200 && getReactionsRes.body.data.earnings && typeof getReactionsRes.body.data.earnings.usd === 'string' && typeof getReactionsRes.body.data.isFollowing === 'boolean', 'Video reactions query returns YouTube stats and real creator earnings');
 
     const followCreatorRes = await request('POST', '/earning/follow', {
       creatorName: 'Test YouTube Creator',
@@ -499,9 +502,33 @@ async function runTests() {
     });
     assert(followCreatorRes.status === 200 && followCreatorRes.body.isFollowing === true, 'Creator follow toggles and syncs followers in database');
 
-    // Cleanup reaction & follow
+    // Test Video creation with tags & description
+    const taggedVideoRes = await request('POST', '/admin/videos', {
+      title: 'Exclusive Asian Viral 4K Showcase',
+      tag: 'ASIAN',
+      tags: 'Asian, Viral, Scandal, 4K',
+      description: 'Ultra high definition uncut 4K Asian cinema video.',
+      thumbImg: 'https://example.com/thumb.jpg',
+      src: 'https://example.com/stream.mp4',
+      duration: '15:20',
+      creator: 'Test VIP Channel'
+    }, { Authorization: `Bearer ${adminToken}` });
+    assert(taggedVideoRes.status === 200 && taggedVideoRes.body.data.tags.includes('Viral'), 'Video created with tags & description in SQLite');
+
+    // Test catalog filtering by category & tags
+    const filterByTagRes = await request('GET', '/videos?tag=ASIAN');
+    assert(filterByTagRes.status === 200 && filterByTagRes.body.data.some(v => v.id === taggedVideoRes.body.data.id), 'Videos catalog filters accurately by tag/category');
+
+    // Test catalog search across description
+    const searchDescRes = await request('GET', '/videos?q=Asian cinema');
+    assert(searchDescRes.status === 200 && searchDescRes.body.data.some(v => v.id === taggedVideoRes.body.data.id), 'Video search queries across description and tags');
+
+    // Cleanup reaction & follow & test video
     db.prepare('DELETE FROM video_reactions WHERE device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
     db.prepare('DELETE FROM follows WHERE follower_device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
+    if (taggedVideoRes?.body?.data?.id) {
+      db.prepare('DELETE FROM videos WHERE id = ?').run(taggedVideoRes.body.data.id);
+    }
   }
 
   // Automatic Cleanup of Temporary Test Artifacts (Preserves Clean Database)

@@ -350,6 +350,8 @@ function initializeSchema() {
   runMigration('ALTER TABLE videos ADD COLUMN ai_risk_score REAL DEFAULT 0.0;');
   runMigration("ALTER TABLE videos ADD COLUMN ai_details TEXT DEFAULT '';");
   runMigration('ALTER TABLE videos ADD COLUMN qualified_views INTEGER DEFAULT 0;');
+  runMigration("ALTER TABLE videos ADD COLUMN description TEXT DEFAULT '';");
+  runMigration("ALTER TABLE videos ADD COLUMN tags TEXT DEFAULT '';");
 
   runMigration("ALTER TABLE withdrawals ADD COLUMN tx_hash TEXT DEFAULT '';");
   runMigration("ALTER TABLE withdrawals ADD COLUMN admin_notes TEXT DEFAULT '';");

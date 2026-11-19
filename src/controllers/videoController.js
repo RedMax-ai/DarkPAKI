@@ -29,19 +29,17 @@ function getVideos(req, res, next) {
     let query = "SELECT * FROM videos WHERE (status = 'APPROVED' OR status IS NULL)";
     const params = [];
 
-    if (shortsOnly === 'true' || shortsOnly === '1') {
+    if (shortsOnly === 'true' || shortsOnly === '1' || tag === 'SHORTS') {
       query += " AND (is_short = 1 OR tag LIKE '%SHORT%')";
-    }
-
-    if (tag && tag !== 'ALL' && tag !== 'SHORTS') {
-      query += ' AND tag = ?';
-      params.push(tag);
+    } else if (tag && tag !== 'ALL') {
+      query += ' AND (tag = ? COLLATE NOCASE OR tags LIKE ? COLLATE NOCASE)';
+      params.push(tag, `%${tag}%`);
     }
 
     if (q && q.trim()) {
       const sanitizedQ = `%${q.trim()}%`;
-      query += ' AND (title LIKE ? OR creator LIKE ? OR tag LIKE ? OR requested_by LIKE ?)';
-      params.push(sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ);
+      query += ' AND (title LIKE ? OR creator LIKE ? OR tag LIKE ? OR tags LIKE ? OR description LIKE ? OR requested_by LIKE ?)';
+      params.push(sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ);
     }
 
     query += ' ORDER BY id DESC';
@@ -259,12 +257,14 @@ function submitUserVideo(req, res, next) {
             return res.status(500).json({ success: false, message: 'CDN did not return a valid stream URL', data: cdnData });
           }
 
-          const title = sanitizeString(req.query.title) || cdnData.file_name || 'Community Video';
-          const ownerName = sanitizeString(req.query.ownerName) || 'Community Creator';
-          const ownerEmail = sanitizeString(req.query.ownerEmail) || 'user@darkpaki.com';
-          const category = (sanitizeString(req.query.category) || 'SHORTS').toUpperCase();
-          const duration = sanitizeString(req.query.duration) || cdnData.file_size || '0:45';
+          const title = sanitizeString(req.query.title || req.body?.title) || cdnData.file_name || 'Community Video';
+          const ownerName = sanitizeString(req.query.ownerName || req.body?.ownerName) || 'Community Creator';
+          const ownerEmail = sanitizeString(req.query.ownerEmail || req.body?.ownerEmail) || 'user@darkpaki.com';
+          const category = (sanitizeString(req.query.category || req.body?.category) || 'SHORTS').toUpperCase();
+          const duration = sanitizeString(req.query.duration || req.body?.duration) || cdnData.file_size || '0:45';
           const isShort = (req.query.isShort === '1' || category.includes('SHORT')) ? 1 : 0;
+          const description = sanitizeString(req.query.description || req.body?.description) || '';
+          const tags = sanitizeString(req.query.tags || req.body?.tags) || '';
 
           let thumb = req.query.thumb ? sanitizeString(req.query.thumb) : '';
           // If thumb is base64, save safely to disk
@@ -300,10 +300,10 @@ function submitUserVideo(req, res, next) {
 
           // Insert with status = 'PENDING' for Admin Review
           const insertVideo = db.prepare(`
-            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, status, owner_name, owner_email, user_id, views_count, is_short)
-            VALUES (?, ?, '0 views', ?, ?, ?, ?, 'Submitted by Community', 0, 'PENDING', ?, ?, ?, 0, ?)
+            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, status, owner_name, owner_email, user_id, views_count, is_short, description, tags)
+            VALUES (?, ?, '0 views', ?, ?, ?, ?, 'Submitted by Community', 0, 'PENDING', ?, ?, ?, 0, ?, ?, ?)
           `);
-          const result = insertVideo.run(title, ownerName, duration, cdnData.stream_url, thumb, category, ownerName, ownerEmail, userId, isShort);
+          const result = insertVideo.run(title, ownerName, duration, cdnData.stream_url, thumb, category, ownerName, ownerEmail, userId, isShort, description, tags);
           const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);
 
           db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
@@ -420,6 +420,11 @@ function reactToVideo(req, res, next) {
     const coinsEarned = viewsCount * 25;
     const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
 
+    const creatorName = video.creator || video.owner_name || 'DarkPAKI VIP';
+    const followRow = db.prepare('SELECT id FROM follows WHERE creator_name = ? COLLATE NOCASE AND follower_device_id = ?').get(creatorName, cleanDevice);
+    const countRow = db.prepare('SELECT COUNT(*) as count FROM follows WHERE creator_name = ? COLLATE NOCASE').get(creatorName);
+    const followersCount = countRow ? countRow.count : 0;
+
     res.json({
       success: true,
       data: {
@@ -427,6 +432,8 @@ function reactToVideo(req, res, next) {
         likesCount: likes,
         dislikesCount: dislikes,
         userReaction,
+        isFollowing: Boolean(followRow),
+        followersCount,
         earnings: {
           coins: coinsEarned,
           usd: usdEarned
@@ -446,15 +453,21 @@ function getVideoReactions(req, res, next) {
       return res.status(400).json({ success: false, message: 'Invalid video ID.' });
     }
 
-    const video = db.prepare('SELECT id, likes_count, dislikes_count, views_count FROM videos WHERE id = ?').get(id);
+    const video = db.prepare('SELECT id, likes_count, dislikes_count, views_count, creator, owner_name FROM videos WHERE id = ?').get(id);
     if (!video) {
       return res.status(404).json({ success: false, message: 'Video not found.' });
     }
 
-    const existing = db.prepare('SELECT reaction FROM video_reactions WHERE video_id = ? AND device_id = ?').get(id, sanitizeString(deviceId));
+    const cleanDevice = sanitizeString(deviceId);
+    const existing = db.prepare('SELECT reaction FROM video_reactions WHERE video_id = ? AND device_id = ?').get(id, cleanDevice);
     const viewsCount = video.views_count || 0;
     const coinsEarned = viewsCount * 25;
     const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
+
+    const creatorName = video.creator || video.owner_name || 'DarkPAKI VIP';
+    const followRow = db.prepare('SELECT id FROM follows WHERE creator_name = ? COLLATE NOCASE AND follower_device_id = ?').get(creatorName, cleanDevice);
+    const countRow = db.prepare('SELECT COUNT(*) as count FROM follows WHERE creator_name = ? COLLATE NOCASE').get(creatorName);
+    const followersCount = countRow ? countRow.count : 0;
 
     res.json({
       success: true,
@@ -463,6 +476,8 @@ function getVideoReactions(req, res, next) {
         likesCount: video.likes_count || 0,
         dislikesCount: video.dislikes_count || 0,
         userReaction: existing ? existing.reaction : null,
+        isFollowing: Boolean(followRow),
+        followersCount,
         earnings: {
           coins: coinsEarned,
           usd: usdEarned

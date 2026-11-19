@@ -206,7 +206,7 @@ function getAdminVideos(req, res, next) {
 
 function createVideo(req, res, next) {
   try {
-    const { title, tag, thumbImg, src, duration, creator, isFeatured, requestedBy } = req.body;
+    const { title, tag, thumbImg, src, duration, creator, isFeatured, requestedBy, description, tags } = req.body;
 
     const cleanTitle = sanitizeString(title);
     const cleanTag = sanitizeString(tag).toUpperCase() || '18+ ADULT';
@@ -215,6 +215,8 @@ function createVideo(req, res, next) {
     const cleanDuration = sanitizeString(duration) || '12:00';
     const cleanCreator = sanitizeString(creator) || 'DarkPAKI VIP Exclusive';
     const cleanReqBy = sanitizeString(requestedBy) || 'Demanded by VIP Users';
+    const cleanDescription = sanitizeString(description) || '';
+    const cleanTags = sanitizeString(tags) || '';
     const featuredFlag = isFeatured ? 1 : 0;
 
     if (!cleanTitle || !cleanThumb || !cleanSrc) {
@@ -222,11 +224,11 @@ function createVideo(req, res, next) {
     }
 
     const insertVideo = db.prepare(`
-      INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured)
-      VALUES (?, ?, 'NEW • 1.5K views', ?, ?, ?, ?, ?, ?)
+      INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, description, tags)
+      VALUES (?, ?, 'NEW • 1.5K views', ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const result = insertVideo.run(cleanTitle, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanTag, cleanReqBy, featuredFlag);
+    const result = insertVideo.run(cleanTitle, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanTag, cleanReqBy, featuredFlag, cleanDescription, cleanTags);
     const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);
 
     db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
@@ -257,7 +259,7 @@ function updateVideo(req, res, next) {
       return res.status(404).json({ success: false, message: 'Video not found.' });
     }
 
-    const { title, tag, creator, duration, src, thumbImg, isFeatured, views } = req.body;
+    const { title, tag, creator, duration, src, thumbImg, isFeatured, views, description, tags } = req.body;
 
     const cleanTitle = title !== undefined ? sanitizeString(title) : video.title;
     const cleanTag = tag !== undefined ? sanitizeString(tag).toUpperCase() : video.tag;
@@ -267,12 +269,14 @@ function updateVideo(req, res, next) {
     const cleanThumb = thumbImg !== undefined ? sanitizeString(thumbImg) : video.thumb_img;
     const cleanViews = views !== undefined ? sanitizeString(views) : video.views;
     const cleanFeatured = isFeatured !== undefined ? (isFeatured ? 1 : 0) : video.is_featured;
+    const cleanDescription = description !== undefined ? sanitizeString(description) : (video.description || '');
+    const cleanTags = tags !== undefined ? sanitizeString(tags) : (video.tags || '');
 
     db.prepare(`
       UPDATE videos 
-      SET title = ?, tag = ?, creator = ?, duration = ?, src = ?, thumb_img = ?, is_featured = ?, views = ?
+      SET title = ?, tag = ?, creator = ?, duration = ?, src = ?, thumb_img = ?, is_featured = ?, views = ?, description = ?, tags = ?
       WHERE id = ?
-    `).run(cleanTitle, cleanTag, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanFeatured, cleanViews, id);
+    `).run(cleanTitle, cleanTag, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanFeatured, cleanViews, cleanDescription, cleanTags, id);
 
     const updated = db.prepare('SELECT * FROM videos WHERE id = ?').get(id);
 

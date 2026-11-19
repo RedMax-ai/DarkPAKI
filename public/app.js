@@ -58,14 +58,84 @@ const step1Badge = document.getElementById('step1Badge');
 const step2Badge = document.getElementById('step2Badge');
 const step3Badge = document.getElementById('step3Badge');
 
-function escapeHtml(str) {
+function unescapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
+    .replace(/&amp;/g, '&')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  const clean = unescapeHtml(str);
+  return String(clean)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function safeHtml(str) {
+  return escapeHtml(unescapeHtml(str));
+}
+
+function formatTimeAgo(dateStr) {
+  if (!dateStr) return 'Recently';
+  try {
+    const parsedStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + (dateStr.endsWith('Z') || dateStr.includes('+') ? '' : 'Z');
+    const date = new Date(parsedStr);
+    if (isNaN(date.getTime())) return 'Recently';
+    const diffMs = Date.now() - date.getTime();
+    if (diffMs < 0) return 'Just now';
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return 'Just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour}h ago`;
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 30) return `${diffDay}d ago`;
+    const diffMonth = Math.floor(diffDay / 30);
+    if (diffMonth < 12) return `${diffMonth}mo ago`;
+    return `${Math.floor(diffMonth / 12)}y ago`;
+  } catch (e) {
+    return 'Recently';
+  }
+}
+
+function appendUploadTag(tagName) {
+  const input = document.getElementById('userUploadTags');
+  if (!input) return;
+  const current = input.value.trim();
+  const tags = current ? current.split(',').map(t => t.trim()).filter(Boolean) : [];
+  if (!tags.some(t => t.toLowerCase() === tagName.toLowerCase())) {
+    tags.push(tagName);
+    input.value = tags.join(', ');
+  }
+}
+
+function filterByTagOrSearch(tagName) {
+  if (!tagName) return;
+  if (typeof switchView === 'function' && currentView === 'watch') {
+    switchView('home');
+  }
+  const pills = document.querySelectorAll('.cat-pill');
+  let matchedPill = null;
+  pills.forEach(p => {
+    if (p.textContent.trim().toUpperCase() === tagName.toUpperCase()) {
+      matchedPill = p;
+    }
+  });
+  if (matchedPill && typeof filterByCategory === 'function') {
+    filterByCategory(tagName.toUpperCase(), matchedPill);
+  } else if (typeof filterByCategory === 'function') {
+    filterByCategory(tagName, null);
+  }
 }
 
 // ============================================================================
@@ -190,13 +260,28 @@ async function apiFetch(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${AUTH_TOKEN}`;
   }
 
+  // Normalize endpoint to prevent double /api/api/ routes
+  let cleanEndpoint = endpoint || '';
+  cleanEndpoint = cleanEndpoint.replace(/^\/?api\/?/, '/');
+  if (!cleanEndpoint.startsWith('/')) {
+    cleanEndpoint = '/' + cleanEndpoint;
+  }
+
   try {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
+    const res = await fetch(`${API_BASE}${cleanEndpoint}`, {
       ...options,
       headers
     });
 
-    const json = await res.json();
+    const contentType = res.headers.get('content-type') || '';
+    let json;
+    if (contentType.includes('application/json')) {
+      json = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error(`Server returned HTTP ${res.status}`);
+    }
+
     if (!res.ok) {
       throw new Error(json.message || `Request failed with status ${res.status}`);
     }
@@ -345,14 +430,23 @@ async function loadVideos(searchQuery = '') {
       MEDIA_SOURCES.mainVideos = res.data.map(v => ({
         id: v.id,
         title: v.title,
-        creator: v.creator,
+        creator: v.creator || v.owner_name,
         views: v.views,
         duration: v.duration,
         src: v.src,
         thumbImg: v.thumb_img,
         tag: v.tag,
+        tags: v.tags,
+        description: v.description,
+        created_at: v.created_at,
         requestedBy: v.requested_by,
-        isFeatured: v.is_featured
+        isFeatured: v.is_featured,
+        views_count: v.views_count,
+        likes_count: v.likes_count,
+        dislikes_count: v.dislikes_count,
+        followers_count: v.followers_count,
+        creator_avatar: v.creator_avatar,
+        earnings: v.earnings
       }));
       renderFeaturedSpotlight();
       renderHomeVideoGrid(searchQuery);
@@ -761,7 +855,7 @@ async function transitionToMainVideo(message) {
 
   const selectedVideo = MEDIA_SOURCES.mainVideos[currentVideoIndex];
   if (selectedVideo) {
-    document.getElementById('videoTitle').textContent = selectedVideo.title;
+    document.getElementById('videoTitle').textContent = unescapeHtml(selectedVideo.title);
     videoEl.src = selectedVideo.src;
     videoEl.load();
     videoEl.currentTime = 0;
@@ -887,13 +981,44 @@ async function updateWatchPlayerDetails(selected) {
   if (!selected) return;
 
   const titleEl = document.getElementById('videoTitle');
-  if (titleEl) titleEl.textContent = selected.title || 'DarkPAKI 4K VIP Cinema Player';
+  if (titleEl) titleEl.textContent = unescapeHtml(selected.title || 'DarkPAKI 4K VIP Cinema Player');
 
   const catEl = document.getElementById('videoCategoryPill');
-  if (catEl) catEl.textContent = selected.tag || 'VIP 4K STREAM';
+  if (catEl) catEl.textContent = unescapeHtml(selected.tag || 'VIP 4K STREAM');
 
-  const demandEl = document.getElementById('videoDemandTag');
-  if (demandEl) demandEl.textContent = `🎬 Ultra HD Cinema Quality`;
+  const uploadTimeEl = document.getElementById('watchUploadTime');
+  if (uploadTimeEl) {
+    uploadTimeEl.textContent = formatTimeAgo(selected.created_at);
+  }
+
+  const descEl = document.getElementById('watchVideoDesc');
+  if (descEl) {
+    const rawDesc = unescapeHtml(selected.description || '').trim();
+    descEl.textContent = rawDesc || 'Watch high-definition uncut 4K video stream on DarkPAKI VIP Cinema Hub.';
+  }
+
+  const tagsContainer = document.getElementById('watchTagsContainer');
+  if (tagsContainer) {
+    tagsContainer.innerHTML = '';
+    const rawTags = (selected.tags || selected.tag || '').trim();
+    const tagsList = rawTags
+      ? rawTags.split(/[,#\s]+/).map(t => t.trim()).filter(t => t && t.length > 1)
+      : [];
+    const uniqueTags = [...new Set(tagsList)];
+    if (uniqueTags.length > 0) {
+      uniqueTags.forEach(tag => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#7C3AED]/15 hover:bg-[#7C3AED]/30 text-[#A78BFA] border border-[#7C3AED]/30 transition cursor-pointer';
+        btn.textContent = `#${tag}`;
+        btn.onclick = () => filterByTagOrSearch(tag);
+        tagsContainer.appendChild(btn);
+      });
+      tagsContainer.classList.remove('hidden');
+    } else {
+      tagsContainer.classList.add('hidden');
+    }
+  }
 
   const viewDesc = document.getElementById('watchViewCountDesc');
   if (viewDesc) {
@@ -903,7 +1028,7 @@ async function updateWatchPlayerDetails(selected) {
 
   const channelName = document.getElementById('watchChannelName');
   const chName = selected.creator || selected.owner_name || 'DarkPAKI VIP';
-  if (channelName) channelName.textContent = chName;
+  if (channelName) channelName.textContent = unescapeHtml(chName);
 
   const channelSubs = document.getElementById('watchChannelSubs');
   if (channelSubs) {
@@ -936,6 +1061,10 @@ async function updateWatchPlayerDetails(selected) {
       const res = await apiFetch(`/api/videos/${selected.id}/reactions?deviceId=${encodeURIComponent(DEVICE_FINGERPRINT)}`);
       if (res && res.success && res.data) {
         updateReactionButtonsUI(res.data.userReaction, res.data.likesCount, res.data.dislikesCount);
+        if (res.data.isFollowing !== undefined) {
+          selected.followers_count = res.data.followersCount;
+          updateWatchFollowButton(res.data.isFollowing, res.data.followersCount);
+        }
         if (res.data.earnings && earningsText) {
           earningsText.textContent = `$${res.data.earnings.usd} (${formatViewCount(res.data.earnings.coins)} Coins)`;
         }
@@ -1105,8 +1234,14 @@ async function toggleSaveCurrentVideo() {
 }
 
 function handleVideoSourceError(vid) {
-  console.warn("Video source failed, switching to backup stream.");
-  vid.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
+  if (!vid || vid._failedOnce) {
+    console.warn("Stream unavailable.");
+    return;
+  }
+  vid._failedOnce = true;
+  vid.onerror = null;
+  console.warn("Video stream load failed, switching to backup stream.");
+  vid.src = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
   vid.load();
   vid.play().catch(() => {});
 }
@@ -3030,6 +3165,8 @@ async function handleUserUploadSubmit(event) {
   const duration = document.getElementById('userUploadDuration').value.trim() || '0:45';
   const creator = document.getElementById('userUploadCreator').value.trim() || (CURRENT_USER ? CURRENT_USER.name : 'Community Creator');
   const ownerEmail = document.getElementById('userUploadEmail').value.trim() || (CURRENT_USER ? CURRENT_USER.gmail : '');
+  const description = (document.getElementById('userUploadDescription')?.value || '').trim();
+  const tags = (document.getElementById('userUploadTags')?.value || '').trim();
   const isShort = category === 'SHORTS' ? '1' : '0';
 
   const progressContainer = document.getElementById('userUploadProgressContainer');
@@ -3071,7 +3208,9 @@ async function handleUserUploadSubmit(event) {
     ownerName: creator,
     ownerEmail,
     isShort,
-    thumb: serverThumbUrl
+    thumb: serverThumbUrl,
+    description,
+    tags
   });
 
   const uploadUrl = `/api/videos/user-upload?${queryParams.toString()}`;
@@ -3079,6 +3218,8 @@ async function handleUserUploadSubmit(event) {
   formData.append('file', file);
   formData.append('title', title);
   formData.append('category', category);
+  formData.append('description', description);
+  formData.append('tags', tags);
 
   const xhr = new XMLHttpRequest();
   xhr.open('POST', uploadUrl, true);
@@ -3112,6 +3253,8 @@ async function handleUserUploadSubmit(event) {
       document.getElementById('userSelectedFileInfo').classList.add('hidden');
       document.getElementById('userDetectedThumbBox').classList.add('hidden');
       document.getElementById('userUploadTitle').value = '';
+      if (document.getElementById('userUploadDescription')) document.getElementById('userUploadDescription').value = '';
+      if (document.getElementById('userUploadTags')) document.getElementById('userUploadTags').value = '';
 
       // Immediately refresh creator profile & analytics
       if (typeof loadProfilePosts === 'function') loadProfilePosts();

@@ -29,7 +29,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https:", "http:", "data:"],
       imgSrc: ["'self'", "data:", "https:", "http:", "blob:"],
       mediaSrc: ["'self'", "https:", "http:", "blob:"],
-      connectSrc: ["'self'", "*", "https:", "http:"],
+      connectSrc: ["'self'", "*", "https:", "http:", "data:"],
       frameSrc: ["'self'", "*", "https:", "http:"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: null
