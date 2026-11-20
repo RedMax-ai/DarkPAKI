@@ -118,6 +118,12 @@ app.get(['/kadam61d7e30ae7630243474e278aab32f1cb.html', '/kadam61d7e30ae76302434
   res.send('kadam61d7e30ae7630243474e278aab32f1cb');
 });
 
+// JuicyAds Site Verification (2491dffcf8f5c242c4e221db787d650)
+app.get(['/2491dffcf8f5c242c4e221db787d650.html', '/2491dffcf8f5c242c4e221db787d650.txt', '/juicyads.txt'], (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send('2491dffcf8f5c242c4e221db787d650');
+});
+
 // Serve index.html with Dynamic Monetag Verification Injection for Root Route
 app.get('/', (req, res) => {
   try {
