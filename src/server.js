@@ -107,9 +107,9 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 // ExoClick Site Verification
-app.get('/0c17e0da78a5c5ca5650c8c1b10977c5.html', (req, res) => {
+app.get(['/0c17e0da78a5c5ca5650c8c1b10977c5.html', '/42fe1541c7a22bf3c12a8c02c34c1573.html'], (req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.send('0c17e0da78a5c5ca5650c8c1b10977c5');
+  res.send('42fe1541c7a22bf3c12a8c02c34c1573');
 });
 
 // Kadam Network Site Verification (kadam61d7e30ae7630243474e278aab32f1cb)
