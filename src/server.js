@@ -139,6 +139,7 @@ app.get('/', (req, res) => {
       }
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('X-JuicyAds-Site-Verification', '2491dffcf8f5c242c4e221db787d650');
     res.send(html);
   } catch (err) {
     res.sendFile(path.resolve(__dirname, '../index.html'));
