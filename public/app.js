@@ -359,7 +359,14 @@ function setupPopunder(url) {
   document.addEventListener('click', popunderTrigger, { once: true });
 }
 
+let CURRENT_BANNER_AD_HTML = '';
+
 function renderBannerAd(html) {
+  if (html) {
+    CURRENT_BANNER_AD_HTML = html;
+  } else {
+    html = CURRENT_BANNER_AD_HTML;
+  }
   const slot = document.getElementById('adBannerSlot');
   const container = document.getElementById('adBannerContent');
   if (!slot || !container || !html || !html.trim()) return;
@@ -367,13 +374,16 @@ function renderBannerAd(html) {
   container.innerHTML = html.trim();
   slot.classList.remove('hidden');
 
-  // Re-run embedded script tags if any
-  const scripts = container.querySelectorAll('script');
+  // Re-run embedded script tags sequentially to preserve execution order
+  const scripts = Array.from(container.querySelectorAll('script'));
   scripts.forEach(oldScript => {
     const newScript = document.createElement('script');
     Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
     if (oldScript.src) {
       newScript.src = oldScript.src;
+      if (!oldScript.hasAttribute('async')) {
+        newScript.async = false;
+      }
     } else {
       newScript.text = oldScript.innerHTML;
     }
@@ -2716,6 +2726,9 @@ function switchView(mode) {
 
   if (mode === 'watch') {
     if (watchSec) watchSec.classList.remove('hidden');
+    if (CURRENT_BANNER_AD_HTML) {
+      renderBannerAd(CURRENT_BANNER_AD_HTML);
+    }
   } else if (mode === 'demand') {
     if (demandSec) demandSec.classList.remove('hidden');
   } else if (mode === 'login') {

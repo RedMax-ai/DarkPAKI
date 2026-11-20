@@ -19,7 +19,7 @@ data/*.db-shm
 
 # Uploads
 public/uploads/*
-!public/uploads/avatars/
+public/uploads/avatars/*
 !public/uploads/avatars/.gitkeep
 
 # OS metadata

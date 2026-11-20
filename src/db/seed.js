@@ -18,6 +18,33 @@ function seedDatabase() {
   insertSetting.run('ad_video_url', 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4');
   insertSetting.run('allow_instant_skip', 'false');
 
+  // Ensure Adsterra Ad Unit Codes (dark.anizon.watch - Zone 6215251: 300x250 Banner & Native Banner 4:1)
+  const defaultAdsterraBanner = `<div class="adsterra-banner-wrapper flex flex-col items-center justify-center gap-4 w-full my-2">
+  <div class="adsterra-300x250 flex justify-center items-center w-full max-w-[300px] min-h-[250px] overflow-hidden rounded-xl bg-black/40 border border-white/5">
+    <script type="text/javascript">
+      atOptions = {
+        'key' : '43f9e09cd4ef7cb118ca50792e70a158',
+        'format' : 'iframe',
+        'height' : 250,
+        'width' : 300,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="https://biomanos.org/22/43f9e09cd4ef7cb118ca50792e70a158"></script>
+  </div>
+  <div class="adsterra-native-widget w-full flex justify-center items-center">
+    <script async="async" data-cfasync="false" src="https://biomanos.org/21/8ae2cfde322dd962f3ee3497927c63f2"></script>
+    <div id="container-8ae2cfde322dd962f3ee3497927c63f2" class="w-full"></div>
+  </div>
+</div>`;
+
+  try {
+    const existingBanner = db.prepare("SELECT value FROM settings WHERE key = 'banner_ad_html'").get();
+    if (!existingBanner || !existingBanner.value || existingBanner.value.includes('alwingulla.com')) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('banner_ad_html', ?)").run(defaultAdsterraBanner);
+    }
+  } catch (e) {}
+
   // Replace dead Google sample ad URLs with working fallback stream
   try {
     const adRow = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get();
