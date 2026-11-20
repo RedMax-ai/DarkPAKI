@@ -112,6 +112,12 @@ app.get('/0c17e0da78a5c5ca5650c8c1b10977c5.html', (req, res) => {
   res.send('0c17e0da78a5c5ca5650c8c1b10977c5');
 });
 
+// Kadam Network Site Verification (kadam61d7e30ae7630243474e278aab32f1cb)
+app.get(['/kadam61d7e30ae7630243474e278aab32f1cb.html', '/kadam61d7e30ae7630243474e278aab32f1cb.txt', '/kadam61d7e30ae7630243474e278aab32f1cb'], (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send('kadam61d7e30ae7630243474e278aab32f1cb');
+});
+
 // Serve index.html with Dynamic Monetag Verification Injection for Root Route
 app.get('/', (req, res) => {
   try {
