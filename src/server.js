@@ -124,6 +124,12 @@ app.get(['/2491dffcf8f5c242c4e221db787d650.html', '/2491dffcf8f5c242c4e221db787d
   res.send('2491dffcf8f5c242c4e221db787d650');
 });
 
+// Clickaine Site Verification
+app.get('/clickaine.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send('7b79c256e4a646fa7aee3552c816967eceaba4d4bfa007fc4b47de2d9c37069133ed0ea2fef49d918ab70d1f332a6130dd161bf2ac3366ad4209f7817f757bf1');
+});
+
 // Serve index.html with Dynamic Monetag Verification Injection for Root Route
 app.get('/', (req, res) => {
   try {
