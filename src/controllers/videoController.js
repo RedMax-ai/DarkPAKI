@@ -356,7 +356,7 @@ function getAdConfig(req, res, next) {
       success: true,
       data: {
         adVideoUrl: (adVideoSetting && adVideoSetting.value) ? adVideoSetting.value : 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-        vastTagUrl: (vastTagSetting && vastTagSetting.value) ? vastTagSetting.value : 'https://s.magsrv.com/v1/vast.php?idz=6098978',
+        vastTagUrl: (vastTagSetting && vastTagSetting.value) ? vastTagSetting.value : 'https://rodexchange.com/adt/vd.php?pid=0SA1QS7GFZZ4D',
         allowInstantSkip: instantSkipSetting ? instantSkipSetting.value === 'true' : false,
         telegramUrl: telegramSetting ? telegramSetting.value : 'https://t.me/darkpaki_official',
         popunderUrl: popunderSetting ? popunderSetting.value : '',
@@ -375,10 +375,20 @@ async function getVastAd(req, res, next) {
     const vastTagSetting = db.prepare("SELECT value FROM settings WHERE key = 'vast_tag_url'").get();
     const adVideoSetting = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get();
     const fallbackUrl = (adVideoSetting && adVideoSetting.value) ? adVideoSetting.value : 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
-    const vastUrl = (vastTagSetting && vastTagSetting.value) ? vastTagSetting.value : 'https://s.magsrv.com/v1/vast.php?idz=6098978';
+    
+    // Priority Waterfall: 1) Configured VAST (WYNQ) 2) ExoClick In-Stream fallback
+    const configuredVast = (vastTagSetting && vastTagSetting.value) ? vastTagSetting.value : 'https://rodexchange.com/adt/vd.php?pid=0SA1QS7GFZZ4D';
+    const exoClickVast = 'https://s.magsrv.com/v1/vast.php?idz=6098978';
 
-    const result = await vastService.resolveVastTag(vastUrl);
-    if (result.success && result.ad) {
+    // 1. Try Primary VAST tag (WYNQ)
+    let result = await vastService.resolveVastTag(configuredVast);
+
+    // 2. If no-fill on primary, waterfall to ExoClick
+    if ((!result || !result.success || !result.ad) && configuredVast !== exoClickVast) {
+      result = await vastService.resolveVastTag(exoClickVast);
+    }
+
+    if (result && result.success && result.ad) {
       return res.json({
         success: true,
         ad: result.ad
@@ -389,7 +399,7 @@ async function getVastAd(req, res, next) {
       success: false,
       noFill: true,
       fallbackUrl: fallbackUrl,
-      message: result.message || 'No VAST ad fill'
+      message: result?.message || 'No VAST ad fill'
     });
   } catch (err) {
     console.error('[VAST Resolver Controller Error]', err);

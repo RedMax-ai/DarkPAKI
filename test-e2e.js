@@ -78,7 +78,7 @@ async function runTests() {
 
   // 3. Ad & Telegram Config
   const configRes = await request('GET', '/videos/config');
-  assert(configRes.status === 200 && configRes.body.data.adVideoUrl.includes('http') && configRes.body.data.vastTagUrl.includes('s.magsrv.com'), 'Ad, VAST & Telegram configuration returned correctly');
+  assert(configRes.status === 200 && configRes.body.data.adVideoUrl.includes('http') && (configRes.body.data.vastTagUrl.includes('rodexchange.com') || configRes.body.data.vastTagUrl.includes('s.magsrv.com')), 'Ad, VAST & Telegram configuration returned correctly');
 
   // 3b. VAST Ad Resolver
   const vastAdRes = await request('GET', '/videos/vast-ad');

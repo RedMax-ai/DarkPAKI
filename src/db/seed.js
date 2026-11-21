@@ -53,11 +53,11 @@ function seedDatabase() {
     }
   } catch (e) {}
 
-  // ExoClick In-Stream Video VAST Tag
+  // In-Stream Video VAST Tag (WYNQ & ExoClick Waterfall)
   try {
     const vastRow = db.prepare("SELECT value FROM settings WHERE key = 'vast_tag_url'").get();
-    if (!vastRow || !vastRow.value) {
-      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('vast_tag_url', ?)").run('https://s.magsrv.com/v1/vast.php?idz=6098978');
+    if (!vastRow || !vastRow.value || vastRow.value.includes('magsrv')) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('vast_tag_url', ?)").run('https://rodexchange.com/adt/vd.php?pid=0SA1QS7GFZZ4D');
     }
   } catch (e) {}
 
