@@ -282,6 +282,7 @@ function initializeSchema() {
       source TEXT NOT NULL DEFAULT 'direct',
       ip TEXT,
       user_agent TEXT,
+      device_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
     );
@@ -374,14 +375,18 @@ function initializeSchema() {
       source TEXT NOT NULL DEFAULT 'direct',
       ip TEXT,
       user_agent TEXT,
+      device_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
     );
   `);
+  runMigration("ALTER TABLE video_views_log ADD COLUMN device_id TEXT;");
   runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_video ON video_views_log(video_id);");
   runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_creator ON video_views_log(creator_name);");
   runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_user ON video_views_log(user_id);");
   runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_created ON video_views_log(created_at);");
+  runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_dedup ON video_views_log(video_id, device_id, created_at);");
+  runMigration("CREATE INDEX IF NOT EXISTS idx_views_log_ip_dedup ON video_views_log(video_id, ip, created_at);");
 
   // Video Likes & Dislikes Reactions Table Migration
   runMigration(`
@@ -398,13 +403,13 @@ function initializeSchema() {
   runMigration("CREATE INDEX IF NOT EXISTS idx_video_reactions_vid ON video_reactions(video_id);");
   runMigration("CREATE INDEX IF NOT EXISTS idx_video_reactions_device ON video_reactions(device_id);");
 
-  // Sync existing videos' views_count from views string if 0
+  // Sync existing videos' views_count from views string if missing
   try {
     const existingVideos = db.prepare('SELECT id, views, views_count FROM videos').all();
     for (const v of existingVideos) {
-      if (!v.views_count || v.views_count === 0) {
+      if (v.views_count === null || v.views_count === undefined) {
         const match = (v.views || '').match(/([\d.]+)\s*([KkMm]?)/);
-        let count = 1200;
+        let count = 0;
         if (match) {
           const num = parseFloat(match[1]);
           const unit = (match[2] || '').toUpperCase();

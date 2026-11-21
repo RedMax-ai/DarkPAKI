@@ -24,6 +24,15 @@ function getEffectiveCdnUrl() {
   }
 }
 
+// Calculate Creator Earnings: 100 Coins per 1,000 Views (0.10 Coins per view)
+// Conversion: 1,000 Coins = $0.11 USD -> 100 Coins = $0.011 USD
+function calculateCreatorEarnings(viewsCount) {
+  const count = Math.max(0, parseInt(viewsCount, 10) || 0);
+  const coinsEarned = Math.floor((count / 1000) * 100);
+  const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
+  return { coins: coinsEarned, usd: usdEarned };
+}
+
 function getVideos(req, res, next) {
   try {
     const { q, tag, shortsOnly } = req.query;
@@ -53,8 +62,7 @@ function getVideos(req, res, next) {
       const user = db.prepare('SELECT is_monetized, followers_count, avatar_url FROM users WHERE name = ? COLLATE NOCASE LIMIT 1').get(creatorName);
       const followCount = db.prepare('SELECT COUNT(*) as count FROM follows WHERE creator_name = ? COLLATE NOCASE').get(creatorName)?.count || 0;
       const viewsCount = v.views_count || 0;
-      const coinsEarned = viewsCount * 25;
-      const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
+      const earnings = calculateCreatorEarnings(viewsCount);
 
       return {
         ...v,
@@ -63,10 +71,7 @@ function getVideos(req, res, next) {
         is_monetized: Boolean(user?.is_monetized),
         followers_count: Math.max(user?.followers_count || 0, followCount),
         creator_avatar: user?.avatar_url || null,
-        earnings: {
-          coins: coinsEarned,
-          usd: usdEarned
-        }
+        earnings
       };
     });
 
@@ -95,8 +100,7 @@ function getVideoById(req, res, next) {
     const user = db.prepare('SELECT is_monetized, followers_count, avatar_url FROM users WHERE name = ? COLLATE NOCASE LIMIT 1').get(creatorName);
     const followCount = db.prepare('SELECT COUNT(*) as count FROM follows WHERE creator_name = ? COLLATE NOCASE').get(creatorName)?.count || 0;
     const viewsCount = video.views_count || 0;
-    const coinsEarned = viewsCount * 25;
-    const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
+    const earnings = calculateCreatorEarnings(viewsCount);
 
     res.json({
       success: true,
@@ -107,10 +111,7 @@ function getVideoById(req, res, next) {
         is_monetized: Boolean(user?.is_monetized),
         followers_count: Math.max(user?.followers_count || 0, followCount),
         creator_avatar: user?.avatar_url || null,
-        earnings: {
-          coins: coinsEarned,
-          usd: usdEarned
-        }
+        earnings
       }
     });
   } catch (err) {
@@ -118,7 +119,7 @@ function getVideoById(req, res, next) {
   }
 }
 
-// Increment Video View Count
+// Increment Video View Count with Strict 24h Deduplication & Creator Self-View Filter
 function incrementView(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
@@ -126,11 +127,76 @@ function incrementView(req, res, next) {
       return res.status(400).json({ success: false, message: 'Invalid video ID.' });
     }
 
-    const video = db.prepare('SELECT id, views_count, creator, owner_name, user_id FROM videos WHERE id = ?').get(id);
+    const video = db.prepare('SELECT id, views_count, creator, owner_name, owner_email, user_id FROM videos WHERE id = ?').get(id);
     if (!video) {
       return res.status(404).json({ success: false, message: 'Video not found.' });
     }
 
+    const clientIp = (req.headers['x-forwarded-for']?.split(',')[0] || req.ip || req.socket?.remoteAddress || '').trim();
+    const rawDeviceId = (req.body?.deviceId || req.query?.deviceId || '').toString().trim();
+    const cleanDevice = sanitizeString(rawDeviceId);
+    const authUser = req.user;
+
+    // 1. Creator self-view check: Creator watching their own video does NOT count as a view
+    const creatorName = (video.creator || video.owner_name || '').toLowerCase().trim();
+    const creatorEmail = (video.owner_email || '').toLowerCase().trim();
+    if (authUser) {
+      const viewerName = (authUser.name || '').toLowerCase().trim();
+      const viewerEmail = (authUser.gmail || authUser.email || '').toLowerCase().trim();
+      if (
+        (creatorName && viewerName && creatorName === viewerName) ||
+        (creatorEmail && viewerEmail && creatorEmail === viewerEmail) ||
+        (video.user_id && authUser.id === video.user_id)
+      ) {
+        return res.json({
+          success: true,
+          deduplicated: true,
+          reason: 'creator_self_view',
+          data: {
+            id,
+            viewsCount: video.views_count || 0,
+            views: `${video.views_count || 0} views`
+          }
+        });
+      }
+    }
+
+    // 2. Strict 24-hour rate limiting / deduplication per IP and per deviceId
+    let existingView = null;
+    if (cleanDevice && clientIp) {
+      existingView = db.prepare(`
+        SELECT id FROM video_views_log 
+        WHERE video_id = ? AND (device_id = ? OR ip = ?) AND created_at > datetime('now', '-24 hours')
+        LIMIT 1
+      `).get(id, cleanDevice, clientIp);
+    } else if (cleanDevice) {
+      existingView = db.prepare(`
+        SELECT id FROM video_views_log 
+        WHERE video_id = ? AND device_id = ? AND created_at > datetime('now', '-24 hours')
+        LIMIT 1
+      `).get(id, cleanDevice);
+    } else if (clientIp) {
+      existingView = db.prepare(`
+        SELECT id FROM video_views_log 
+        WHERE video_id = ? AND ip = ? AND created_at > datetime('now', '-24 hours')
+        LIMIT 1
+      `).get(id, clientIp);
+    }
+
+    if (existingView) {
+      return res.json({
+        success: true,
+        deduplicated: true,
+        reason: 'rate_limited_24h',
+        data: {
+          id,
+          viewsCount: video.views_count || 0,
+          views: `${video.views_count || 0} views`
+        }
+      });
+    }
+
+    // Authentic view: increment views count
     const newCount = (video.views_count || 0) + 1;
     let formattedViews = `${newCount} views`;
     if (newCount >= 1000000) {
@@ -146,14 +212,13 @@ function incrementView(req, res, next) {
     const rawSource = (req.body?.source || req.query?.source || 'direct').toString().toLowerCase().trim();
     const source = allowedSources.includes(rawSource) ? rawSource : 'direct';
 
-    const creatorName = video.creator || video.owner_name || '';
     const creatorUserId = video.user_id || null;
 
     try {
       db.prepare(`
-        INSERT INTO video_views_log (video_id, creator_name, user_id, source, ip, user_agent)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(id, creatorName, creatorUserId, source, req.ip || '', req.headers['user-agent'] || '');
+        INSERT INTO video_views_log (video_id, creator_name, user_id, source, ip, user_agent, device_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(id, video.creator || video.owner_name || '', creatorUserId, source, clientIp, req.headers['user-agent'] || '', cleanDevice || null);
     } catch (logErr) {
       console.warn('[Views Log Error]', logErr.message);
     }
@@ -398,15 +463,14 @@ async function getVastAd(req, res, next) {
     return res.json({
       success: false,
       noFill: true,
-      fallbackUrl: fallbackUrl,
+      fallbackUrl: null,
       message: result?.message || 'No VAST ad fill'
     });
   } catch (err) {
     console.error('[VAST Resolver Controller Error]', err);
-    const adVideoSetting = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get();
     return res.json({
       success: false,
-      fallbackUrl: (adVideoSetting && adVideoSetting.value) ? adVideoSetting.value : 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      fallbackUrl: null,
       message: err.message
     });
   }
@@ -462,8 +526,7 @@ function reactToVideo(req, res, next) {
     db.prepare('UPDATE videos SET likes_count = ?, dislikes_count = ? WHERE id = ?').run(likes, dislikes, id);
 
     const viewsCount = video.views_count || 0;
-    const coinsEarned = viewsCount * 25;
-    const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
+    const earnings = calculateCreatorEarnings(viewsCount);
 
     const creatorName = video.creator || video.owner_name || 'DarkPAKI VIP';
     const followRow = db.prepare('SELECT id FROM follows WHERE creator_name = ? COLLATE NOCASE AND follower_device_id = ?').get(creatorName, cleanDevice);
@@ -479,10 +542,7 @@ function reactToVideo(req, res, next) {
         userReaction,
         isFollowing: Boolean(followRow),
         followersCount,
-        earnings: {
-          coins: coinsEarned,
-          usd: usdEarned
-        }
+        earnings
       }
     });
   } catch (err) {
@@ -506,8 +566,7 @@ function getVideoReactions(req, res, next) {
     const cleanDevice = sanitizeString(deviceId);
     const existing = db.prepare('SELECT reaction FROM video_reactions WHERE video_id = ? AND device_id = ?').get(id, cleanDevice);
     const viewsCount = video.views_count || 0;
-    const coinsEarned = viewsCount * 25;
-    const usdEarned = ((coinsEarned / 1000) * 0.11).toFixed(2);
+    const earnings = calculateCreatorEarnings(viewsCount);
 
     const creatorName = video.creator || video.owner_name || 'DarkPAKI VIP';
     const followRow = db.prepare('SELECT id FROM follows WHERE creator_name = ? COLLATE NOCASE AND follower_device_id = ?').get(creatorName, cleanDevice);
@@ -523,12 +582,107 @@ function getVideoReactions(req, res, next) {
         userReaction: existing ? existing.reaction : null,
         isFollowing: Boolean(followRow),
         followersCount,
-        earnings: {
-          coins: coinsEarned,
-          usd: usdEarned
-        }
+        earnings
       }
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Stream Proxy for External CDNs (bypasses 403 Forbidden, CORS & supports HTTP Range seeking)
+function proxyVideoStream(req, res, next) {
+  try {
+    const rawUrl = req.query.url;
+    if (!rawUrl || typeof rawUrl !== 'string') {
+      return res.status(400).send('Video URL parameter is required.');
+    }
+
+    let parsed;
+    try {
+      parsed = new URL(rawUrl);
+    } catch (e) {
+      return res.status(400).send('Invalid video URL.');
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return res.status(400).send('Only HTTP and HTTPS protocols are supported.');
+    }
+
+    // SSRF protection: block local/private network addresses
+    const hostname = parsed.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('172.16.')
+    ) {
+      return res.status(403).send('Forbidden destination host.');
+    }
+
+    const client = parsed.protocol === 'https:' ? require('https') : require('http');
+
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'Accept': '*/*'
+    };
+
+    if (req.headers.range) {
+      headers['Range'] = req.headers.range;
+    }
+
+    const proxyReq = client.request({
+      protocol: parsed.protocol,
+      hostname: parsed.hostname,
+      port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+      path: parsed.pathname + parsed.search,
+      method: 'GET',
+      headers: headers,
+      timeout: 60000
+    }, (proxyRes) => {
+      const statusCode = proxyRes.statusCode || 200;
+
+      // Handle redirects
+      if ([301, 302, 307, 308].includes(statusCode) && proxyRes.headers.location) {
+        return res.redirect(proxyRes.headers.location);
+      }
+
+      const responseHeaders = {
+        'Content-Type': 'video/mp4',
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=86400',
+        'Access-Control-Allow-Origin': '*'
+      };
+
+      if (proxyRes.headers['content-range']) {
+        responseHeaders['Content-Range'] = proxyRes.headers['content-range'];
+      }
+      if (proxyRes.headers['content-length']) {
+        responseHeaders['Content-Length'] = proxyRes.headers['content-length'];
+      }
+
+      res.writeHead(statusCode, responseHeaders);
+      proxyRes.pipe(res);
+    });
+
+    proxyReq.on('timeout', () => {
+      proxyReq.destroy();
+      if (!res.headersSent) res.status(504).send('CDN Gateway Timeout');
+    });
+
+    proxyReq.on('error', (err) => {
+      console.error('[Video Stream Proxy Error]', err.message);
+      if (!res.headersSent) res.status(502).send('Error streaming from upstream CDN');
+    });
+
+    res.on('close', () => {
+      proxyReq.destroy();
+    });
+
+    proxyReq.end();
+
   } catch (err) {
     next(err);
   }
@@ -543,5 +697,6 @@ module.exports = {
   getAdConfig,
   getVastAd,
   reactToVideo,
-  getVideoReactions
+  getVideoReactions,
+  proxyVideoStream
 };

@@ -831,13 +831,15 @@ async function startAdExperience(isFullReward = false) {
   }
 
   const hasVastAd = activeVastAd && activeVastAd.mediaUrl;
-  const effectiveAdUrl = hasVastAd ? activeVastAd.mediaUrl : MEDIA_SOURCES.adVideo;
 
-  // If no ad configured or dead sample URL, transition directly to the main video
-  if (!effectiveAdUrl || !effectiveAdUrl.trim() || effectiveAdUrl.includes('commondatastorage.googleapis.com')) {
+  // If no REAL VAST ad is returned, do NOT play fake flower placeholder! Skip directly to main video!
+  if (!hasVastAd) {
+    console.log("No active VAST ad available, skipping ad and playing video directly.");
     transitionToMainVideo("Playing 4K stream...");
     return;
   }
+
+  const effectiveAdUrl = activeVastAd.mediaUrl;
 
   currentState = 'AD_PLAYING';
   isFullRewardAdMode = isFullReward;
@@ -966,7 +968,10 @@ async function transitionToMainVideo(message) {
   await creditWatchEarningBonus(false);
   const curVid = MEDIA_SOURCES.mainVideos[currentVideoIndex];
   if (curVid && curVid.id) {
-    fetch('/api/videos/' + curVid.id + '/view', { method: 'POST' }).catch(() => {});
+    apiFetch('/api/videos/' + curVid.id + '/view', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId: getDeviceId() })
+    }).catch(() => {});
   }
 
   showToast(message);
@@ -974,6 +979,7 @@ async function transitionToMainVideo(message) {
   const selectedVideo = MEDIA_SOURCES.mainVideos[currentVideoIndex];
   if (selectedVideo) {
     document.getElementById('videoTitle').textContent = unescapeHtml(selectedVideo.title);
+    videoEl._proxied = false;
     videoEl.src = selectedVideo.src;
     videoEl.load();
     videoEl.currentTime = 0;
@@ -1090,9 +1096,6 @@ function launchFeaturedFromHome(index) {
   renderUpNextQueue();
   switchView('watch');
   resetToAdFlow();
-  if (selected && selected.id) {
-    fetch('/api/videos/' + selected.id + '/view', { method: 'POST' }).catch(() => {});
-  }
 }
 
 async function updateWatchPlayerDetails(selected) {
@@ -1352,16 +1355,18 @@ async function toggleSaveCurrentVideo() {
 }
 
 function handleVideoSourceError(vid) {
-  if (!vid || vid._failedOnce) {
-    console.warn("Stream unavailable.");
+  if (!vid) return;
+  const currentSrc = vid.currentSrc || vid.src || '';
+  // If direct stream fails (e.g. 403 Forbidden, CORS restrictions on external CDN), route through DarkPAKI Stream Proxy
+  if (!vid._proxied && currentSrc && !currentSrc.includes('/api/videos/proxy-stream') && !currentSrc.startsWith('data:')) {
+    vid._proxied = true;
+    console.warn("Direct stream load failed (CORS/403/Forbidden), routing through DarkPAKI Stream Proxy:", currentSrc);
+    vid.src = `/api/videos/proxy-stream?url=${encodeURIComponent(currentSrc)}`;
+    vid.load();
+    vid.play().catch(e => console.warn("Proxy playback autoplay note:", e.message));
     return;
   }
-  vid._failedOnce = true;
-  vid.onerror = null;
-  console.warn("Video stream load failed, switching to backup stream.");
-  vid.src = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
-  vid.load();
-  vid.play().catch(() => {});
+  console.warn("Video stream unavailable.");
 }
 
 // ============================================================================
@@ -2550,14 +2555,24 @@ let TRENDING_FORMAT_FILTER = 'all'; // 'all', 'videos', 'shorts'
 let TRENDING_SEARCH_DEBOUNCE_TIMER = null;
 
 function formatViewCount(views) {
-  const n = parseInt(views, 10);
-  if (isNaN(n) || n <= 0) {
-    if (typeof views === 'string' && views.trim().length > 0) return views;
-    return '0';
+  if (views === null || views === undefined) return '0';
+  let num = 0;
+  if (typeof views === 'number') {
+    num = views;
+  } else if (typeof views === 'string') {
+    const clean = views.replace(/views?/gi, '').trim();
+    if (clean.toLowerCase().endsWith('k')) {
+      num = Math.round(parseFloat(clean) * 1000);
+    } else if (clean.toLowerCase().endsWith('m')) {
+      num = Math.round(parseFloat(clean) * 1000000);
+    } else {
+      num = parseInt(clean, 10);
+    }
   }
-  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  return String(n);
+  if (isNaN(num) || num <= 0) return '0';
+  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(num);
 }
 
 function formatDurationDisplay(dur) {

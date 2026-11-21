@@ -185,9 +185,9 @@ async function runTests() {
   const meRes = await request('GET', '/auth/me', null, { Authorization: `Bearer ${userToken}` });
   assert(meRes.status === 200 && meRes.body.data.gmail === testGmail && meRes.body.data.coins === 50, 'Protected /auth/me returns authenticated user details with 50 welcome coins');
 
-  // 8. Watch Video Ad Bonus (Random 20, 25, or 30 coins & cash)
+  // 8. Watch Video Bonus (Fixed 5 coins & proportional cash for user)
   const watchBonusRes = await request('POST', '/earning/watch-bonus', { type: 'ad_bonus' }, { Authorization: `Bearer ${userToken}` });
-  assert(watchBonusRes.status === 200 && [20, 25, 30].includes(watchBonusRes.body.data.coinsEarned) && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits random 20, 25, or 30 Coins in SQLite');
+  assert(watchBonusRes.status === 200 && watchBonusRes.body.data.coinsEarned === 5 && watchBonusRes.body.data.adsWatched === 1, 'Watch video bonus credits exactly 5 Coins for user');
 
   // 9. Referral Bonus (+1,100 Coins per referral)
   await request('POST', '/earning/test-referral', null, { Authorization: `Bearer ${userToken}` });
@@ -473,7 +473,19 @@ async function runTests() {
       source: 'trending'
     });
     assert(viewWithSourceRes.status === 200 && viewWithSourceRes.body.data.source === 'trending', 'Authentic view source logged in SQLite video_views_log');
+
+    // Test duplicate view from same IP / device within 24h -> must be deduplicated
+    const dupViewRes = await request('POST', `/videos/${uploadVidRes.body.data.id}/view`, {
+      source: 'trending'
+    });
+    assert(dupViewRes.status === 200 && dupViewRes.body.deduplicated === true && dupViewRes.body.reason === 'rate_limited_24h', 'Subsequent view within 24h safely deduplicated without inflating view count');
   }
+
+  // Test Video Stream Proxy (bypasses 403 / CORS and serves partial range 206)
+  const streamProxyRes = await request('GET', '/videos/proxy-stream?url=' + encodeURIComponent('https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'), null, {
+    Range: 'bytes=0-100'
+  });
+  assert(streamProxyRes.status === 206 && streamProxyRes.headers['content-type'] === 'video/mp4', 'Stream proxy delivers partial 206 stream with video/mp4 MIME type');
 
   // Verify Creator Analytics calculates from authentic database state (zero fake data)
   const freshAnalyticsRes = await request('GET', '/profile/analytics', null, { Authorization: `Bearer ${userToken}` });

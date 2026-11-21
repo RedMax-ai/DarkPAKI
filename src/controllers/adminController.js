@@ -228,8 +228,8 @@ function createVideo(req, res, next) {
     }
 
     const insertVideo = db.prepare(`
-      INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, description, tags)
-      VALUES (?, ?, 'NEW • 1.5K views', ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, description, tags, views_count)
+      VALUES (?, ?, '0 views', ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `);
 
     const result = insertVideo.run(cleanTitle, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanTag, cleanReqBy, featuredFlag, cleanDescription, cleanTags);
@@ -694,8 +694,8 @@ function cdnDirectUpload(req, res, next) {
           const requestedBy = sanitizeString(req.query.requestedBy) || 'Demanded by VIP Users';
 
           const insertVideo = db.prepare(`
-            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured)
-            VALUES (?, ?, 'NEW • 1.5K views', ?, ?, ?, ?, ?, ?)
+            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, views_count)
+            VALUES (?, ?, '0 views', ?, ?, ?, ?, ?, ?, 0)
           `);
           const result = insertVideo.run(title, creator, duration, cdnData.stream_url, thumb, tag, requestedBy, isFeatured);
           const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);

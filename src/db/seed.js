@@ -99,6 +99,17 @@ function seedDatabase() {
     db.prepare("DELETE FROM videos WHERE creator IN ('DarkPAKI Cinema', 'AnimeVerse HD', 'VIP Stream Club', 'Apex Speed', 'SciFi Studio')").run();
   } catch (err) {}
 
+  // Reset fake views to 0 views if no authentic views exist in video_views_log
+  try {
+    const allVideos = db.prepare('SELECT id, views, views_count FROM videos').all();
+    for (const v of allVideos) {
+      const realViews = db.prepare('SELECT COUNT(*) as count FROM video_views_log WHERE video_id = ?').get(v.id)?.count || 0;
+      if (realViews === 0) {
+        db.prepare("UPDATE videos SET views = '0 views', views_count = 0 WHERE id = ?").run(v.id);
+      }
+    }
+  } catch (err) {}
+
   console.log('[SEED] Database verification complete. Zero dummy/fake posts or items seeded.');
 }
 

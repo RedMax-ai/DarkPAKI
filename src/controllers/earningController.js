@@ -2,19 +2,17 @@ const db = require('../db/database');
 const { sanitizeString } = require('../middleware/validator');
 
 // Credit Watch Bonus
-// Sponsor Video Ad Watch: 20, 25, or 30 Coins randomly (with proportional USD cash)
-// Conversion Rate: 100 Coins = $0.011 USD
+// Sponsor Video Watch: Exactly 5 Coins per video for user
+// Conversion Rate: 1,000 Coins = $0.11 USD -> 5 Coins = $0.0055 USD
 function creditWatchBonus(req, res, next) {
   try {
     const userId = req.user.id;
     const type = req.body?.type || 'video_watch';
 
-    // 20 - 25 - 30 Random Coins per sponsor ad
-    const coinOptions = [20, 25, 30];
-    const coinsEarned = coinOptions[Math.floor(Math.random() * coinOptions.length)];
-    // 20 coins = $0.022, 25 coins = $0.0275, 30 coins = $0.033
+    // Exactly 5 Coins per video watched
+    const coinsEarned = 5;
     const cashEarned = +(coinsEarned * 0.0011).toFixed(4);
-    const msg = `+${coinsEarned} Coins ($${cashEarned.toFixed(3)}) Watch to Earn Bonus credited!`;
+    const msg = `+${coinsEarned} Coins ($${cashEarned.toFixed(4)}) Watch to Earn Bonus credited!`;
 
     // Atomic update
     db.prepare('UPDATE users SET balance = balance + ?, coins = coins + ?, ads_watched = ads_watched + 1 WHERE id = ?')
