@@ -53,6 +53,14 @@ function seedDatabase() {
     }
   } catch (e) {}
 
+  // ExoClick In-Stream Video VAST Tag
+  try {
+    const vastRow = db.prepare("SELECT value FROM settings WHERE key = 'vast_tag_url'").get();
+    if (!vastRow || !vastRow.value) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('vast_tag_url', ?)").run('https://s.magsrv.com/v1/vast.php?idz=6098978');
+    }
+  } catch (e) {}
+
   // Self-heal CDN Stream URL to ensure it never self-references dark.anizon.watch
   try {
     const currentCdn = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get();

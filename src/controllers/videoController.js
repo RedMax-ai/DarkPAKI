@@ -5,6 +5,7 @@ const db = require('../db/database');
 const config = require('../config');
 const { sanitizeString } = require('../middleware/validator');
 const aiModeration = require('../services/aiModerationService');
+const vastService = require('../services/vastService');
 
 // Self-healing CDN URL resolver (Prevents self-referencing loops & 404s)
 function getEffectiveCdnUrl() {
@@ -343,6 +344,7 @@ function submitUserVideo(req, res, next) {
 function getAdConfig(req, res, next) {
   try {
     const adVideoSetting = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get();
+    const vastTagSetting = db.prepare("SELECT value FROM settings WHERE key = 'vast_tag_url'").get();
     const instantSkipSetting = db.prepare("SELECT value FROM settings WHERE key = 'allow_instant_skip'").get();
     const telegramSetting = db.prepare("SELECT value FROM settings WHERE key = 'telegram_url'").get();
     const popunderSetting = db.prepare("SELECT value FROM settings WHERE key = 'popunder_url'").get();
@@ -354,6 +356,7 @@ function getAdConfig(req, res, next) {
       success: true,
       data: {
         adVideoUrl: (adVideoSetting && adVideoSetting.value) ? adVideoSetting.value : 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+        vastTagUrl: (vastTagSetting && vastTagSetting.value) ? vastTagSetting.value : 'https://s.magsrv.com/v1/vast.php?idz=6098978',
         allowInstantSkip: instantSkipSetting ? instantSkipSetting.value === 'true' : false,
         telegramUrl: telegramSetting ? telegramSetting.value : 'https://t.me/darkpaki_official',
         popunderUrl: popunderSetting ? popunderSetting.value : '',
@@ -364,6 +367,38 @@ function getAdConfig(req, res, next) {
     });
   } catch (err) {
     next(err);
+  }
+}
+
+async function getVastAd(req, res, next) {
+  try {
+    const vastTagSetting = db.prepare("SELECT value FROM settings WHERE key = 'vast_tag_url'").get();
+    const adVideoSetting = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get();
+    const fallbackUrl = (adVideoSetting && adVideoSetting.value) ? adVideoSetting.value : 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+    const vastUrl = (vastTagSetting && vastTagSetting.value) ? vastTagSetting.value : 'https://s.magsrv.com/v1/vast.php?idz=6098978';
+
+    const result = await vastService.resolveVastTag(vastUrl);
+    if (result.success && result.ad) {
+      return res.json({
+        success: true,
+        ad: result.ad
+      });
+    }
+
+    return res.json({
+      success: false,
+      noFill: true,
+      fallbackUrl: fallbackUrl,
+      message: result.message || 'No VAST ad fill'
+    });
+  } catch (err) {
+    console.error('[VAST Resolver Controller Error]', err);
+    const adVideoSetting = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get();
+    return res.json({
+      success: false,
+      fallbackUrl: (adVideoSetting && adVideoSetting.value) ? adVideoSetting.value : 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      message: err.message
+    });
   }
 }
 
@@ -496,6 +531,7 @@ module.exports = {
   uploadThumbnail,
   submitUserVideo,
   getAdConfig,
+  getVastAd,
   reactToVideo,
   getVideoReactions
 };

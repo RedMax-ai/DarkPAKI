@@ -17,8 +17,12 @@ let CAPTCHA_CHALLENGE_TOKEN = '';
 // Application State
 let MEDIA_SOURCES = {
   adVideo: "",
+  vastTagUrl: "",
   mainVideos: []
 };
+
+let activeVastAd = null;
+let isResolvingVast = false;
 
 let DEMAND_POLL_ITEMS = [];
 let COMMENTS_FEED = [];
@@ -396,8 +400,12 @@ async function loadAdConfig() {
     const res = await apiFetch('/videos/config');
     if (res.success && res.data) {
       MEDIA_SOURCES.adVideo = res.data.adVideoUrl;
+      MEDIA_SOURCES.vastTagUrl = res.data.vastTagUrl || '';
       allowInstantSkip = res.data.allowInstantSkip;
       TELEGRAM_CHANNEL_URL = res.data.telegramUrl;
+
+      // Prefetch first in-stream video ad in background for zero-latency start
+      fetchNextVastAd().catch(() => {});
 
       if (res.data.popunderUrl) {
         setupPopunder(res.data.popunderUrl);
@@ -754,13 +762,79 @@ function updateStepperUI(stage) {
   }
 }
 
+function pingTrackingUrls(urls) {
+  if (!urls || !Array.isArray(urls)) return;
+  urls.forEach(url => {
+    if (!url || typeof url !== 'string') return;
+    try {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(url);
+      } else {
+        const img = new Image();
+        img.src = url;
+      }
+    } catch (e) {
+      try {
+        fetch(url, { mode: 'no-cors', cache: 'no-cache' }).catch(() => {});
+      } catch (err) {}
+    }
+  });
+}
+
+async function fetchNextVastAd() {
+  if (isResolvingVast) return activeVastAd;
+  isResolvingVast = true;
+  try {
+    const res = await apiFetch('/videos/vast-ad');
+    if (res && res.success && res.ad && res.ad.mediaUrl) {
+      activeVastAd = res.ad;
+    } else {
+      activeVastAd = null;
+    }
+  } catch (e) {
+    activeVastAd = null;
+  } finally {
+    isResolvingVast = false;
+  }
+  return activeVastAd;
+}
+
+function handleAdClick(e) {
+  // If clicked directly on the skip button or mute icon, don't trigger clickthrough
+  if (e && e.target && (e.target.closest('#skipAdBtn') || e.target.closest('#adMuteIcon') || (e.target.tagName === 'BUTTON' && !e.target.closest('#adSponsorCard')))) {
+    return;
+  }
+
+  if (activeVastAd && activeVastAd.clickThrough) {
+    pingTrackingUrls(activeVastAd.clickTracking);
+    window.open(activeVastAd.clickThrough, '_blank');
+    return;
+  }
+
+  // Fallback to sponsor modal
+  openSponsorModal(e);
+}
+
 let isFullRewardAdMode = false;
 
-function startAdExperience(isFullReward = false) {
+async function startAdExperience(isFullReward = false) {
   clearInterval(adCountdownInterval);
 
+  // If activeVastAd not yet resolved, attempt quick fetch with 2s timeout
+  if (!activeVastAd && !isFullReward) {
+    try {
+      await Promise.race([
+        fetchNextVastAd(),
+        new Promise(resolve => setTimeout(resolve, 2000))
+      ]);
+    } catch (e) {}
+  }
+
+  const hasVastAd = activeVastAd && activeVastAd.mediaUrl;
+  const effectiveAdUrl = hasVastAd ? activeVastAd.mediaUrl : MEDIA_SOURCES.adVideo;
+
   // If no ad configured or dead sample URL, transition directly to the main video
-  if (!MEDIA_SOURCES.adVideo || !MEDIA_SOURCES.adVideo.trim() || MEDIA_SOURCES.adVideo.includes('commondatastorage.googleapis.com')) {
+  if (!effectiveAdUrl || !effectiveAdUrl.trim() || effectiveAdUrl.includes('commondatastorage.googleapis.com')) {
     transitionToMainVideo("Playing 4K stream...");
     return;
   }
@@ -773,7 +847,7 @@ function startAdExperience(isFullReward = false) {
   mainVideoControls.classList.add('hidden');
   adOverlay.classList.remove('hidden');
 
-  videoEl.src = MEDIA_SOURCES.adVideo;
+  videoEl.src = effectiveAdUrl;
   videoEl.load();
   videoEl.currentTime = 0;
   videoEl.play().catch(() => {
@@ -782,14 +856,36 @@ function startAdExperience(isFullReward = false) {
     videoEl.play().catch(() => {});
   });
 
+  // Track impressions if VAST ad
+  if (hasVastAd && activeVastAd.impressions) {
+    pingTrackingUrls(activeVastAd.impressions);
+  }
+
+  // Update UI sponsor details
+  const titleEl = document.getElementById('adTitleText');
+  const sponsorTitleEl = document.getElementById('adSponsorTitle');
+  const sponsorSubEl = document.getElementById('adSponsorSub');
+  if (hasVastAd) {
+    if (titleEl) titleEl.textContent = 'ExoClick Sponsor Ad';
+    if (sponsorTitleEl) sponsorTitleEl.textContent = activeVastAd.title || 'Verified In-Stream Sponsor';
+    if (sponsorSubEl) sponsorSubEl.textContent = 'Click to visit sponsor • HD 4K unlocked on finish';
+  } else {
+    if (titleEl) titleEl.textContent = 'Sponsor Video';
+    if (sponsorTitleEl) sponsorTitleEl.textContent = 'DarkPAKI Ultra-Fast Server';
+    if (sponsorSubEl) sponsorSubEl.textContent = 'Unlock instant direct 4K MP4 downloads';
+  }
+
   adElapsedSeconds = 0;
-  // Per video 5-10 sec skip (default 6s); Full Reward Ad = full 30 seconds
+  // Per video 5-10 sec skip (default 5-6s); Full Reward Ad = full 30 seconds
   if (isFullReward) {
     adTotalSeconds = 30;
     skipWaitSeconds = 30;
+  } else if (hasVastAd) {
+    adTotalSeconds = activeVastAd.duration || 15;
+    skipWaitSeconds = activeVastAd.skipOffset || 5;
   } else {
     adTotalSeconds = 15;
-    skipWaitSeconds = 6; // 6 seconds before skip unlocks video
+    skipWaitSeconds = 6;
   }
   updateAdSkipButtonState();
 
@@ -811,6 +907,9 @@ function startAdExperience(isFullReward = false) {
         ? "30s Full Sponsor Ad complete! +30 Coins & Cash reward unlocked!"
         : "Ad completed! Starting 18+ 4K feature stream...";
       transitionToMainVideo(msg);
+      // Consume active ad and prefetch next
+      activeVastAd = null;
+      fetchNextVastAd().catch(() => {});
     }
   }, 250);
 }
@@ -852,6 +951,8 @@ function skipAdAndPlayVideo() {
   if (skipAdBtn.disabled) return;
   clearInterval(adCountdownInterval);
   transitionToMainVideo("Ad skipped! Playing 18+ main video...");
+  activeVastAd = null;
+  fetchNextVastAd().catch(() => {});
 }
 
 async function transitionToMainVideo(message) {

@@ -9,6 +9,7 @@
     <meta name="6a97888e-site-verification" content="42fe1541c7a22bf3c12a8c02c34c1573">
     <meta name="kadam-verification" content="kadam61d7e30ae7630243474e278aab32f1cb" />
     <meta name="clickaine-site-verification" content="7b79c256e4a646fa7aee3552c816967eceaba4d4bfa007fc4b47de2d9c37069133ed0ea2fef49d918ab70d1f332a6130dd161bf2ac3366ad4209f7817f757bf1">
+    <meta http-equiv="Delegate-CH" content="Sec-CH-UA https://s.magsrv.com; Sec-CH-UA-Mobile https://s.magsrv.com; Sec-CH-UA-Arch https://s.magsrv.com; Sec-CH-UA-Model https://s.magsrv.com; Sec-CH-UA-Platform https://s.magsrv.com; Sec-CH-UA-Platform-Version https://s.magsrv.com; Sec-CH-UA-Bitness https://s.magsrv.com; Sec-CH-UA-Full-Version-List https://s.magsrv.com; Sec-CH-UA-Full-Version https://s.magsrv.com;">
     <title>DarkPAKI - HD Cinema, Anime & 18+ VIP Streams</title>
     <!-- Google Search Engine Optimization (SEO) & Indexing Meta Tags -->
     <meta name="description" content="DarkPAKI is an ultra-fast digital entertainment stream hub offering HD cinema trailers, anime showcases, 4K direct cloud downloads, and 18+ VIP creator sessions.">
@@ -650,29 +651,31 @@
             </div>
 
             <!-- STATE 2: Sponsor Ad Overlay -->
-            <div id="adOverlay" class="hidden absolute inset-0 flex flex-col justify-between p-3.5 sm:p-5 bg-gradient-to-t from-black/90 via-transparent to-black/75">
-                <div class="flex items-center justify-between gap-2">
+            <div id="adOverlay" onclick="handleAdClick(event)" class="hidden absolute inset-0 flex flex-col justify-between p-3.5 sm:p-5 bg-gradient-to-t from-black/90 via-transparent to-black/75 cursor-pointer">
+                <div class="flex items-center justify-between gap-2 pointer-events-auto">
                     <div class="flex items-center gap-2 bg-black/85 backdrop-blur-md border border-amber-400/50 px-3 py-1.5 rounded-xl shadow-lg">
                         <span class="bg-amber-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded">AD 1 of 1</span>
-                        <span class="text-xs font-semibold text-white">Sponsor Video • <span id="adTimerText" class="text-amber-300 font-mono">0:15</span></span>
+                        <span class="text-xs font-semibold text-white"><span id="adTitleText">Sponsor Video</span> • <span id="adTimerText" class="text-amber-300 font-mono">0:15</span></span>
                     </div>
-                    <button onclick="toggleMute()" class="w-9 h-9 rounded-xl bg-black/75 border border-white/15 text-white flex items-center justify-center">
+                    <button onclick="event.stopPropagation(); toggleMute();" class="w-9 h-9 rounded-xl bg-black/75 border border-white/15 text-white flex items-center justify-center hover:bg-black/90 transition">
                         <i id="adMuteIcon" class="fa-solid fa-volume-high text-sm"></i>
                     </button>
                 </div>
 
                 <!-- Ad CTA & 5s Skip Button -->
-                <div class="flex flex-col gap-3">
+                <div class="flex flex-col gap-3 pointer-events-auto">
                     <div class="flex flex-wrap items-end justify-between gap-3">
-                        <div onclick="openSponsorModal(event)" class="bg-black/90 border border-white/20 rounded-2xl p-2.5 flex items-center gap-2.5 cursor-pointer hover:border-rose-500 transition shadow-xl">
-                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-600 to-red-600 text-white flex items-center justify-center font-black text-xs shadow">VIP</div>
+                        <div id="adSponsorCard" onclick="handleAdClick(event)" class="bg-black/90 border border-white/20 rounded-2xl p-2.5 flex items-center gap-2.5 cursor-pointer hover:border-amber-400 transition shadow-xl">
+                            <div id="adSponsorBadge" class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-rose-600 text-white flex items-center justify-center font-black text-xs shadow">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                            </div>
                             <div>
-                                <p class="text-xs font-bold text-white">DarkPAKI Ultra-Fast Server</p>
-                                <p class="text-[10px] text-rose-400">Unlock instant direct 4K MP4 downloads</p>
+                                <p id="adSponsorTitle" class="text-xs font-bold text-white">DarkPAKI Sponsor Video</p>
+                                <p id="adSponsorSub" class="text-[10px] text-amber-300">Click to visit sponsor • HD 4K unlocks on finish</p>
                             </div>
                         </div>
 
-                        <button id="skipAdBtn" onclick="skipAdAndPlayVideo()" disabled class="bg-slate-900/95 text-slate-300 border border-slate-600/80 px-5 py-3 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-2xl">
+                        <button id="skipAdBtn" onclick="event.stopPropagation(); skipAdAndPlayVideo();" disabled class="bg-slate-900/95 text-slate-300 border border-slate-600/80 px-5 py-3 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-2xl">
                             <span id="skipAdText">Skip Ad in 5s</span>
                             <i id="skipAdIcon" class="fa-solid fa-hourglass-half text-xs"></i>
                         </button>

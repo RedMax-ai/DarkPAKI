@@ -456,6 +456,7 @@ function getSettings(req, res, next) {
     const telegramUrl = db.prepare("SELECT value FROM settings WHERE key = 'telegram_url'").get()?.value || 'https://t.me/darkpaki_official';
     const allowInstantSkip = db.prepare("SELECT value FROM settings WHERE key = 'allow_instant_skip'").get()?.value === 'true';
     const adVideoUrl = db.prepare("SELECT value FROM settings WHERE key = 'ad_video_url'").get()?.value || 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+    const vastTagUrl = db.prepare("SELECT value FROM settings WHERE key = 'vast_tag_url'").get()?.value || 'https://s.magsrv.com/v1/vast.php?idz=6098978';
     const cdnStreamUrl = db.prepare("SELECT value FROM settings WHERE key = 'cdn_stream_url'").get()?.value || config.cdnStreamUrl;
     const popunderUrl = db.prepare("SELECT value FROM settings WHERE key = 'popunder_url'").get()?.value || '';
     const bannerAdHtml = db.prepare("SELECT value FROM settings WHERE key = 'banner_ad_html'").get()?.value || '';
@@ -474,6 +475,7 @@ function getSettings(req, res, next) {
         telegramUrl,
         allowInstantSkip,
         adVideoUrl,
+        vastTagUrl,
         cdnStreamUrl,
         popunderUrl,
         bannerAdHtml,
@@ -495,7 +497,7 @@ function getSettings(req, res, next) {
 
 function updateSettings(req, res, next) {
   try {
-    const { telegramUrl, allowInstantSkip, adVideoUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, recaptchaSiteKey, recaptchaSecretKey, googleClientId, newPin, adminAccessKey } = req.body;
+    const { telegramUrl, allowInstantSkip, adVideoUrl, vastTagUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, recaptchaSiteKey, recaptchaSecretKey, googleClientId, newPin, adminAccessKey } = req.body;
 
     if (adminAccessKey && adminAccessKey.toString().trim()) {
       const cleanKey = sanitizeString(adminAccessKey).trim();
@@ -545,6 +547,11 @@ function updateSettings(req, res, next) {
     if (adVideoUrl !== undefined) {
       const cleanAdUrl = sanitizeString(adVideoUrl);
       db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('ad_video_url', ?)").run(cleanAdUrl);
+    }
+
+    if (vastTagUrl !== undefined) {
+      const cleanVastUrl = sanitizeString(vastTagUrl);
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('vast_tag_url', ?)").run(cleanVastUrl);
     }
 
     if (cdnStreamUrl !== undefined) {

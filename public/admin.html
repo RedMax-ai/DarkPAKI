@@ -1019,11 +1019,20 @@
 
             <div>
               <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
-                <span>Ad Video Stream URL (Pre-Roll Video Ad)</span>
-                <span class="text-[10px] text-amber-400 font-normal">Plays 5-15s before video starts</span>
+                <span>Ad Video Stream URL (Fallback Video Ad)</span>
+                <span class="text-[10px] text-amber-400 font-normal">Plays if VAST has no fill</span>
               </label>
               <input type="url" id="settingAdUrl" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-rose-500 transition">
               <span class="text-[10px] text-neutral-500 mt-1 block">Enter direct MP4 link (e.g. from Google Cloud, Render CDN, or promotional video).</span>
+            </div>
+
+            <div class="p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-transparent border border-emerald-500/20">
+              <label class="block text-xs font-bold text-emerald-400 mb-1.5 flex items-center justify-between">
+                <span>ExoClick In-Stream Video VAST Tag (Pre-Roll Video Ads)</span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono">Zone 6098978 Active</span>
+              </label>
+              <input type="url" id="settingVastUrl" placeholder="https://s.magsrv.com/v1/vast.php?idz=6098978" class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-emerald-400 transition">
+              <span class="text-[10px] text-neutral-400 mt-1 block">ExoClick VAST tag URL that delivers high-paying in-stream video ads with impression tracking and skip controls.</span>
             </div>
 
             <div class="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-transparent border border-amber-500/20">
@@ -2054,6 +2063,8 @@
         if (res.success && res.data) {
           document.getElementById('settingCdnUrl').value = res.data.cdnStreamUrl || 'https://darkpaki-stream.onrender.com';
           document.getElementById('settingAdUrl').value = res.data.adVideoUrl || '';
+          const vastEl = document.getElementById('settingVastUrl');
+          if (vastEl) vastEl.value = res.data.vastTagUrl || '';
           document.getElementById('settingPopunderUrl').value = res.data.popunderUrl || '';
           document.getElementById('settingBannerHtml').value = res.data.bannerAdHtml || '';
           document.getElementById('settingMonetagMeta').value = res.data.monetagMetaTag || '';
@@ -2078,6 +2089,7 @@
       e.preventDefault();
       const cdnStreamUrl = document.getElementById('settingCdnUrl').value.trim();
       const adVideoUrl = document.getElementById('settingAdUrl').value.trim();
+      const vastTagUrl = document.getElementById('settingVastUrl')?.value?.trim() || '';
       const popunderUrl = document.getElementById('settingPopunderUrl').value.trim();
       const bannerAdHtml = document.getElementById('settingBannerHtml').value.trim();
       const monetagMetaTag = document.getElementById('settingMonetagMeta').value.trim();
@@ -2096,7 +2108,7 @@
         const res = await adminFetch('/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, recaptchaSiteKey, recaptchaSecretKey, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin, adminAccessKey })
+          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, vastTagUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, recaptchaSiteKey, recaptchaSecretKey, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin, adminAccessKey })
         });
         if (res.success) {
           showToast('Settings saved successfully!', 'success');

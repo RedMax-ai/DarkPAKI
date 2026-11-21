@@ -78,7 +78,11 @@ async function runTests() {
 
   // 3. Ad & Telegram Config
   const configRes = await request('GET', '/videos/config');
-  assert(configRes.status === 200 && configRes.body.data.adVideoUrl.includes('http'), 'Ad & Telegram configuration returned correctly');
+  assert(configRes.status === 200 && configRes.body.data.adVideoUrl.includes('http') && configRes.body.data.vastTagUrl.includes('s.magsrv.com'), 'Ad, VAST & Telegram configuration returned correctly');
+
+  // 3b. VAST Ad Resolver
+  const vastAdRes = await request('GET', '/videos/vast-ad');
+  assert(vastAdRes.status === 200 && (vastAdRes.body.ad?.mediaUrl || vastAdRes.body.fallbackUrl), 'VAST in-stream video ad resolver responds with valid creative or fallback');
 
   // 4. Captcha Generation
   const captchaRes = await request('GET', '/auth/captcha');
@@ -286,9 +290,10 @@ async function runTests() {
 
   const updateSettingsRes = await request('PUT', '/admin/settings', {
     telegramUrl: 'https://t.me/darkpaki_vip',
-    allowInstantSkip: true
+    allowInstantSkip: true,
+    vastTagUrl: 'https://s.magsrv.com/v1/vast.php?idz=6098978'
   }, { Authorization: `Bearer ${adminToken}` });
-  assert(updateSettingsRes.status === 200, 'Admin updated Telegram URL and instant skip rules in SQLite');
+  assert(updateSettingsRes.status === 200, 'Admin updated Telegram URL, instant skip rules, and VAST Tag URL in SQLite');
 
   // 18b. Admin USDT Payouts (Trust Wallet Review & Complete)
   const adminWithdrawalsRes = await request('GET', '/admin/withdrawals', null, { Authorization: `Bearer ${adminToken}` });
