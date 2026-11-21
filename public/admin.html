@@ -585,11 +585,23 @@
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Select Video Category *</label>
                 <select id="cdnCategoryInput" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
-                  <option value="18+ ADULT" selected>🔞 18+ Adult / VIP</option>
-                  <option value="MOVIES">🎬 Movies (Bollywood / Hollywood)</option>
-                  <option value="WEB SERIES">📺 Web Series / OTT</option>
-                  <option value="ANIME">⚡ Anime & Animation</option>
-                  <option value="TRENDING VIDEOS">🔥 Trending Videos</option>
+                  <option value="TRENDING VIDEOS" selected>🔥 18+ Trending</option>
+                  <option value="VIRAL">🚀 Viral</option>
+                  <option value="ASIAN">🌏 Asian</option>
+                  <option value="SCANDAL">⚠️ Scandal</option>
+                  <option value="CELEBRITY">⭐ Celebrity</option>
+                  <option value="MODELS">💎 Models</option>
+                  <option value="BDSM">⛓️ BDSM</option>
+                  <option value="THREESOME">👥 Threesome</option>
+                  <option value="FOURSOME">👥 Foursome</option>
+                  <option value="LESBIAN">💋 Lesbian</option>
+                  <option value="GAY">🌈 Gay</option>
+                  <option value="PORN VIDEOS">🔞 Porn Videos</option>
+                  <option value="SHORTS">📱 Shorts / Reels</option>
+                  <option value="18+ ADULT">🔞 18+ Adult / VIP</option>
+                  <option value="MOVIES">🎬 Movies</option>
+                  <option value="WEB SERIES">📺 Web Series</option>
+                  <option value="ANIME">⚡ Anime</option>
                   <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
                 </select>
               </div>
@@ -854,10 +866,23 @@
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Category *</label>
                 <select id="tgCategoryInput" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition">
-                  <option value="18+ ADULT" selected>🔞 18+ Adult / VIP</option>
-                  <option value="MOVIES">🎬 Movies (Bollywood / Hollywood)</option>
-                  <option value="WEB SERIES">📺 Web Series / OTT</option>
-                  <option value="ANIME">⚡ Anime & Animation</option>
+                  <option value="TRENDING VIDEOS" selected>🔥 18+ Trending</option>
+                  <option value="VIRAL">🚀 Viral</option>
+                  <option value="ASIAN">🌏 Asian</option>
+                  <option value="SCANDAL">⚠️ Scandal</option>
+                  <option value="CELEBRITY">⭐ Celebrity</option>
+                  <option value="MODELS">💎 Models</option>
+                  <option value="BDSM">⛓️ BDSM</option>
+                  <option value="THREESOME">👥 Threesome</option>
+                  <option value="FOURSOME">👥 Foursome</option>
+                  <option value="LESBIAN">💋 Lesbian</option>
+                  <option value="GAY">🌈 Gay</option>
+                  <option value="PORN VIDEOS">🔞 Porn Videos</option>
+                  <option value="SHORTS">📱 Shorts / Reels</option>
+                  <option value="18+ ADULT">🔞 18+ Adult / VIP</option>
+                  <option value="MOVIES">🎬 Movies</option>
+                  <option value="WEB SERIES">📺 Web Series</option>
+                  <option value="ANIME">⚡ Anime</option>
                   <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
                 </select>
               </div>
@@ -901,23 +926,63 @@
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Video Stream URL (MP4 / CDN / HLS) *</label>
-              <input type="url" id="manualSrc" required placeholder="https://darkpaki-stream.onrender.com/... or https://commondatastorage..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                <span>Video Stream URL (MP4 / CDN / HLS) *</span>
+                <span id="manualStreamStatus" class="text-[10px] text-amber-400 font-mono hidden flex items-center gap-1">
+                  <i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Auto-detecting thumbnail & duration...
+                </span>
+              </label>
+              <input type="url" id="manualSrc" required oninput="handleStreamUrlChange(this.value)" onchange="handleStreamUrlChange(this.value)" placeholder="https://darkpaki-stream.onrender.com/... or https://c6no5-b.cdn.cr/...mp4" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Thumbnail Image URL *</label>
-              <input type="url" id="manualThumb" required placeholder="https://...jpg/png" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                <span>Thumbnail Image URL (Auto-Generated from Stream if left blank)</span>
+                <span class="text-[10px] text-neutral-400">Auto-detected from video</span>
+              </label>
+              <div class="flex gap-2">
+                <input type="url" id="manualThumb" placeholder="https://...jpg/png (Auto-captured from stream)" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
+                <button type="button" onclick="captureStreamThumbnailManual()" class="px-3.5 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0">
+                  <i class="fa-solid fa-camera"></i>
+                  <span>Auto Frame</span>
+                </button>
+              </div>
+              <!-- Live Auto-Captured Thumbnail Preview -->
+              <div id="manualThumbPreviewContainer" class="hidden mt-2.5 p-2 bg-black/60 border border-white/10 rounded-xl flex items-center gap-3">
+                <img id="manualThumbPreviewImg" src="" alt="Thumbnail" class="w-24 h-16 object-cover rounded-lg border border-amber-400/50 shadow">
+                <div class="text-[11px] text-neutral-300">
+                  <p class="font-bold text-white flex items-center gap-1 text-emerald-400">
+                    <i class="fa-solid fa-circle-check text-[10px]"></i> Thumbnail Detected From Video
+                  </p>
+                  <p class="text-neutral-400">Captured frame from video stream</p>
+                </div>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Category Tag *</label>
                 <select id="manualTag" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition">
-                  <option value="18+ ADULT" selected>🔞 18+ Adult / VIP</option>
+                  <option value="TRENDING VIDEOS" selected>🔥 18+ Trending</option>
+                  <option value="VIRAL">🚀 Viral</option>
+                  <option value="ASIAN">🌏 Asian</option>
+                  <option value="SCANDAL">⚠️ Scandal</option>
+                  <option value="CELEBRITY">⭐ Celebrity</option>
+                  <option value="MODELS">💎 Models</option>
+                  <option value="BDSM">⛓️ BDSM</option>
+                  <option value="THREESOME">👥 Threesome</option>
+                  <option value="FOURSOME">👥 Foursome</option>
+                  <option value="LESBIAN">💋 Lesbian</option>
+                  <option value="GAY">🌈 Gay</option>
+                  <option value="PORN VIDEOS">🔞 Porn Videos</option>
+                  <option value="SHORTS">📱 Shorts / Reels</option>
+                  <option value="18+ ADULT">🔞 18+ Adult / VIP</option>
                   <option value="MOVIES">🎬 Movies</option>
                   <option value="WEB SERIES">📺 Web Series</option>
                   <option value="ANIME">⚡ Anime</option>
+                  <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
+                </select>
+              </div>
                   <option value="TRENDING VIDEOS">🔥 Trending Videos</option>
                   <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
                 </select>
@@ -962,11 +1027,24 @@
               </div>
               <select id="videoCategoryFilter" onchange="loadAdminVideos()" class="bg-[#0c0d14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500 transition">
                 <option value="ALL">All Categories</option>
-                <option value="18+ ADULT">18+ Adult</option>
-                <option value="MOVIES">Movies</option>
-                <option value="WEB SERIES">Web Series</option>
-                <option value="ANIME">Anime</option>
-                <option value="TRENDING VIDEOS">Trending</option>
+                <option value="TRENDING VIDEOS">🔥 18+ Trending</option>
+                <option value="VIRAL">🚀 Viral</option>
+                <option value="ASIAN">🌏 Asian</option>
+                <option value="SCANDAL">⚠️ Scandal</option>
+                <option value="CELEBRITY">⭐ Celebrity</option>
+                <option value="MODELS">💎 Models</option>
+                <option value="BDSM">⛓️ BDSM</option>
+                <option value="THREESOME">👥 Threesome</option>
+                <option value="FOURSOME">👥 Foursome</option>
+                <option value="LESBIAN">💋 Lesbian</option>
+                <option value="GAY">🌈 Gay</option>
+                <option value="PORN VIDEOS">🔞 Porn Videos</option>
+                <option value="SHORTS">📱 Shorts / Reels</option>
+                <option value="18+ ADULT">🔞 18+ Adult / VIP</option>
+                <option value="MOVIES">🎬 Movies</option>
+                <option value="WEB SERIES">📺 Web Series</option>
+                <option value="ANIME">⚡ Anime</option>
+                <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
               </select>
             </div>
           </div>
@@ -1239,12 +1317,24 @@
         <div>
           <label class="block font-bold text-neutral-300 mb-1">Category Tag</label>
           <select id="editTag" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-3 py-2 text-white">
-            <option value="18+ ADULT">18+ Adult</option>
-            <option value="MOVIES">Movies</option>
-            <option value="WEB SERIES">Web Series</option>
-            <option value="ANIME">Anime</option>
-            <option value="TRENDING VIDEOS">Trending Videos</option>
-            <option value="VIP PAKISTANI">VIP Pakistani Exclusive</option>
+            <option value="TRENDING VIDEOS">🔥 18+ Trending</option>
+            <option value="VIRAL">🚀 Viral</option>
+            <option value="ASIAN">🌏 Asian</option>
+            <option value="SCANDAL">⚠️ Scandal</option>
+            <option value="CELEBRITY">⭐ Celebrity</option>
+            <option value="MODELS">💎 Models</option>
+            <option value="BDSM">⛓️ BDSM</option>
+            <option value="THREESOME">👥 Threesome</option>
+            <option value="FOURSOME">👥 Foursome</option>
+            <option value="LESBIAN">💋 Lesbian</option>
+            <option value="GAY">🌈 Gay</option>
+            <option value="PORN VIDEOS">🔞 Porn Videos</option>
+            <option value="SHORTS">📱 Shorts / Reels</option>
+            <option value="18+ ADULT">🔞 18+ Adult / VIP</option>
+            <option value="MOVIES">🎬 Movies</option>
+            <option value="WEB SERIES">📺 Web Series</option>
+            <option value="ANIME">⚡ Anime</option>
+            <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
           </select>
         </div>
         <div>
@@ -1839,17 +1929,160 @@
     }
 
     // =========================================================================
-    // MANUAL FAST PUBLISHER
+    // MANUAL FAST PUBLISHER & STREAM THUMBNAIL AUTO-DETECTOR
     // =========================================================================
+    function generateFallbackThumbDataUrl(title, tag) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 360;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 640, 360);
+      grad.addColorStop(0, '#0f172a');
+      grad.addColorStop(1, '#090d16');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 640, 360);
+
+      ctx.strokeStyle = '#e11d48';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(3, 3, 634, 354);
+
+      ctx.fillStyle = 'rgba(225, 29, 72, 0.85)';
+      ctx.beginPath();
+      ctx.arc(320, 150, 48, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(312, 130);
+      ctx.lineTo(336, 150);
+      ctx.lineTo(312, 170);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
+      ctx.fillRect(40, 30, 160, 32);
+      ctx.fillStyle = '#f43f5e';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText(tag || 'VIP STREAM', 52, 52);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 22px sans-serif';
+      const cleanTitle = (title || 'DarkPAKI VIP Video').substring(0, 36);
+      ctx.fillText(cleanTitle, 40, 260);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('DarkPAKI Ultra HD 4K Cinema Stream', 40, 295);
+
+      return canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    let activeStreamDetectionVideo = null;
+
+    function handleStreamUrlChange(url) {
+      if (!url || !url.trim() || !url.startsWith('http')) return;
+      const cleanUrl = url.trim();
+      const statusEl = document.getElementById('manualStreamStatus');
+      if (statusEl) {
+        statusEl.classList.remove('hidden');
+        statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Auto-detecting video & thumbnail...';
+      }
+
+      if (activeStreamDetectionVideo) {
+        activeStreamDetectionVideo.pause();
+        activeStreamDetectionVideo.removeAttribute('src');
+        activeStreamDetectionVideo.load();
+      }
+
+      const tempVideo = document.createElement('video');
+      tempVideo.crossOrigin = 'anonymous';
+      tempVideo.preload = 'metadata';
+      tempVideo.muted = true;
+      tempVideo.playsInline = true;
+      activeStreamDetectionVideo = tempVideo;
+
+      tempVideo.onloadedmetadata = () => {
+        const secs = Math.floor(tempVideo.duration);
+        if (secs && isFinite(secs)) {
+          const m = Math.floor(secs / 60);
+          const s = secs % 60;
+          const durInput = document.getElementById('manualDuration');
+          if (durInput) durInput.value = `${m}:${s < 10 ? '0' + s : s}`;
+        }
+        tempVideo.currentTime = Math.min(2.5, (tempVideo.duration || 5) / 4);
+      };
+
+      tempVideo.onseeked = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.min(tempVideo.videoWidth || 640, 640);
+          canvas.height = Math.min(tempVideo.videoHeight || 360, 360);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+          const prevImg = document.getElementById('manualThumbPreviewImg');
+          const prevCont = document.getElementById('manualThumbPreviewContainer');
+          if (prevImg && prevCont) {
+            prevImg.src = dataUrl;
+            prevCont.classList.remove('hidden');
+          }
+
+          fetch('/api/videos/upload-thumbnail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ base64: dataUrl })
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success && data.thumbUrl) {
+              document.getElementById('manualThumb').value = window.location.origin + data.thumbUrl;
+              if (statusEl) statusEl.innerHTML = '<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check"></i> Thumbnail auto-detected!</span>';
+            } else {
+              document.getElementById('manualThumb').value = dataUrl;
+              if (statusEl) statusEl.classList.add('hidden');
+            }
+          })
+          .catch(() => {
+            document.getElementById('manualThumb').value = dataUrl;
+            if (statusEl) statusEl.classList.add('hidden');
+          });
+        } catch (e) {
+          console.warn('Canvas capture restricted by CORS:', e);
+          if (statusEl) statusEl.innerHTML = '<span class="text-neutral-400"><i class="fa-solid fa-check"></i> Stream valid (Duration set)</span>';
+        }
+      };
+
+      tempVideo.onerror = () => {
+        if (statusEl) statusEl.classList.add('hidden');
+      };
+
+      tempVideo.src = cleanUrl;
+    }
+
+    function captureStreamThumbnailManual() {
+      const src = document.getElementById('manualSrc')?.value?.trim();
+      if (!src) {
+        showToast('Please enter a Video Stream URL first', 'error');
+        return;
+      }
+      handleStreamUrlChange(src);
+    }
+
     async function handleManualPublish(e) {
       e.preventDefault();
       const title = document.getElementById('manualTitle').value.trim();
       const src = document.getElementById('manualSrc').value.trim();
-      const thumbImg = document.getElementById('manualThumb').value.trim();
+      let thumbImg = document.getElementById('manualThumb').value.trim();
       const tag = document.getElementById('manualTag').value;
       const duration = document.getElementById('manualDuration').value.trim() || '12:00';
       const creator = document.getElementById('manualCreator').value.trim() || 'DarkPAKI VIP Exclusive';
       const isFeatured = document.getElementById('manualFeatured').checked;
+
+      if (!thumbImg) {
+        thumbImg = generateFallbackThumbDataUrl(title, tag);
+        document.getElementById('manualThumb').value = thumbImg;
+      }
 
       try {
         const res = await adminFetch('/admin/videos', {
@@ -1860,7 +2093,12 @@
         if (res.success) {
           showToast(`Published "${title}" successfully!`, 'success');
           e.target.reset();
+          const prevCont = document.getElementById('manualThumbPreviewContainer');
+          if (prevCont) prevCont.classList.add('hidden');
+          const statusEl = document.getElementById('manualStreamStatus');
+          if (statusEl) statusEl.classList.add('hidden');
           loadAdminStats();
+          loadAdminVideos();
         } else {
           showToast(res.message || 'Failed to publish', 'error');
         }

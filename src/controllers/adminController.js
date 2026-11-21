@@ -210,7 +210,7 @@ function createVideo(req, res, next) {
 
     const cleanTitle = sanitizeString(title);
     const cleanTag = sanitizeString(tag).toUpperCase() || '18+ ADULT';
-    const cleanThumb = sanitizeString(thumbImg);
+    let cleanThumb = sanitizeString(thumbImg);
     const cleanSrc = sanitizeString(src);
     const cleanDuration = sanitizeString(duration) || '12:00';
     const cleanCreator = sanitizeString(creator) || 'DarkPAKI VIP Exclusive';
@@ -219,8 +219,12 @@ function createVideo(req, res, next) {
     const cleanTags = sanitizeString(tags) || '';
     const featuredFlag = isFeatured ? 1 : 0;
 
-    if (!cleanTitle || !cleanThumb || !cleanSrc) {
-      return res.status(400).json({ success: false, message: 'Title, Thumbnail URL, and Video Stream URL are required.' });
+    if (!cleanThumb) {
+      cleanThumb = 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&q=80';
+    }
+
+    if (!cleanTitle || !cleanSrc) {
+      return res.status(400).json({ success: false, message: 'Title and Video Stream URL are required.' });
     }
 
     const insertVideo = db.prepare(`
