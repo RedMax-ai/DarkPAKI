@@ -14,6 +14,13 @@ let ADMIN_TOKEN = localStorage.getItem('darkpaki_admin_token') || null;
 let DEVICE_FINGERPRINT = localStorage.getItem('darkpaki_device_fp') || '';
 let CAPTCHA_CHALLENGE_TOKEN = '';
 
+function getDeviceId() {
+  if (!DEVICE_FINGERPRINT) {
+    DEVICE_FINGERPRINT = localStorage.getItem('darkpaki_device_fp') || '';
+  }
+  return DEVICE_FINGERPRINT || 'DPK-ANON';
+}
+
 // Application State
 let MEDIA_SOURCES = {
   adVideo: "",
@@ -835,6 +842,7 @@ async function startAdExperience(isFullReward = false) {
   // If no REAL VAST ad is returned, do NOT play fake flower placeholder! Skip directly to main video!
   if (!hasVastAd) {
     console.log("No active VAST ad available, skipping ad and playing video directly.");
+    initialOverlay.classList.add('hidden');
     transitionToMainVideo("Playing 4K stream...");
     return;
   }
@@ -961,21 +969,12 @@ async function transitionToMainVideo(message) {
   currentState = 'MAIN_PLAYING';
   updateStepperUI('MAIN_PLAYING');
 
+  // Immediately hide overlays and expose player controls
+  initialOverlay.classList.add('hidden');
   adOverlay.classList.add('hidden');
   mainVideoControls.classList.remove('hidden');
 
-  // Trigger real persistent watch earning bonus on backend
-  await creditWatchEarningBonus(false);
-  const curVid = MEDIA_SOURCES.mainVideos[currentVideoIndex];
-  if (curVid && curVid.id) {
-    apiFetch('/api/videos/' + curVid.id + '/view', {
-      method: 'POST',
-      body: JSON.stringify({ deviceId: getDeviceId() })
-    }).catch(() => {});
-  }
-
-  showToast(message);
-
+  // Load and play video immediately
   const selectedVideo = MEDIA_SOURCES.mainVideos[currentVideoIndex];
   if (selectedVideo) {
     document.getElementById('videoTitle').textContent = unescapeHtml(selectedVideo.title);
@@ -984,9 +983,32 @@ async function transitionToMainVideo(message) {
     videoEl.load();
     videoEl.currentTime = 0;
     videoEl.playbackRate = playbackSpeeds[currentSpeedIdx];
-    videoEl.play().catch(() => {});
+    videoEl.play().catch((err) => {
+      console.warn("Autoplay note:", err.message);
+      videoEl.muted = true;
+      updateMuteIcons();
+      videoEl.play().catch(() => {});
+    });
   }
   updatePlayPauseIcons();
+
+  if (message) {
+    showToast(message);
+  }
+
+  // Background view tracking & watch bonus credit (safe from throwing)
+  try {
+    creditWatchEarningBonus(false).catch(() => {});
+    const curVid = MEDIA_SOURCES.mainVideos[currentVideoIndex];
+    if (curVid && curVid.id) {
+      apiFetch('/api/videos/' + curVid.id + '/view', {
+        method: 'POST',
+        body: JSON.stringify({ deviceId: getDeviceId() })
+      }).catch(() => {});
+    }
+  } catch (err) {
+    console.warn("Background view log error:", err.message);
+  }
 }
 
 // Scrubber & Completion Event Listeners
