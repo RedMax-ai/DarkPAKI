@@ -540,11 +540,69 @@ async function runTests() {
     const searchDescRes = await request('GET', '/videos?q=Asian cinema');
     assert(searchDescRes.status === 200 && searchDescRes.body.data.some(v => v.id === taggedVideoRes.body.data.id), 'Video search queries across description and tags');
 
+    // ----------------------------------------------------
+    // TEST 13: CUSTOM FOLDERS & COLLECTIONS MANAGEMENT
+    // ----------------------------------------------------
+    console.log('\n--- TEST 13: CUSTOM FOLDERS & COLLECTIONS SYSTEM ---');
+
+    // 13a. Get Admin Folders
+    const adminFoldersRes = await request('GET', '/admin/folders', null, { Authorization: `Bearer ${adminToken}` });
+    assert(adminFoldersRes.status === 200 && Array.isArray(adminFoldersRes.body.data), 'GET /admin/folders returns list of folders with video counts');
+
+    // 13b. Create New Custom Folder
+    const createFolderRes = await request('POST', '/admin/folders', {
+      name: 'VIP Test Collection',
+      color: '#EC4899',
+      icon: 'fa-crown',
+      description: 'Special custom folder for automated testing'
+    }, { Authorization: `Bearer ${adminToken}` });
+    assert(createFolderRes.status === 200 && createFolderRes.body.data.name === 'VIP Test Collection', 'POST /admin/folders creates custom folder in SQLite');
+    const testFolderId = createFolderRes.body.data.id;
+
+    // 13c. Update / Rename Folder
+    const updateFolderRes = await request('PUT', `/admin/folders/${testFolderId}`, {
+      name: 'VIP Test Collection Updated',
+      color: '#7C3AED',
+      icon: 'fa-gem'
+    }, { Authorization: `Bearer ${adminToken}` });
+    assert(updateFolderRes.status === 200 && updateFolderRes.body.data.name === 'VIP Test Collection Updated', 'PUT /admin/folders/:id updates/renames custom folder');
+
+    // 13d. Create Video Assigned to Folder
+    const folderVideoRes = await request('POST', '/admin/videos', {
+      title: 'Folder Test Video Stream',
+      src: 'https://darkpaki-stream.onrender.com/stream/folder-test.mp4',
+      thumbImg: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800',
+      tag: 'TRENDING VIDEOS',
+      tags: '#foldertest, #vip',
+      duration: '11:22',
+      creator: 'Folder Test Studio',
+      folderId: testFolderId
+    }, { Authorization: `Bearer ${adminToken}` });
+    assert(folderVideoRes.status === 200 && folderVideoRes.body.data.folder_id === testFolderId && folderVideoRes.body.data.folder_name === 'VIP Test Collection Updated', 'POST /admin/videos assigns video to folder_id and folder_name');
+
+    // 13e. Filter Admin Videos by Folder
+    const filterFolderRes = await request('GET', `/admin/videos?folderId=${testFolderId}`, null, { Authorization: `Bearer ${adminToken}` });
+    assert(filterFolderRes.status === 200 && filterFolderRes.body.data.some(v => v.id === folderVideoRes.body.data.id), 'GET /admin/videos?folderId filters videos accurately');
+
+    // 13f. Public Folders API
+    const publicFoldersRes = await request('GET', '/videos/folders');
+    assert(publicFoldersRes.status === 200 && publicFoldersRes.body.data.some(f => f.id === testFolderId && f.video_count >= 1), 'GET /videos/folders returns catalog with active video counts');
+
+    // 13g. Delete Folder (Safe unlinking without video loss)
+    const deleteFolderRes = await request('DELETE', `/admin/folders/${testFolderId}`, null, { Authorization: `Bearer ${adminToken}` });
+    assert(deleteFolderRes.status === 200, 'DELETE /admin/folders/:id deletes folder cleanly');
+
+    const unlinkedVideo = db.prepare('SELECT folder_id, folder_name FROM videos WHERE id = ?').get(folderVideoRes.body.data.id);
+    assert(unlinkedVideo && unlinkedVideo.folder_id === null, 'Deleting folder unlinks videos without deleting the video records');
+
     // Cleanup reaction & follow & test video
     db.prepare('DELETE FROM video_reactions WHERE device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
     db.prepare('DELETE FROM follows WHERE follower_device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
     if (taggedVideoRes?.body?.data?.id) {
       db.prepare('DELETE FROM videos WHERE id = ?').run(taggedVideoRes.body.data.id);
+    }
+    if (folderVideoRes?.body?.data?.id) {
+      db.prepare('DELETE FROM videos WHERE id = ?').run(folderVideoRes.body.data.id);
     }
   }
 

@@ -432,6 +432,13 @@
           <i class="fa-solid fa-film w-4 text-emerald-400"></i>
           <span>Video Content Library</span>
         </button>
+        <button onclick="switchTab('folders')" id="tabBtn-folders" class="tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-folder-tree w-4 text-amber-400"></i>
+            <span>Folders & Collections</span>
+          </div>
+          <span id="sidebarFoldersBadge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">0</span>
+        </button>
         <button onclick="switchTab('review-queue')" id="tabBtn-review-queue" class="tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
           <div class="flex items-center gap-3">
             <i class="fa-solid fa-list-check w-4 text-amber-400"></i>
@@ -537,6 +544,118 @@
       </section>
 
       <!-- =================================================================== -->
+      <!-- TAB: FOLDERS & VIDEO COLLECTIONS MANAGER -->
+      <!-- =================================================================== -->
+      <section id="tab-folders" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-folder-tree text-amber-400 text-xl"></i>
+                <span>Custom Folders & Video Collections</span>
+              </h3>
+              <p class="text-xs text-neutral-400 mt-1">
+                Create custom folders for content organization. When uploading videos, select which folder they belong to.
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="foldersCountStat" class="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <i class="fa-solid fa-folder text-[10px] mr-1"></i> 0 Folders
+              </span>
+            </div>
+          </div>
+
+          <!-- Create Folder Form -->
+          <form id="createFolderForm" onsubmit="handleCreateFolderSubmit(event)" class="space-y-4 bg-black/30 p-4 sm:p-5 rounded-2xl border border-white/[0.08]">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-circle-plus text-amber-400"></i>
+              <span>Create New Custom Folder</span>
+            </h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="md:col-span-1">
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Folder Name *</label>
+                <input 
+                  type="text" 
+                  id="newFolderName" 
+                  required 
+                  placeholder="e.g. VIP Exclusive, Desi Special, etc." 
+                  class="w-full bg-black/60 border border-white/15 focus:border-amber-400 rounded-xl px-4 py-2.5 text-sm text-white font-medium outline-none transition"
+                >
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Accent Color</label>
+                <select id="newFolderColor" class="w-full bg-[#0c0d14] border border-white/15 focus:border-amber-400 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition font-mono">
+                  <option value="#7C3AED" selected>🟣 Electric Violet (#7C3AED)</option>
+                  <option value="#F43F5E">🔴 Crimson Rose (#F43F5E)</option>
+                  <option value="#F59E0B">🟡 Amber Gold (#F59E0B)</option>
+                  <option value="#10B981">🟢 Emerald Green (#10B981)</option>
+                  <option value="#06B6D4">🔵 Cyan Sky (#06B6D4)</option>
+                  <option value="#6366F1">🔷 Indigo Light (#6366F1)</option>
+                  <option value="#EC4899">💖 Neon Pink (#EC4899)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Folder Icon</label>
+                <select id="newFolderIcon" class="w-full bg-[#0c0d14] border border-white/15 focus:border-amber-400 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition font-mono">
+                  <option value="fa-folder" selected>📁 Default Folder</option>
+                  <option value="fa-fire">🔥 Fire / Trending</option>
+                  <option value="fa-gem">💎 Gem / VIP</option>
+                  <option value="fa-star">⭐ Star / Special</option>
+                  <option value="fa-bolt">⚡ Bolt / Viral</option>
+                  <option value="fa-heart">❤️ Heart / Love</option>
+                  <option value="fa-film">🎬 Film / Video</option>
+                  <option value="fa-play">▶️ Play / Stream</option>
+                  <option value="fa-crown">👑 Crown / Royalty</option>
+                  <option value="fa-shield-halved">🛡️ Shield / Private</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Description (Optional)</label>
+              <input 
+                type="text" 
+                id="newFolderDesc" 
+                placeholder="Brief notes about the videos placed in this folder..." 
+                class="w-full bg-black/60 border border-white/15 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs text-neutral-300 outline-none transition"
+              >
+            </div>
+
+            <div class="flex justify-end pt-2">
+              <button type="submit" id="createFolderBtn" class="bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-black py-2.5 px-6 rounded-xl transition shadow-lg shadow-amber-500/20 flex items-center gap-2 text-xs">
+                <i class="fa-solid fa-plus"></i>
+                <span>Create Folder Now</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- 2. Existing Folders Grid List -->
+          <div class="mt-8 space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-white/10">
+              <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-layer-group text-amber-400"></i>
+                <span>All Active Folders & Video Counts</span>
+              </h4>
+              <button onclick="loadAdminFolders()" class="px-3 py-1 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate text-[10px]"></i>
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <div id="foldersGridContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Rendered dynamically via loadAdminFolders() -->
+              <div class="p-6 text-center text-neutral-400 text-xs col-span-full">
+                <i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading folders...
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
       <!-- TAB: FILES CREATE & PUBLISHER WITH TAGS -->
       <!-- =================================================================== -->
       <section id="tab-files-create" class="tab-content hidden space-y-6">
@@ -578,17 +697,29 @@
               <span class="text-[10px] text-neutral-500 mt-1 block">Supports direct .mp4, m3u8 HLS streams, Telegram CDN, Cloudflare R2, or storage links.</span>
             </div>
 
-            <!-- 2. File Title & Category -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 2. File Title, Folder & Category -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">File / Video Title *</label>
                 <input 
                   type="text" 
                   id="fcTitle" 
                   required 
-                  placeholder="e.g. VIP Pakistani Exclusive Full HD Episode 03" 
+                  placeholder="e.g. VIP Exclusive Full HD Episode" 
                   class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition"
                 >
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-folder-open text-amber-400"></i> Target Folder *</span>
+                  <button type="button" onclick="promptCreateQuickFolder('fcFolderSelect')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-plus text-[9px]"></i> New
+                  </button>
+                </label>
+                <select id="fcFolderSelect" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
+                  <option value="">📁 Select Folder...</option>
+                </select>
               </div>
 
               <div>
@@ -797,10 +928,22 @@
             </div>
 
             <!-- Metadata Form Fields -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Custom Title / Movie Name *</label>
-                <input type="text" id="cdnTitleInput" required placeholder="e.g. Inception 1080p [Hindi] or Adult VIP Episode 01" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+                <input type="text" id="cdnTitleInput" required placeholder="e.g. VIP Stream Video" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-folder-open text-amber-400"></i> Target Folder *</span>
+                  <button type="button" onclick="promptCreateQuickFolder('cdnFolderSelect')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-plus text-[9px]"></i> New
+                  </button>
+                </label>
+                <select id="cdnFolderSelect" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition font-mono">
+                  <option value="">📁 Select Folder...</option>
+                </select>
               </div>
 
               <div>
@@ -832,7 +975,7 @@
                 <input type="text" id="cdnCreatorInput" placeholder="e.g. DarkPAKI VIP or Model Name" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
               </div>
 
-              <div>
+              <div class="md:col-span-2">
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Duration Display (Optional)</label>
                 <input type="text" id="cdnDurationInput" placeholder="e.g. 14:30 or 1h 45m" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
               </div>
@@ -1189,7 +1332,18 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-folder-open text-amber-400"></i> Target Folder *</span>
+                  <button type="button" onclick="promptCreateQuickFolder('manualFolderSelect')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-plus text-[9px]"></i> New
+                  </button>
+                </label>
+                <select id="manualFolderSelect" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
+                  <option value="">📁 Select Folder...</option>
+                </select>
+              </div>
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Category Tag *</label>
                 <select id="manualTag" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition">
@@ -1215,7 +1369,7 @@
               </div>
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Duration</label>
-                <input type="text" id="manualDuration" value="12:30" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition">
+                <input type="text" id="manualDuration" value="12:30" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
               </div>
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Creator Name</label>
@@ -1255,11 +1409,14 @@
               <p class="text-xs text-neutral-400">Manage, edit, feature, and delete published streams on DarkPAKI</p>
             </div>
             
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-              <div class="relative flex-1 sm:w-64">
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <div class="relative flex-1 sm:w-56">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-neutral-500 text-xs"></i>
                 <input type="text" id="videoSearchInput" oninput="debounceVideoSearch()" placeholder="Search videos..." class="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500 transition">
               </div>
+              <select id="videoFolderFilter" onchange="loadAdminVideos()" class="bg-[#0c0d14] border border-white/10 rounded-xl px-3 py-2 text-xs text-amber-300 focus:outline-none focus:border-amber-400 transition font-mono">
+                <option value="ALL">📁 All Folders</option>
+              </select>
               <select id="videoCategoryFilter" onchange="loadAdminVideos()" class="bg-[#0c0d14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500 transition">
                 <option value="ALL">All Categories</option>
                 <option value="TRENDING VIDEOS">🔥 18+ Trending</option>
@@ -1290,6 +1447,7 @@
               <thead class="bg-white/5 uppercase text-neutral-400 text-[10px] font-bold tracking-wider">
                 <tr>
                   <th class="p-3">Video</th>
+                  <th class="p-3">Folder</th>
                   <th class="p-3">Category</th>
                   <th class="p-3">Duration</th>
                   <th class="p-3">Featured</th>
@@ -1298,7 +1456,7 @@
               </thead>
               <tbody id="adminVideoTableBody" class="divide-y divide-white/5">
                 <tr>
-                  <td colspan="5" class="p-8 text-center text-neutral-400">Loading video library...</td>
+                  <td colspan="6" class="p-8 text-center text-neutral-400">Loading video library...</td>
                 </tr>
               </tbody>
             </table>
@@ -1573,6 +1731,17 @@
           </select>
         </div>
         <div>
+          <label class="block font-bold text-neutral-300 mb-1 flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-folder-open text-amber-400"></i> Folder / Collection</span>
+            <button type="button" onclick="promptCreateQuickFolder('editFolderSelect')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1">
+              <i class="fa-solid fa-plus text-[9px]"></i> New
+            </button>
+          </label>
+          <select id="editFolderSelect" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
+            <option value="">📁 No Folder (Root)</option>
+          </select>
+        </div>
+        <div>
           <label class="block font-bold text-neutral-300 mb-1">Thumbnail URL</label>
           <input type="url" id="editThumb" required class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
         </div>
@@ -1731,7 +1900,9 @@
       if (activeContent) activeContent.classList.remove('hidden');
       if (activeBtn) activeBtn.classList.add('active');
 
-      if (tabId === 'video-manager') {
+      if (tabId === 'folders') {
+        loadAdminFolders();
+      } else if (tabId === 'video-manager') {
         loadAdminVideos();
       } else if (tabId === 'review-queue') {
         loadPendingVideos();
@@ -1796,6 +1967,7 @@
           document.getElementById('adminAuthModal').classList.add('hidden');
           showToast('Master PIN Verified! Welcome to DarkPAKI Admin.', 'success');
           loadAdminStats();
+          loadAdminFolders();
         } else {
           showToast(data.message || 'Invalid PIN', 'error');
         }
@@ -1825,11 +1997,232 @@
         if (res.success) {
           document.getElementById('adminAuthModal').classList.add('hidden');
           loadAdminStats();
+          loadAdminFolders();
         } else {
           document.getElementById('adminAuthModal').classList.remove('hidden');
         }
       } catch (err) {
         document.getElementById('adminAuthModal').classList.remove('hidden');
+      }
+    }
+
+    // =========================================================================
+    // FOLDERS & COLLECTIONS MANAGEMENT
+    // =========================================================================
+    let ADMIN_FOLDERS = [];
+
+    async function loadAdminFolders() {
+      try {
+        const res = await adminFetch('/admin/folders');
+        if (res.success && Array.isArray(res.data)) {
+          ADMIN_FOLDERS = res.data;
+          renderFoldersGrid(ADMIN_FOLDERS);
+          populateFolderDropdowns(ADMIN_FOLDERS);
+
+          // Update badges
+          const count = ADMIN_FOLDERS.length;
+          const badge = document.getElementById('sidebarFoldersBadge');
+          if (badge) badge.textContent = count;
+          const statBadge = document.getElementById('foldersCountStat');
+          if (statBadge) statBadge.innerHTML = `<i class="fa-solid fa-folder text-[10px] mr-1"></i> ${count} Folders`;
+        }
+      } catch (err) {
+        console.error('Error loading folders:', err);
+      }
+    }
+
+    function renderFoldersGrid(folders) {
+      const container = document.getElementById('foldersGridContainer');
+      if (!container) return;
+
+      if (!folders || folders.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center text-neutral-400 text-xs col-span-full border border-dashed border-white/10 rounded-2xl bg-black/20">
+            <i class="fa-solid fa-folder-open text-2xl text-neutral-600 mb-2"></i>
+            <p class="font-bold text-white">No custom folders created yet.</p>
+            <p class="text-neutral-500 mt-1">Use the form above to create your first organized video folder!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = folders.map(f => {
+        const color = f.color || '#7C3AED';
+        const icon = f.icon || 'fa-folder';
+        const count = f.video_count || 0;
+        return `
+          <div class="glass-panel rounded-2xl p-4 border border-white/10 hover:border-amber-400/40 transition relative group flex flex-col justify-between">
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow" style="background-color: ${color}20; color: ${color}; border: 1px solid ${color}40;">
+                    <i class="fa-solid ${icon} text-sm"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <h5 class="font-bold text-white text-sm truncate" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</h5>
+                    <span class="text-[10px] font-mono text-neutral-400">/${escapeHtml(f.slug)}</span>
+                  </div>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono shrink-0 bg-white/5 border border-white/10 text-neutral-300">
+                  ${count} ${count === 1 ? 'Video' : 'Videos'}
+                </span>
+              </div>
+              <p class="text-[11px] text-neutral-400 line-clamp-2 min-h-[30px] mb-3">
+                ${f.description ? escapeHtml(f.description) : '<span class="italic text-neutral-600">No description provided</span>'}
+              </p>
+            </div>
+
+            <div class="flex items-center gap-1.5 pt-2 border-t border-white/5">
+              <button onclick="filterVideosByFolder('${escapeHtml(f.name)}')" class="flex-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-film text-[10px]"></i>
+                <span>Videos (${count})</span>
+              </button>
+              <button onclick="prefillUploadFolder(${f.id})" title="Upload Video directly into this folder" class="bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-plus text-[10px]"></i>
+                <span>Upload</span>
+              </button>
+              <button onclick="deleteFolder(${f.id}, '${escapeHtml(f.name)}')" title="Delete Folder" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/30 flex items-center justify-center transition shrink-0">
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function populateFolderDropdowns(folders) {
+      const selects = [
+        { id: 'fcFolderSelect', defaultText: '📁 Select Target Folder...' },
+        { id: 'manualFolderSelect', defaultText: '📁 Select Target Folder...' },
+        { id: 'cdnFolderSelect', defaultText: '📁 Select Target Folder...' },
+        { id: 'editFolderSelect', defaultText: '📁 No Folder (Root)' },
+        { id: 'videoFolderFilter', defaultText: '📁 All Folders', isFilter: true }
+      ];
+
+      selects.forEach(({ id, defaultText, isFilter }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const currentVal = el.value;
+
+        let options = '';
+        if (isFilter) {
+          options = `<option value="ALL">${defaultText}</option>`;
+        } else {
+          options = `<option value="">${defaultText}</option>`;
+        }
+
+        folders.forEach(f => {
+          const val = isFilter ? f.name : f.id;
+          options += `<option value="${escapeHtml(String(val))}">${isFilter ? '📁 ' : ''}${escapeHtml(f.name)} (${f.video_count || 0})</option>`;
+        });
+
+        el.innerHTML = options;
+        if (currentVal) {
+          el.value = currentVal;
+        }
+      });
+    }
+
+    async function handleCreateFolderSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('newFolderName').value.trim();
+      const color = document.getElementById('newFolderColor').value;
+      const icon = document.getElementById('newFolderIcon').value;
+      const description = document.getElementById('newFolderDesc').value.trim();
+      const btn = document.getElementById('createFolderBtn');
+
+      if (!name) {
+        showToast('Please enter a folder name.', 'error');
+        return;
+      }
+
+      try {
+        if (btn) btn.disabled = true;
+        const res = await adminFetch('/admin/folders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, color, icon, description })
+        });
+
+        if (res.success) {
+          showToast(res.message || 'Folder created successfully!', 'success');
+          document.getElementById('newFolderName').value = '';
+          document.getElementById('newFolderDesc').value = '';
+          await loadAdminFolders();
+        } else {
+          showToast(res.message || 'Failed to create folder', 'error');
+        }
+      } catch (err) {
+        showToast('Error creating folder: ' + err.message, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function deleteFolder(id, name) {
+      if (!confirm(`Are you sure you want to delete folder "${name}"?\nVideos inside this folder will NOT be deleted; they will simply be unassigned.`)) {
+        return;
+      }
+
+      try {
+        const res = await adminFetch(`/admin/folders/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (res.success) {
+          showToast(res.message || 'Folder deleted.', 'success');
+          await loadAdminFolders();
+          if (document.getElementById('tab-video-manager') && !document.getElementById('tab-video-manager').classList.contains('hidden')) {
+            loadAdminVideos();
+          }
+        } else {
+          showToast(res.message || 'Failed to delete folder', 'error');
+        }
+      } catch (err) {
+        showToast('Error deleting folder: ' + err.message, 'error');
+      }
+    }
+
+    async function promptCreateQuickFolder(targetSelectId) {
+      const folderName = prompt('Enter New Folder Name (e.g. VIP Special, Desi Heat, etc.):');
+      if (!folderName || !folderName.trim()) return;
+
+      try {
+        const res = await adminFetch('/admin/folders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: folderName.trim() })
+        });
+
+        if (res.success && res.data) {
+          showToast(`Folder "${res.data.name}" created!`, 'success');
+          await loadAdminFolders();
+          const targetEl = document.getElementById(targetSelectId);
+          if (targetEl) {
+            targetEl.value = String(res.data.id);
+          }
+        } else {
+          showToast(res.message || 'Failed to create folder', 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function filterVideosByFolder(folderName) {
+      switchTab('video-manager');
+      const filterEl = document.getElementById('videoFolderFilter');
+      if (filterEl) {
+        filterEl.value = folderName;
+      }
+      loadAdminVideos();
+    }
+
+    function prefillUploadFolder(folderId) {
+      switchTab('files-create');
+      const sel = document.getElementById('fcFolderSelect');
+      if (sel) {
+        sel.value = String(folderId);
       }
     }
 
@@ -2019,6 +2412,7 @@
       const file = fileInput.files[0];
       const title = document.getElementById('cdnTitleInput').value.trim();
       const category = document.getElementById('cdnCategoryInput').value;
+      const folderId = document.getElementById('cdnFolderSelect')?.value || '';
       const creator = document.getElementById('cdnCreatorInput').value.trim() || 'DarkPAKI VIP Exclusive';
       const duration = document.getElementById('cdnDurationInput').value.trim() || '15:00';
       const thumb = document.getElementById('cdnThumbInput').value.trim();
@@ -2047,6 +2441,7 @@
         tags: tags || '',
         featured: isFeatured ? '1' : '0'
       });
+      if (folderId) queryParams.set('folderId', folderId);
 
       const uploadUrl = `${API_BASE}/admin/upload-direct?${queryParams.toString()}`;
 
@@ -2316,6 +2711,7 @@
       const src = document.getElementById('manualSrc').value.trim();
       let thumbImg = document.getElementById('manualThumb').value.trim();
       const tag = document.getElementById('manualTag').value;
+      const folderId = document.getElementById('manualFolderSelect')?.value || null;
       const tags = document.getElementById('manualTags')?.value?.trim() || '';
       const duration = document.getElementById('manualDuration').value.trim() || '12:00';
       const creator = document.getElementById('manualCreator').value.trim() || 'DarkPAKI VIP Exclusive';
@@ -2330,7 +2726,7 @@
         const res = await adminFetch('/admin/videos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, src, thumbImg, tag, tags, duration, creator, isFeatured })
+          body: JSON.stringify({ title, src, thumbImg, tag, tags, duration, creator, isFeatured, folderId })
         });
         if (res.success) {
           showToast(`Published "${title}" successfully!`, 'success');
@@ -2340,6 +2736,7 @@
           const statusEl = document.getElementById('manualStreamStatus');
           if (statusEl) statusEl.classList.add('hidden');
           loadAdminStats();
+          loadAdminFolders();
           loadAdminVideos();
         } else {
           showToast(res.message || 'Failed to publish', 'error');
@@ -2481,6 +2878,7 @@
       const src = document.getElementById('fcSrc').value.trim();
       let thumbImg = document.getElementById('fcThumb').value.trim();
       const tag = document.getElementById('fcCategory').value;
+      const folderId = document.getElementById('fcFolderSelect')?.value || null;
       const tags = document.getElementById('fcTagsInput').value.trim();
       const description = document.getElementById('fcDescription').value.trim();
       const duration = document.getElementById('fcDuration').value.trim() || '12:30';
@@ -2516,7 +2914,8 @@
             description,
             duration,
             creator,
-            isFeatured
+            isFeatured,
+            folderId
           })
         });
 
@@ -2553,6 +2952,7 @@
           if (statusEl) statusEl.classList.add('hidden');
 
           loadAdminStats();
+          loadAdminFolders();
           loadAdminVideos();
         } else {
           showToast(res.message || 'Failed to create file', 'error');
@@ -2572,19 +2972,20 @@
     // =========================================================================
     async function loadAdminVideos() {
       const tbody = document.getElementById('adminVideoTableBody');
-      tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-neutral-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading videos...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-neutral-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading videos...</td></tr>`;
 
-      const tag = document.getElementById('videoCategoryFilter').value;
+      const tag = document.getElementById('videoCategoryFilter')?.value || 'ALL';
+      const folder = document.getElementById('videoFolderFilter')?.value || 'ALL';
       const q = currentSearchQuery;
 
       try {
-        const res = await adminFetch(`/admin/videos?page=${currentVideoPage}&limit=25&tag=${encodeURIComponent(tag)}&q=${encodeURIComponent(q)}`);
+        const res = await adminFetch(`/admin/videos?page=${currentVideoPage}&limit=25&tag=${encodeURIComponent(tag)}&folder=${encodeURIComponent(folder)}&q=${encodeURIComponent(q)}`);
         if (res.success && Array.isArray(res.data)) {
           currentAdminVideos = res.data;
           renderAdminVideoTable(res.data, res.total, res.page, res.totalPages);
         }
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-rose-400">Failed to load video library: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-400">Failed to load video library: ${err.message}</td></tr>`;
       }
     }
 
@@ -2595,7 +2996,7 @@
       document.getElementById('btnNextPage').disabled = page >= totalPages;
 
       if (!videos || videos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-neutral-500">No videos found matching criteria.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-neutral-500">No videos found matching criteria.</td></tr>`;
         return;
       }
 
@@ -2611,6 +3012,15 @@
                 <span class="text-[10px] text-neutral-400 font-mono">ID #${v.id} • ${v.creator}</span>
               </div>
             </div>
+          </td>
+          <td class="p-3">
+            ${v.folder_name ? `
+              <span class="inline-flex items-center gap-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                <i class="fa-solid fa-folder text-[9px]"></i> ${escapeHtml(v.folder_name)}
+              </span>
+            ` : `
+              <span class="text-neutral-500 text-[10px] italic">No folder</span>
+            `}
           </td>
           <td class="p-3">
             <span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
@@ -2713,6 +3123,8 @@
       document.getElementById('editVideoId').value = v.id;
       document.getElementById('editTitle').value = v.title;
       document.getElementById('editTag').value = v.tag;
+      const editFolder = document.getElementById('editFolderSelect');
+      if (editFolder) editFolder.value = v.folder_id ? String(v.folder_id) : '';
       document.getElementById('editThumb').value = v.thumb_img;
       document.getElementById('editSrc').value = v.src;
       document.getElementById('editDuration').value = v.duration;
@@ -2731,6 +3143,7 @@
       const id = document.getElementById('editVideoId').value;
       const title = document.getElementById('editTitle').value.trim();
       const tag = document.getElementById('editTag').value;
+      const folderId = document.getElementById('editFolderSelect')?.value || null;
       const thumbImg = document.getElementById('editThumb').value.trim();
       const src = document.getElementById('editSrc').value.trim();
       const duration = document.getElementById('editDuration').value.trim();
@@ -2741,11 +3154,12 @@
         const res = await adminFetch(`/admin/videos/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, tag, thumbImg, src, duration, creator, tags })
+          body: JSON.stringify({ title, tag, thumbImg, src, duration, creator, tags, folderId })
         });
         if (res.success) {
           showToast('Video updated successfully!', 'success');
           closeEditModal();
+          loadAdminFolders();
           loadAdminVideos();
         } else {
           showToast(res.message || 'Update failed', 'error');

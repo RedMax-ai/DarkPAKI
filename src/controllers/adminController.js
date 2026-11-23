@@ -153,9 +153,160 @@ function getStats(req, res, next) {
   }
 }
 
+function getFolders(req, res, next) {
+  try {
+    const folders = db.prepare(`
+      SELECT f.*, COUNT(v.id) AS video_count
+      FROM folders f
+      LEFT JOIN videos v ON (v.folder_id = f.id OR (v.folder_id IS NULL AND v.folder_name = f.name COLLATE NOCASE))
+      GROUP BY f.id
+      ORDER BY f.name ASC
+    `).all();
+
+    res.json({
+      success: true,
+      data: folders
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function createFolder(req, res, next) {
+  try {
+    const { name, color, icon, description } = req.body;
+    const cleanName = sanitizeString(name).trim();
+    if (!cleanName) {
+      return res.status(400).json({ success: false, message: 'Folder name is required.' });
+    }
+
+    let slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!slug) slug = 'folder-' + Date.now();
+
+    const existing = db.prepare('SELECT id, name FROM folders WHERE name = ? COLLATE NOCASE OR slug = ?').get(cleanName, slug);
+    if (existing) {
+      return res.status(400).json({ success: false, message: `Folder "${cleanName}" already exists.` });
+    }
+
+    const cleanColor = sanitizeString(color) || '#7C3AED';
+    const cleanIcon = sanitizeString(icon) || 'fa-folder';
+    const cleanDesc = sanitizeString(description) || '';
+
+    const ins = db.prepare('INSERT INTO folders (name, slug, color, icon, description) VALUES (?, ?, ?, ?, ?)');
+    const result = ins.run(cleanName, slug, cleanColor, cleanIcon, cleanDesc);
+    const newFolder = db.prepare('SELECT f.*, 0 as video_count FROM folders f WHERE f.id = ?').get(result.lastInsertRowid);
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+      'FOLDER_CREATED',
+      `Admin created folder: "${cleanName}"`,
+      req.ip
+    );
+
+    res.json({
+      success: true,
+      message: `Folder "${cleanName}" created successfully!`,
+      data: newFolder
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function updateFolder(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid folder ID.' });
+    }
+
+    const folder = db.prepare('SELECT * FROM folders WHERE id = ?').get(id);
+    if (!folder) {
+      return res.status(404).json({ success: false, message: 'Folder not found.' });
+    }
+
+    const { name, color, icon, description } = req.body;
+    const cleanName = name !== undefined ? sanitizeString(name).trim() : folder.name;
+    if (!cleanName) {
+      return res.status(400).json({ success: false, message: 'Folder name cannot be blank.' });
+    }
+
+    let slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!slug) slug = 'folder-' + Date.now();
+
+    const duplicate = db.prepare('SELECT id FROM folders WHERE (name = ? COLLATE NOCASE OR slug = ?) AND id != ?').get(cleanName, slug, id);
+    if (duplicate) {
+      return res.status(400).json({ success: false, message: `Folder name "${cleanName}" is already taken.` });
+    }
+
+    const cleanColor = color !== undefined ? sanitizeString(color) : folder.color;
+    const cleanIcon = icon !== undefined ? sanitizeString(icon) : folder.icon;
+    const cleanDesc = description !== undefined ? sanitizeString(description) : folder.description;
+
+    db.prepare('UPDATE folders SET name = ?, slug = ?, color = ?, icon = ?, description = ? WHERE id = ?').run(
+      cleanName, slug, cleanColor, cleanIcon, cleanDesc, id
+    );
+
+    // Sync folder_name on existing videos
+    db.prepare('UPDATE videos SET folder_name = ? WHERE folder_id = ?').run(cleanName, id);
+
+    const updated = db.prepare(`
+      SELECT f.*, COUNT(v.id) AS video_count
+      FROM folders f
+      LEFT JOIN videos v ON v.folder_id = f.id
+      WHERE f.id = ?
+      GROUP BY f.id
+    `).get(id);
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+      'FOLDER_UPDATED',
+      `Admin updated folder #${id}: "${cleanName}"`,
+      req.ip
+    );
+
+    res.json({
+      success: true,
+      message: `Folder "${cleanName}" updated successfully!`,
+      data: updated
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function deleteFolder(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid folder ID.' });
+    }
+
+    const folder = db.prepare('SELECT * FROM folders WHERE id = ?').get(id);
+    if (!folder) {
+      return res.status(404).json({ success: false, message: 'Folder not found.' });
+    }
+
+    // Unlink any videos from this folder without deleting the videos
+    db.prepare("UPDATE videos SET folder_id = NULL, folder_name = '' WHERE folder_id = ?").run(id);
+    db.prepare('DELETE FROM folders WHERE id = ?').run(id);
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+      'FOLDER_DELETED',
+      `Admin deleted folder #${id}: "${folder.name}"`,
+      req.ip
+    );
+
+    res.json({
+      success: true,
+      message: `Folder "${folder.name}" deleted successfully.`
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 function getAdminVideos(req, res, next) {
   try {
-    const { q, tag, page = 1, limit = 50 } = req.query;
+    const { q, tag, folder, folderId, page = 1, limit = 50 } = req.query;
     const pageNum = Math.max(1, parseInt(page, 10));
     const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10)));
     const offset = (pageNum - 1) * limitNum;
@@ -169,10 +320,18 @@ function getAdminVideos(req, res, next) {
       params.push(tag);
     }
 
+    if (folderId) {
+      conditions.push('folder_id = ?');
+      params.push(parseInt(folderId, 10));
+    } else if (folder && folder !== 'ALL') {
+      conditions.push('(folder_name = ? COLLATE NOCASE OR folder_id = (SELECT id FROM folders WHERE slug = ? OR name = ? COLLATE NOCASE LIMIT 1))');
+      params.push(folder, folder, folder);
+    }
+
     if (q && q.trim()) {
       const sanitizedQ = `%${q.trim()}%`;
-      conditions.push('(title LIKE ? OR creator LIKE ? OR tag LIKE ?)');
-      params.push(sanitizedQ, sanitizedQ, sanitizedQ);
+      conditions.push('(title LIKE ? OR creator LIKE ? OR tag LIKE ? OR folder_name LIKE ? OR tags LIKE ?)');
+      params.push(sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ);
     }
 
     if (conditions.length > 0) {
@@ -206,7 +365,7 @@ function getAdminVideos(req, res, next) {
 
 function createVideo(req, res, next) {
   try {
-    const { title, tag, thumbImg, src, duration, creator, isFeatured, requestedBy, description, tags } = req.body;
+    const { title, tag, thumbImg, src, duration, creator, isFeatured, requestedBy, description, tags, folderId, folderName } = req.body;
 
     const cleanTitle = sanitizeString(title);
     const cleanTag = sanitizeString(tag).toUpperCase() || '18+ ADULT';
@@ -219,6 +378,29 @@ function createVideo(req, res, next) {
     const cleanTags = sanitizeString(tags) || '';
     const featuredFlag = isFeatured ? 1 : 0;
 
+    let targetFolderId = null;
+    let targetFolderName = '';
+    if (folderId) {
+      const f = db.prepare('SELECT id, name FROM folders WHERE id = ?').get(parseInt(folderId, 10));
+      if (f) {
+        targetFolderId = f.id;
+        targetFolderName = f.name;
+      }
+    } else if (folderName && sanitizeString(folderName).trim()) {
+      const fName = sanitizeString(folderName).trim();
+      let f = db.prepare('SELECT id, name FROM folders WHERE name = ? COLLATE NOCASE').get(fName);
+      if (!f) {
+        let fSlug = fName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const ins = db.prepare('INSERT INTO folders (name, slug) VALUES (?, ?)');
+        const r = ins.run(fName, fSlug || 'folder-' + Date.now());
+        targetFolderId = r.lastInsertRowid;
+        targetFolderName = fName;
+      } else {
+        targetFolderId = f.id;
+        targetFolderName = f.name;
+      }
+    }
+
     if (!cleanThumb) {
       cleanThumb = 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&q=80';
     }
@@ -228,16 +410,16 @@ function createVideo(req, res, next) {
     }
 
     const insertVideo = db.prepare(`
-      INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, description, tags, views_count)
-      VALUES (?, ?, '0 views', ?, ?, ?, ?, ?, ?, ?, ?, 0)
+      INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, description, tags, folder_id, folder_name, views_count)
+      VALUES (?, ?, '0 views', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `);
 
-    const result = insertVideo.run(cleanTitle, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanTag, cleanReqBy, featuredFlag, cleanDescription, cleanTags);
+    const result = insertVideo.run(cleanTitle, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanTag, cleanReqBy, featuredFlag, cleanDescription, cleanTags, targetFolderId, targetFolderName);
     const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);
 
     db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
       'VIDEO_UPLOADED',
-      `Admin published video: "${cleanTitle}" [${cleanTag}]`,
+      `Admin published video: "${cleanTitle}" [${cleanTag}] in folder [${targetFolderName || 'None'}]`,
       req.ip
     );
 
@@ -263,7 +445,7 @@ function updateVideo(req, res, next) {
       return res.status(404).json({ success: false, message: 'Video not found.' });
     }
 
-    const { title, tag, creator, duration, src, thumbImg, isFeatured, views, description, tags } = req.body;
+    const { title, tag, creator, duration, src, thumbImg, isFeatured, views, description, tags, folderId, folderName } = req.body;
 
     const cleanTitle = title !== undefined ? sanitizeString(title) : video.title;
     const cleanTag = tag !== undefined ? sanitizeString(tag).toUpperCase() : video.tag;
@@ -276,11 +458,43 @@ function updateVideo(req, res, next) {
     const cleanDescription = description !== undefined ? sanitizeString(description) : (video.description || '');
     const cleanTags = tags !== undefined ? sanitizeString(tags) : (video.tags || '');
 
+    let targetFolderId = video.folder_id;
+    let targetFolderName = video.folder_name || '';
+    if (folderId !== undefined) {
+      if (!folderId) {
+        targetFolderId = null;
+        targetFolderName = '';
+      } else {
+        const f = db.prepare('SELECT id, name FROM folders WHERE id = ?').get(parseInt(folderId, 10));
+        if (f) {
+          targetFolderId = f.id;
+          targetFolderName = f.name;
+        }
+      }
+    } else if (folderName !== undefined) {
+      const fName = sanitizeString(folderName).trim();
+      if (!fName) {
+        targetFolderId = null;
+        targetFolderName = '';
+      } else {
+        let f = db.prepare('SELECT id, name FROM folders WHERE name = ? COLLATE NOCASE').get(fName);
+        if (f) {
+          targetFolderId = f.id;
+          targetFolderName = f.name;
+        } else {
+          let fSlug = fName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          const r = db.prepare('INSERT INTO folders (name, slug) VALUES (?, ?)').run(fName, fSlug || 'folder-' + Date.now());
+          targetFolderId = r.lastInsertRowid;
+          targetFolderName = fName;
+        }
+      }
+    }
+
     db.prepare(`
       UPDATE videos 
-      SET title = ?, tag = ?, creator = ?, duration = ?, src = ?, thumb_img = ?, is_featured = ?, views = ?, description = ?, tags = ?
+      SET title = ?, tag = ?, creator = ?, duration = ?, src = ?, thumb_img = ?, is_featured = ?, views = ?, description = ?, tags = ?, folder_id = ?, folder_name = ?
       WHERE id = ?
-    `).run(cleanTitle, cleanTag, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanFeatured, cleanViews, cleanDescription, cleanTags, id);
+    `).run(cleanTitle, cleanTag, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanFeatured, cleanViews, cleanDescription, cleanTags, targetFolderId, targetFolderName, id);
 
     const updated = db.prepare('SELECT * FROM videos WHERE id = ?').get(id);
 
@@ -695,11 +909,34 @@ function cdnDirectUpload(req, res, next) {
           const tags = sanitizeString(req.query.tags) || '';
           const description = sanitizeString(req.query.description) || '';
 
+          let targetFolderId = null;
+          let targetFolderName = '';
+          if (req.query.folderId) {
+            const f = db.prepare('SELECT id, name FROM folders WHERE id = ?').get(parseInt(req.query.folderId, 10));
+            if (f) {
+              targetFolderId = f.id;
+              targetFolderName = f.name;
+            }
+          } else if (req.query.folderName && sanitizeString(req.query.folderName).trim()) {
+            const fName = sanitizeString(req.query.folderName).trim();
+            let f = db.prepare('SELECT id, name FROM folders WHERE name = ? COLLATE NOCASE').get(fName);
+            if (!f) {
+              let fSlug = fName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+              const ins = db.prepare('INSERT INTO folders (name, slug) VALUES (?, ?)');
+              const r = ins.run(fName, fSlug || 'folder-' + Date.now());
+              targetFolderId = r.lastInsertRowid;
+              targetFolderName = fName;
+            } else {
+              targetFolderId = f.id;
+              targetFolderName = f.name;
+            }
+          }
+
           const insertVideo = db.prepare(`
-            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, description, tags, views_count)
-            VALUES (?, ?, '0 views', ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, description, tags, folder_id, folder_name, views_count)
+            VALUES (?, ?, '0 views', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
           `);
-          const result = insertVideo.run(title, creator, duration, cdnData.stream_url, thumb, tag, requestedBy, isFeatured, description, tags);
+          const result = insertVideo.run(title, creator, duration, cdnData.stream_url, thumb, tag, requestedBy, isFeatured, description, tags, targetFolderId, targetFolderName);
           const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);
 
           db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
@@ -1047,6 +1284,10 @@ module.exports = {
   loginAdmin,
   verifyAuth,
   getStats,
+  getFolders,
+  createFolder,
+  updateFolder,
+  deleteFolder,
   getAdminVideos,
   createVideo,
   updateVideo,

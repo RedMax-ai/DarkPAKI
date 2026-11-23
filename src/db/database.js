@@ -274,6 +274,17 @@ function initializeSchema() {
     CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON user_follows(follower_id);
     CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows(following_id);
 
+    CREATE TABLE IF NOT EXISTS folders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL COLLATE NOCASE,
+      slug TEXT UNIQUE NOT NULL,
+      description TEXT DEFAULT '',
+      color TEXT DEFAULT '#7C3AED',
+      icon TEXT DEFAULT 'fa-folder',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_folders_slug ON folders(slug);
+
     CREATE TABLE IF NOT EXISTS video_views_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       video_id INTEGER NOT NULL,
@@ -353,6 +364,29 @@ function initializeSchema() {
   runMigration('ALTER TABLE videos ADD COLUMN qualified_views INTEGER DEFAULT 0;');
   runMigration("ALTER TABLE videos ADD COLUMN description TEXT DEFAULT '';");
   runMigration("ALTER TABLE videos ADD COLUMN tags TEXT DEFAULT '';");
+  runMigration("ALTER TABLE videos ADD COLUMN folder_id INTEGER;");
+  runMigration("ALTER TABLE videos ADD COLUMN folder_name TEXT DEFAULT '';");
+  runMigration("CREATE INDEX IF NOT EXISTS idx_videos_folder_id ON videos(folder_id);");
+  runMigration("CREATE INDEX IF NOT EXISTS idx_videos_folder_name ON videos(folder_name);");
+
+  // Default folders seed if empty
+  try {
+    const fCount = db.prepare('SELECT COUNT(*) as count FROM folders').get()?.count || 0;
+    if (fCount === 0) {
+      const initFolders = [
+        ['Trending Videos', 'trending-videos', '#F43F5E', 'fa-fire', 'High-heat trending streams and viral releases'],
+        ['VIP Exclusive', 'vip-exclusive', '#7C3AED', 'fa-gem', 'Exclusive premium uncut content for VIP viewers'],
+        ['Desi Special', 'desi-special', '#F59E0B', 'fa-star', 'Desi culture and regional special releases'],
+        ['Viral Hits', 'viral-hits', '#10B981', 'fa-bolt', 'Internet sensation viral videos']
+      ];
+      const ins = db.prepare('INSERT OR IGNORE INTO folders (name, slug, color, icon, description) VALUES (?, ?, ?, ?, ?)');
+      for (const [fn, fs, fc, fi, fd] of initFolders) {
+        ins.run(fn, fs, fc, fi, fd);
+      }
+    }
+  } catch (err) {
+    // ignore
+  }
 
   runMigration("ALTER TABLE withdrawals ADD COLUMN tx_hash TEXT DEFAULT '';");
   runMigration("ALTER TABLE withdrawals ADD COLUMN admin_notes TEXT DEFAULT '';");

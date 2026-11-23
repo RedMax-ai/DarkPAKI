@@ -3,6 +3,7 @@ const router = express.Router();
 const videoController = require('../controllers/videoController');
 
 router.get('/', videoController.getVideos);
+router.get('/folders', videoController.getPublicFolders);
 router.get('/config', videoController.getAdConfig);
 router.get('/vast-ad', videoController.getVastAd);
 router.get('/proxy-stream', videoController.proxyVideoStream);

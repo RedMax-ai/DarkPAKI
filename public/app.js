@@ -462,6 +462,8 @@ async function loadVideos(searchQuery = '') {
         thumbImg: v.thumb_img,
         tag: v.tag,
         tags: v.tags,
+        folder_id: v.folder_id,
+        folder_name: v.folder_name,
         description: v.description,
         created_at: v.created_at,
         requestedBy: v.requested_by,

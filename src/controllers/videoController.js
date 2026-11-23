@@ -35,7 +35,7 @@ function calculateCreatorEarnings(viewsCount) {
 
 function getVideos(req, res, next) {
   try {
-    const { q, tag, shortsOnly } = req.query;
+    const { q, tag, folder, folderId, shortsOnly } = req.query;
     let query = "SELECT * FROM videos WHERE (status = 'APPROVED' OR status IS NULL)";
     const params = [];
 
@@ -46,10 +46,18 @@ function getVideos(req, res, next) {
       params.push(tag, `%${tag}%`);
     }
 
+    if (folderId) {
+      query += ' AND folder_id = ?';
+      params.push(parseInt(folderId, 10));
+    } else if (folder && folder !== 'ALL') {
+      query += ' AND (folder_name = ? COLLATE NOCASE OR folder_id = (SELECT id FROM folders WHERE slug = ? OR name = ? COLLATE NOCASE LIMIT 1))';
+      params.push(folder, folder, folder);
+    }
+
     if (q && q.trim()) {
       const sanitizedQ = `%${q.trim()}%`;
-      query += ' AND (title LIKE ? OR creator LIKE ? OR tag LIKE ? OR tags LIKE ? OR description LIKE ? OR requested_by LIKE ?)';
-      params.push(sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ);
+      query += ' AND (title LIKE ? OR creator LIKE ? OR tag LIKE ? OR tags LIKE ? OR description LIKE ? OR requested_by LIKE ? OR folder_name LIKE ?)';
+      params.push(sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ, sanitizedQ);
     }
 
     query += ' ORDER BY id DESC';
@@ -688,9 +696,29 @@ function proxyVideoStream(req, res, next) {
   }
 }
 
+function getPublicFolders(req, res, next) {
+  try {
+    const folders = db.prepare(`
+      SELECT f.*, COUNT(v.id) AS video_count
+      FROM folders f
+      LEFT JOIN videos v ON (v.folder_id = f.id OR (v.folder_id IS NULL AND v.folder_name = f.name COLLATE NOCASE)) AND (v.status = 'APPROVED' OR v.status IS NULL)
+      GROUP BY f.id
+      ORDER BY f.name ASC
+    `).all();
+
+    res.json({
+      success: true,
+      data: folders
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getVideos,
   getVideoById,
+  getPublicFolders,
   incrementView,
   uploadThumbnail,
   submitUserVideo,

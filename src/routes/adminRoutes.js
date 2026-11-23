@@ -11,6 +11,12 @@ router.get('/verify', requireAdmin, adminController.verifyAuth);
 // Analytics & Overview
 router.get('/stats', requireAdmin, adminController.getStats);
 
+// Folder & Collection Management
+router.get('/folders', requireAdmin, adminController.getFolders);
+router.post('/folders', requireAdmin, adminController.createFolder);
+router.put('/folders/:id', requireAdmin, adminController.updateFolder);
+router.delete('/folders/:id', requireAdmin, adminController.deleteFolder);
+
 // Content Management & Review Queue
 router.get('/videos', requireAdmin, adminController.getAdminVideos);
 router.post('/videos', requireAdmin, adminController.createVideo);
