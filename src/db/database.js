@@ -46,6 +46,9 @@ function initializeSchema() {
       ads_watched INTEGER NOT NULL DEFAULT 0,
       ref_code TEXT UNIQUE NOT NULL,
       role TEXT NOT NULL DEFAULT 'user',
+      last_active_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      watch_time_minutes INTEGER NOT NULL DEFAULT 0,
+      total_earned_usd REAL NOT NULL DEFAULT 0.0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -423,6 +426,22 @@ function initializeSchema() {
   runMigration("ALTER TABLE users ADD COLUMN allow_comments INTEGER NOT NULL DEFAULT 1;");
   runMigration("ALTER TABLE users ADD COLUMN show_watermark INTEGER NOT NULL DEFAULT 1;");
   runMigration("ALTER TABLE users ADD COLUMN email_notifications INTEGER NOT NULL DEFAULT 1;");
+
+  // User Earning & Activity Tracking Migrations (Live Online/Offline, Watch Time, Earnings)
+  runMigration("ALTER TABLE users ADD COLUMN last_active_at DATETIME;");
+  try {
+    db.exec("UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE last_active_at IS NULL;");
+  } catch (err) {}
+  runMigration("ALTER TABLE users ADD COLUMN watch_time_minutes INTEGER NOT NULL DEFAULT 0;");
+  runMigration("ALTER TABLE users ADD COLUMN total_earned_usd REAL NOT NULL DEFAULT 0.0;");
+  runMigration("CREATE INDEX IF NOT EXISTS idx_users_last_active ON users(last_active_at);");
+
+  // Google AdSense & Publisher Compliance Settings
+  runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('adsense_pub_id', '');");
+  runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('adsense_head_code', '');");
+  runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('adsense_slot_id', '');");
+  runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('adsense_enabled', 'false');");
+  runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('ads_txt_content', 'google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0');");
 
   // Video Views Log Table Migration
   runMigration(`

@@ -763,7 +763,8 @@ async function resendEmailOtp(req, res, next) {
 
 function getMe(req, res, next) {
   try {
-    const user = db.prepare('SELECT id, name, gmail, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role FROM users WHERE id = ?').get(req.user.id);
+    db.prepare('UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE id = ?').run(req.user.id);
+    const user = db.prepare('SELECT id, name, gmail, phone, device_id, balance, coins, referrals, ads_watched, ref_code, role, last_active_at, watch_time_minutes, total_earned_usd FROM users WHERE id = ?').get(req.user.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }

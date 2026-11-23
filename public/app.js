@@ -430,6 +430,27 @@ async function loadAdConfig() {
         const match = res.data.monetagMetaTag.match(/content=["']([^"']+)["']/i);
         meta.content = match ? match[1] : res.data.monetagMetaTag.replace(/<[^>]+>/g, '').trim();
       }
+
+      // Google AdSense & Publisher Script Tag Integration
+      if (res.data.adsenseHeadCode) {
+        try {
+          const div = document.createElement('div');
+          div.innerHTML = res.data.adsenseHeadCode;
+          Array.from(div.querySelectorAll('script')).forEach(s => {
+            const sc = document.createElement('script');
+            if (s.src) sc.src = s.src;
+            if (s.crossOrigin) sc.crossOrigin = s.crossOrigin;
+            sc.async = true;
+            document.head.appendChild(sc);
+          });
+        } catch (_) {}
+      } else if (res.data.adsensePubId && !document.querySelector('script[src*="pagead2.googlesyndication.com"]')) {
+        const sc = document.createElement('script');
+        sc.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${res.data.adsensePubId}`;
+        sc.crossOrigin = 'anonymous';
+        sc.async = true;
+        document.head.appendChild(sc);
+      }
     }
   } catch (err) {
     console.warn('Using default ad configurations.');
@@ -510,7 +531,12 @@ async function loadComments() {
 }
 
 async function loadCurrentUserProfile() {
-  if (!AUTH_TOKEN) return;
+  if (!AUTH_TOKEN) {
+    CURRENT_USER = null;
+    refreshEarningDashboardUI();
+    updateHeaderProfileUI(null);
+    return;
+  }
   try {
     const res = await apiFetch('/auth/me');
     if (res.success && res.data) {
@@ -2257,7 +2283,7 @@ function refreshEarningDashboardUI() {
   const overCoins = document.getElementById('overviewCoinsBalance');
 
   if (!CURRENT_USER) {
-    if (headerTxt) headerTxt.textContent = "Login & Earn";
+    if (headerTxt) headerTxt.textContent = "0 Coins";
     const nameEl = document.getElementById('earnUserName');
     if (nameEl) nameEl.textContent = 'Creator';
     const gmEl = document.getElementById('earnUserGmail');
@@ -3351,6 +3377,7 @@ function bindDirectDOMListeners() {
 // ============================================================================
 window.onload = async function() {
   autoDetectDeviceViewport();
+  refreshEarningDashboardUI();
   bindDirectDOMListeners();
   checkAgeGate();
   await loadAdConfig();

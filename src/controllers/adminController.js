@@ -774,6 +774,11 @@ function getSettings(req, res, next) {
     const recaptchaSiteKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_site_key'").get()?.value || config.recaptchaSiteKey || '6LeYcCAuAAAAANSHhTdxEmvZ4X29vMHERczd_uAK';
     const recaptchaSecretKey = db.prepare("SELECT value FROM settings WHERE key = 'recaptcha_secret_key'").get()?.value || config.recaptchaSecretKey || '6LeYcCAuAAAAANftpMAN79ldhJuXZOp6_tqzZ85t';
     const adminAccessKey = db.prepare("SELECT value FROM settings WHERE key = 'admin_access_key'").get()?.value || config.adminAccessKey || 'naved_master_786';
+    const adsensePubId = db.prepare("SELECT value FROM settings WHERE key = 'adsense_pub_id'").get()?.value || '';
+    const adsenseHeadCode = db.prepare("SELECT value FROM settings WHERE key = 'adsense_head_code'").get()?.value || '';
+    const adsenseSlotId = db.prepare("SELECT value FROM settings WHERE key = 'adsense_slot_id'").get()?.value || '';
+    const adsenseEnabled = db.prepare("SELECT value FROM settings WHERE key = 'adsense_enabled'").get()?.value === 'true';
+    const adsTxtContent = db.prepare("SELECT value FROM settings WHERE key = 'ads_txt_content'").get()?.value || 'google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0';
 
     res.json({
       success: true,
@@ -793,6 +798,11 @@ function getSettings(req, res, next) {
         recaptchaSiteKey,
         recaptchaSecretKey,
         adminAccessKey,
+        adsensePubId,
+        adsenseHeadCode,
+        adsenseSlotId,
+        adsenseEnabled,
+        adsTxtContent,
         cdnApiKey: config.cdnApiKey
       }
     });
@@ -803,7 +813,32 @@ function getSettings(req, res, next) {
 
 function updateSettings(req, res, next) {
   try {
-    const { telegramUrl, allowInstantSkip, adVideoUrl, vastTagUrl, cdnStreamUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, recaptchaSiteKey, recaptchaSecretKey, googleClientId, newPin, adminAccessKey } = req.body;
+    const { 
+      telegramUrl, allowInstantSkip, adVideoUrl, vastTagUrl, cdnStreamUrl, popunderUrl, 
+      bannerAdHtml, monetagMetaTag, safeModeEnabled, turnstileSiteKey, turnstileSecretKey, 
+      recaptchaSiteKey, recaptchaSecretKey, googleClientId, newPin, adminAccessKey,
+      adsensePubId, adsenseHeadCode, adsenseSlotId, adsenseEnabled, adsTxtContent
+    } = req.body;
+
+    if (adsensePubId !== undefined) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('adsense_pub_id', ?)").run(sanitizeString(adsensePubId).trim());
+    }
+
+    if (adsenseHeadCode !== undefined) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('adsense_head_code', ?)").run(adsenseHeadCode.toString().trim());
+    }
+
+    if (adsenseSlotId !== undefined) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('adsense_slot_id', ?)").run(sanitizeString(adsenseSlotId).trim());
+    }
+
+    if (adsenseEnabled !== undefined) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('adsense_enabled', ?)").run(adsenseEnabled ? 'true' : 'false');
+    }
+
+    if (adsTxtContent !== undefined) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('ads_txt_content', ?)").run(adsTxtContent.toString().trim());
+    }
 
     if (adminAccessKey && adminAccessKey.toString().trim()) {
       const cleanKey = sanitizeString(adminAccessKey).trim();
@@ -1369,6 +1404,242 @@ function rejectWithdrawal(req, res, next) {
   }
 }
 
+// =========================================================================
+// USERS & EARNINGS MANAGEMENT
+// =========================================================================
+function formatTimeAgo(dateStr) {
+  if (!dateStr) return 'Never';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  if (diff < 0) return 'Just now';
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return 'Just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
+function getAdminUsers(req, res, next) {
+  try {
+    const q = req.query.q ? String(req.query.q).trim() : '';
+    const status = req.query.status || 'ALL';
+    const sort = req.query.sort || 'recent';
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 50));
+    const offset = (page - 1) * limit;
+
+    let whereClauses = [];
+    let params = [];
+
+    if (q) {
+      whereClauses.push('(u.name LIKE ? OR u.username LIKE ? OR u.gmail LIKE ? OR u.phone LIKE ? OR u.device_id LIKE ?)');
+      const pattern = `%${q}%`;
+      params.push(pattern, pattern, pattern, pattern, pattern);
+    }
+
+    // Status filtering: Online = active within last 15 minutes (900 seconds)
+    if (status === 'ONLINE') {
+      whereClauses.push("(strftime('%s', 'now') - strftime('%s', COALESCE(u.last_active_at, u.created_at))) <= 900");
+    } else if (status === 'OFFLINE') {
+      whereClauses.push("(strftime('%s', 'now') - strftime('%s', COALESCE(u.last_active_at, u.created_at))) > 900");
+    } else if (status === 'MONETIZED') {
+      whereClauses.push("u.is_monetized = 1");
+    } else if (status === 'BANNED') {
+      whereClauses.push("u.account_status = 'banned'");
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    let orderBySql = 'ORDER BY u.id DESC';
+    if (sort === 'coins_desc') orderBySql = 'ORDER BY u.coins DESC';
+    else if (sort === 'balance_desc') orderBySql = 'ORDER BY u.balance DESC';
+    else if (sort === 'watchtime_desc') orderBySql = 'ORDER BY COALESCE(u.watch_time_minutes, 0) DESC';
+    else if (sort === 'active_desc') orderBySql = 'ORDER BY COALESCE(u.last_active_at, u.created_at) DESC';
+
+    // Summary statistics across entire user base
+    const summary = db.prepare(`
+      SELECT 
+        COUNT(*) as total_users,
+        SUM(CASE WHEN (strftime('%s', 'now') - strftime('%s', COALESCE(last_active_at, created_at))) <= 900 THEN 1 ELSE 0 END) as online_users,
+        COALESCE(SUM(coins), 0) as total_coins,
+        COALESCE(SUM(balance), 0) as total_balance,
+        COALESCE(SUM(watch_time_minutes), 0) as total_watch_minutes,
+        COALESCE(SUM(ads_watched), 0) as total_videos_watched,
+        COALESCE(SUM(referrals), 0) as total_referrals
+      FROM users
+    `).get() || {};
+
+    const totalCount = db.prepare(`SELECT COUNT(*) as count FROM users u ${whereSql}`).get(...params)?.count || 0;
+
+    const rows = db.prepare(`
+      SELECT 
+        u.id, u.name, u.username, u.gmail, u.phone, u.device_id, u.balance, u.coins,
+        u.referrals, u.ads_watched, u.ref_code, u.role, u.created_at,
+        u.is_monetized, u.monetization_status, u.account_status, u.avatar_url,
+        COALESCE(u.watch_time_minutes, 0) as watch_time_minutes,
+        COALESCE(u.total_earned_usd, 0) as total_earned_usd,
+        COALESCE(u.last_active_at, u.created_at) as last_active_at,
+        (strftime('%s', 'now') - strftime('%s', COALESCE(u.last_active_at, u.created_at))) as seconds_since_active
+      FROM users u
+      ${whereSql}
+      ${orderBySql}
+      LIMIT ? OFFSET ?
+    `).all(...params, limit, offset);
+
+    const users = rows.map(u => {
+      const isOnline = u.seconds_since_active <= 900;
+      const watchMins = u.watch_time_minutes || (u.ads_watched * 2);
+      const hours = Math.floor(watchMins / 60);
+      const mins = watchMins % 60;
+      const watchTimeFormatted = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+      return {
+        ...u,
+        is_online: isOnline,
+        status_badge: isOnline ? 'ONLINE' : 'OFFLINE',
+        last_active_human: isOnline ? 'Online Now' : formatTimeAgo(u.last_active_at),
+        watch_time_formatted: watchTimeFormatted,
+        balance_formatted: `$${Number(u.balance || 0).toFixed(2)}`,
+        coins_formatted: Number(u.coins || 0).toLocaleString(),
+        total_earned_formatted: `$${Number(u.total_earned_usd || u.balance || 0).toFixed(2)}`
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        users,
+        summary: {
+          total_users: summary.total_users || 0,
+          online_users: summary.online_users || 0,
+          total_coins: summary.total_coins || 0,
+          total_balance: +(summary.total_balance || 0).toFixed(2),
+          total_watch_hours: Math.round((summary.total_watch_minutes || 0) / 60),
+          total_videos_watched: summary.total_videos_watched || 0,
+          total_referrals: summary.total_referrals || 0
+        },
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          pages: Math.ceil(totalCount / limit) || 1
+        }
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function getAdminUserDetails(req, res, next) {
+  try {
+    const { id } = req.params;
+    const user = db.prepare(`
+      SELECT 
+        u.*,
+        (strftime('%s', 'now') - strftime('%s', COALESCE(u.last_active_at, u.created_at))) as seconds_since_active
+      FROM users u WHERE u.id = ?
+    `).get(id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    const isOnline = user.seconds_since_active <= 900;
+    const watchMins = user.watch_time_minutes || (user.ads_watched * 2);
+    const hours = Math.floor(watchMins / 60);
+    const mins = watchMins % 60;
+
+    const withdrawals = db.prepare('SELECT * FROM withdrawals WHERE user_id = ? ORDER BY id DESC LIMIT 10').all(id) || [];
+    const logs = db.prepare('SELECT * FROM security_logs WHERE details LIKE ? OR device_id = ? ORDER BY id DESC LIMIT 10').all(`%User ID ${id}%`, user.device_id || '') || [];
+
+    res.json({
+      success: true,
+      data: {
+        ...user,
+        is_online: isOnline,
+        last_active_human: isOnline ? 'Online Now' : formatTimeAgo(user.last_active_at),
+        watch_time_formatted: hours > 0 ? `${hours}h ${mins}m` : `${mins}m`,
+        withdrawals,
+        logs
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function adjustUserBalance(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { coinsDelta, balanceDelta, accountStatus, isMonetized, reason } = req.body;
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    const coinsChange = parseInt(coinsDelta, 10) || 0;
+    const balanceChange = parseFloat(balanceDelta) || 0;
+    const newStatus = accountStatus && ['active', 'suspended', 'banned'].includes(accountStatus) ? accountStatus : user.account_status;
+    const newMonetized = isMonetized !== undefined ? (isMonetized ? 1 : 0) : user.is_monetized;
+
+    db.prepare(`
+      UPDATE users 
+      SET 
+        coins = MAX(0, coins + ?),
+        balance = MAX(0, balance + ?),
+        account_status = ?,
+        is_monetized = ?
+      WHERE id = ?
+    `).run(coinsChange, balanceChange, newStatus, newMonetized, id);
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+      'ADMIN_USER_ADJUSTED',
+      `Admin adjusted User #${id} (${user.gmail}): Coins Δ ${coinsChange}, Balance Δ $${balanceChange}, Status: ${newStatus}, Reason: ${reason || 'Admin modification'}`,
+      req.ip
+    );
+
+    const updated = db.prepare('SELECT id, name, gmail, coins, balance, account_status, is_monetized FROM users WHERE id = ?').get(id);
+
+    res.json({
+      success: true,
+      message: `User #${id} updated successfully!`,
+      data: updated
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function adminResetUserDevice(req, res, next) {
+  try {
+    const { id } = req.params;
+    const user = db.prepare('SELECT id, gmail, device_id FROM users WHERE id = ?').get(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    db.prepare("UPDATE users SET device_id = 'UNBOUND_BY_ADMIN' WHERE id = ?").run(id);
+
+    db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
+      'ADMIN_USER_DEVICE_RESET',
+      `Admin unlocked hardware device binding for User #${id} (${user.gmail})`,
+      req.ip
+    );
+
+    res.json({
+      success: true,
+      message: `Hardware device lock reset for User #${id}. They can now sign in from any new device!`
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   loginAdmin,
   verifyAuth,
@@ -1398,5 +1669,9 @@ module.exports = {
   toggleCreatorMonetization,
   getAdminWithdrawals,
   completeWithdrawal,
-  rejectWithdrawal
+  rejectWithdrawal,
+  getAdminUsers,
+  getAdminUserDetails,
+  adjustUserBalance,
+  adminResetUserDevice
 };

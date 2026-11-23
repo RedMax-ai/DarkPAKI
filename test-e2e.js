@@ -613,6 +613,102 @@ async function runTests() {
     const deleteTagRes = await request('DELETE', `/admin/tags/${newTagId}`, null, { Authorization: `Bearer ${adminToken}` });
     assert(deleteTagRes.status === 200, 'DELETE /admin/tags/:id removes tag from database');
 
+    // ----------------------------------------------------
+    // TEST 15: USERS & LIVE EARNINGS MANAGEMENT
+    // ----------------------------------------------------
+    console.log('\n--- TEST 15: USERS & LIVE EARNINGS MANAGEMENT ---');
+
+    // 15a. Get Admin Users with Metrics
+    const adminUsersRes = await request('GET', '/admin/users?page=1&limit=10', null, { Authorization: `Bearer ${adminToken}` });
+    assert(
+      adminUsersRes.status === 200 && 
+      adminUsersRes.body.success === true && 
+      Array.isArray(adminUsersRes.body.data.users) && 
+      adminUsersRes.body.data.summary.total_users >= 1, 
+      'GET /admin/users returns real registered users with summary metrics'
+    );
+
+    // 15b. Filter by Online Status
+    const onlineUsersRes = await request('GET', '/admin/users?status=ONLINE', null, { Authorization: `Bearer ${adminToken}` });
+    assert(
+      onlineUsersRes.status === 200 && 
+      Array.isArray(onlineUsersRes.body.data.users), 
+      'GET /admin/users?status=ONLINE correctly filters active users'
+    );
+
+    // 15c. Get Single User Details
+    const firstUserId = adminUsersRes.body.data.users[0]?.id;
+    if (firstUserId) {
+      const userDetailRes = await request('GET', `/admin/users/${firstUserId}`, null, { Authorization: `Bearer ${adminToken}` });
+      assert(
+        userDetailRes.status === 200 && 
+        userDetailRes.body.data.id === firstUserId && 
+        userDetailRes.body.data.last_active_human !== undefined, 
+        'GET /admin/users/:id returns user profile, watch time, and activity history'
+      );
+
+      // 15d. Adjust User Balance & Status
+      const adjustRes = await request('PUT', `/admin/users/${firstUserId}/balance`, {
+        coinsDelta: 100,
+        balanceDelta: 1.50,
+        accountStatus: 'active',
+        isMonetized: true,
+        reason: 'E2E Test Bonus'
+      }, { Authorization: `Bearer ${adminToken}` });
+      assert(
+        adjustRes.status === 200 && 
+        adjustRes.body.success === true, 
+        'PUT /admin/users/:id/balance atomically adjusts coins and wallet balance'
+      );
+
+      // 15e. Reset User Hardware Device Binding
+      const resetDevRes = await request('POST', `/admin/users/${firstUserId}/reset-device`, {}, { Authorization: `Bearer ${adminToken}` });
+      assert(
+        resetDevRes.status === 200 && 
+        resetDevRes.body.success === true, 
+        'POST /admin/users/:id/reset-device unlocks hardware device binding'
+      );
+    }
+
+    // ----------------------------------------------------
+    // TEST 16: GOOGLE ADSENSE APPROVAL HUB & COMPLIANCE PAGES
+    // ----------------------------------------------------
+    console.log('\n--- TEST 16: GOOGLE ADSENSE APPROVAL HUB & COMPLIANCE ---');
+
+    // 16a. Preview Google AdSense Approval Portal
+    const approvalRes = await request('GET', '/approval');
+    assert(approvalRes.status === 200 && (approvalRes.body.includes('Editorial Showcase') || approvalRes.body.includes('Anizon Cinema')), 'GET /approval serves Google AdSense clean review portal');
+
+    // 16b. Privacy Policy Compliance Page
+    const privacyRes = await request('GET', '/privacy');
+    assert(privacyRes.status === 200 && privacyRes.body.includes('Privacy Policy'), 'GET /privacy serves standard AdSense Privacy & Cookie Policy');
+
+    // 16c. Terms of Service Page
+    const termsRes = await request('GET', '/terms');
+    assert(termsRes.status === 200 && termsRes.body.includes('Terms of Service'), 'GET /terms serves platform Terms of Service');
+
+    // 16d. About Platform Page
+    const aboutRes = await request('GET', '/about');
+    assert(aboutRes.status === 200 && aboutRes.body.includes('About Anizon Media Network'), 'GET /about serves About Us publisher information');
+
+    // 16e. Contact Us Page
+    const contactRes = await request('GET', '/contact');
+    assert(contactRes.status === 200 && contactRes.body.includes('Contact Us'), 'GET /contact serves publisher contact form and support');
+
+    // 16f. ads.txt Public Endpoint
+    const adsTxtRes = await request('GET', '/ads.txt');
+    assert(adsTxtRes.status === 200 && adsTxtRes.body.includes('google.com, pub-'), 'GET /ads.txt serves official Google AdSense publisher specification');
+
+    // 16g. Update AdSense Settings via Admin Console
+    const updateAdSenseRes = await request('PUT', '/admin/settings', {
+      adsensePubId: 'ca-pub-9998887776665554',
+      adsenseSlotId: '1234567890',
+      adsenseHeadCode: '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9998887776665554" crossorigin="anonymous"></script>',
+      adsenseEnabled: true,
+      adsTxtContent: 'google.com, pub-9998887776665554, DIRECT, f08c47fec0942fa0'
+    }, { Authorization: `Bearer ${adminToken}` });
+    assert(updateAdSenseRes.status === 200 && updateAdSenseRes.body.success === true, 'PUT /admin/settings saves AdSense credentials and ads.txt specification');
+
     // Cleanup reaction & follow & test video
     db.prepare('DELETE FROM video_reactions WHERE device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
     db.prepare('DELETE FROM follows WHERE follower_device_id = ?').run('TEST-YOUTUBE-DEVICE-1');

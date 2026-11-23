@@ -424,6 +424,10 @@ function getAdConfig(req, res, next) {
     const bannerAdSetting = db.prepare("SELECT value FROM settings WHERE key = 'banner_ad_html'").get();
     const monetagMetaSetting = db.prepare("SELECT value FROM settings WHERE key = 'monetag_meta_tag'").get();
     const safeModeSetting = db.prepare("SELECT value FROM settings WHERE key = 'safe_mode_enabled'").get();
+    const adsensePubSetting = db.prepare("SELECT value FROM settings WHERE key = 'adsense_pub_id'").get();
+    const adsenseHeadSetting = db.prepare("SELECT value FROM settings WHERE key = 'adsense_head_code'").get();
+    const adsenseSlotSetting = db.prepare("SELECT value FROM settings WHERE key = 'adsense_slot_id'").get();
+    const adsenseEnabledSetting = db.prepare("SELECT value FROM settings WHERE key = 'adsense_enabled'").get();
 
     res.json({
       success: true,
@@ -435,7 +439,11 @@ function getAdConfig(req, res, next) {
         popunderUrl: popunderSetting ? popunderSetting.value : '',
         bannerAdHtml: bannerAdSetting ? bannerAdSetting.value : '',
         monetagMetaTag: monetagMetaSetting ? monetagMetaSetting.value : '',
-        safeModeEnabled: safeModeSetting ? safeModeSetting.value !== 'false' : true
+        safeModeEnabled: safeModeSetting ? safeModeSetting.value !== 'false' : true,
+        adsensePubId: adsensePubSetting ? adsensePubSetting.value : '',
+        adsenseHeadCode: adsenseHeadSetting ? adsenseHeadSetting.value : '',
+        adsenseSlotId: adsenseSlotSetting ? adsenseSlotSetting.value : '',
+        adsenseEnabled: adsenseEnabledSetting ? adsenseEnabledSetting.value === 'true' : false
       }
     });
   } catch (err) {

@@ -460,6 +460,13 @@
           </div>
           <span id="sidebarPayoutsBadge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hidden">0</span>
         </button>
+        <button onclick="switchTab('users')" id="tabBtn-users" class="tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-users w-4 text-cyan-400"></i>
+            <span>Users & Earnings</span>
+          </div>
+          <span id="sidebarUsersBadge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">0</span>
+        </button>
         <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
           <i class="fa-solid fa-sliders w-4 text-neutral-400"></i>
           <span>Platform Settings</span>
@@ -1538,6 +1545,123 @@
       </section>
 
       <!-- =================================================================== -->
+      <!-- TAB: USERS & EARNINGS MANAGER -->
+      <!-- =================================================================== -->
+      <section id="tab-users" class="tab-content hidden space-y-6">
+        <!-- Top Metrics Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+          <div class="glass-panel p-4 rounded-2xl border border-white/5">
+            <div class="flex items-center justify-between text-neutral-400 text-xs mb-1">
+              <span>Total Registered</span>
+              <i class="fa-solid fa-users text-cyan-400"></i>
+            </div>
+            <div class="text-xl font-black text-white" id="statUsersTotal">0</div>
+            <span class="text-[10px] text-cyan-400 font-mono">Real DB Profiles</span>
+          </div>
+          <div class="glass-panel p-4 rounded-2xl border border-emerald-500/20 bg-emerald-950/10">
+            <div class="flex items-center justify-between text-neutral-400 text-xs mb-1">
+              <span>Online Now (15m)</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            </div>
+            <div class="text-xl font-black text-emerald-400" id="statUsersOnline">0</div>
+            <span class="text-[10px] text-emerald-300/80 font-mono">Live on DarkPAKI</span>
+          </div>
+          <div class="glass-panel p-4 rounded-2xl border border-amber-500/20 bg-amber-950/10">
+            <div class="flex items-center justify-between text-neutral-400 text-xs mb-1">
+              <span>Total Coins Held</span>
+              <i class="fa-solid fa-coins text-amber-400"></i>
+            </div>
+            <div class="text-xl font-black text-amber-400" id="statUsersCoins">0</div>
+            <span class="text-[10px] text-amber-300/80 font-mono">Platform Circulation</span>
+          </div>
+          <div class="glass-panel p-4 rounded-2xl border border-emerald-500/20 bg-emerald-950/10">
+            <div class="flex items-center justify-between text-neutral-400 text-xs mb-1">
+              <span>Wallet Balances</span>
+              <i class="fa-solid fa-dollar-sign text-emerald-400"></i>
+            </div>
+            <div class="text-xl font-black text-emerald-400" id="statUsersBalance">$0.00</div>
+            <span class="text-[10px] text-neutral-400 font-mono">Convertible Funds</span>
+          </div>
+          <div class="glass-panel p-4 rounded-2xl border border-purple-500/20 bg-purple-950/10 col-span-2 md:col-span-1">
+            <div class="flex items-center justify-between text-neutral-400 text-xs mb-1">
+              <span>Total Watch Time</span>
+              <i class="fa-solid fa-clock text-purple-400"></i>
+            </div>
+            <div class="text-xl font-black text-purple-400" id="statUsersWatchHours">0 hrs</div>
+            <span class="text-[10px] text-purple-300/80 font-mono" id="statUsersVideos">0 videos watched</span>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="glass-panel p-4 rounded-2xl space-y-3">
+          <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div class="relative flex-1">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
+              <input type="text" id="adminUsersSearchInput" oninput="debounceUsersSearch()" placeholder="Search by Name, Username, Gmail, Phone, or Device ID..." class="w-full bg-black/60 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-500 transition">
+            </div>
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+              <div class="flex items-center bg-black/40 border border-white/10 rounded-xl p-1 text-xs">
+                <button onclick="setUsersStatusFilter('ALL')" id="usersFilter-ALL" class="px-2.5 py-1 rounded-lg font-bold text-white bg-cyan-600 transition text-[11px]">All</button>
+                <button onclick="setUsersStatusFilter('ONLINE')" id="usersFilter-ONLINE" class="px-2.5 py-1 rounded-lg font-bold text-neutral-400 hover:text-white transition text-[11px] flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>Online</button>
+                <button onclick="setUsersStatusFilter('OFFLINE')" id="usersFilter-OFFLINE" class="px-2.5 py-1 rounded-lg font-bold text-neutral-400 hover:text-white transition text-[11px]">Offline</button>
+                <button onclick="setUsersStatusFilter('MONETIZED')" id="usersFilter-MONETIZED" class="px-2.5 py-1 rounded-lg font-bold text-neutral-400 hover:text-white transition text-[11px]">Monetized</button>
+                <button onclick="setUsersStatusFilter('BANNED')" id="usersFilter-BANNED" class="px-2.5 py-1 rounded-lg font-bold text-neutral-400 hover:text-white transition text-[11px]">Banned</button>
+              </div>
+
+              <select id="adminUsersSortSelect" onchange="loadAdminUsers(1)" class="bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-neutral-300 focus:outline-none focus:border-cyan-500">
+                <option value="recent">Sort: Most Recent</option>
+                <option value="active_desc">Sort: Recently Active</option>
+                <option value="coins_desc">Sort: Highest Coins</option>
+                <option value="balance_desc">Sort: Highest Wallet ($)</option>
+                <option value="watchtime_desc">Sort: Most Watch Time</option>
+              </select>
+
+              <button onclick="loadAdminUsers(currentUsersPage)" class="bg-white/5 hover:bg-white/10 text-neutral-300 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-white/5">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span class="hidden sm:inline">Refresh</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="glass-panel rounded-2xl overflow-hidden border border-white/5">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-white/5 uppercase text-neutral-400 text-[10px] font-bold tracking-wider">
+                <tr>
+                  <th class="p-3.5">User / Identity</th>
+                  <th class="p-3.5">Live Status</th>
+                  <th class="p-3.5">Coins</th>
+                  <th class="p-3.5">Cash Wallet</th>
+                  <th class="p-3.5">Watch Time</th>
+                  <th class="p-3.5">Videos</th>
+                  <th class="p-3.5">Referrals</th>
+                  <th class="p-3.5">Hardware Lock</th>
+                  <th class="p-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTableBody" class="divide-y divide-white/5 text-neutral-300">
+                <tr>
+                  <td colspan="9" class="p-8 text-center text-neutral-500">Loading user profiles...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="flex items-center justify-between p-3.5 border-t border-white/5 text-xs text-neutral-400">
+            <span id="usersPaginationText">Showing 0 of 0 users</span>
+            <div class="flex items-center gap-2">
+              <button onclick="prevUsersPage()" id="btnUsersPrev" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition text-xs font-bold">Prev</button>
+              <span id="usersPageIndicator" class="px-2 py-1 text-xs text-neutral-300 font-mono">1 / 1</span>
+              <button onclick="nextUsersPage()" id="btnUsersNext" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition text-xs font-bold">Next</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
       <!-- TAB 6: SETTINGS -->
       <!-- =================================================================== -->
       <section id="tab-settings" class="tab-content hidden space-y-6">
@@ -1684,6 +1808,74 @@
                 <button type="button" onclick="copySecretAdminUrl()" class="text-xs text-rose-400 hover:text-white font-bold underline flex items-center gap-1.5 transition">
                   <i class="fa-solid fa-copy"></i> Copy My Secret Access URL
                 </button>
+              </div>
+            </div>
+
+            <!-- Google AdSense Official Configuration & Approval Hub -->
+            <div class="p-5 rounded-2xl bg-gradient-to-r from-blue-900/20 via-cyan-950/20 to-neutral-900/40 border border-cyan-500/30 space-y-4">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm">
+                    <i class="fa-brands fa-google"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-white">Google AdSense Publisher & Approval Hub</h4>
+                    <span class="text-[10px] text-cyan-300">Clean Editorial Portal for 100% AdSense Site Approval</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <a href="/approval" target="_blank" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 text-[11px] font-bold border border-cyan-500/30 flex items-center gap-1 transition">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span>Preview /approval</span>
+                  </a>
+                  <a href="/ads.txt" target="_blank" class="px-2.5 py-1 rounded-lg bg-white/10 text-neutral-300 hover:bg-white/20 text-[11px] font-bold flex items-center gap-1 transition">
+                    <span>/ads.txt</span>
+                  </a>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-neutral-300 mb-1">Google AdSense Publisher ID</label>
+                  <input type="text" id="settingAdsensePubId" placeholder="e.g. ca-pub-1234567890123456" class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-400 transition">
+                  <span class="text-[10px] text-neutral-400 mt-1 block">Found in AdSense -> Account -> Settings -> Account info</span>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-neutral-300 mb-1">AdSense Ad Unit / Slot ID (Optional)</label>
+                  <input type="text" id="settingAdsenseSlotId" placeholder="e.g. 9876543210" class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-400 transition">
+                  <span class="text-[10px] text-neutral-400 mt-1 block">Default responsive ad slot for content banners</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1">AdSense Head Tag Script (Optional custom code)</label>
+                <textarea id="settingAdsenseHeadCode" rows="2" placeholder='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-..." crossorigin="anonymous"></script>' class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-400 transition"></textarea>
+                <span class="text-[10px] text-neutral-400 mt-1 block">Paste your full AdSense verification script snippet from Google AdSense setup.</span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1">ads.txt Publisher Specification</label>
+                <textarea id="settingAdsTxtContent" rows="2" placeholder="google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0" class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-400 transition"></textarea>
+                <span class="text-[10px] text-neutral-400 mt-1 block">Automatically served at <code>https://dark.anizon.watch/ads.txt</code> for Google AdSense crawler verification.</span>
+              </div>
+
+              <div class="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/10 flex-wrap gap-2">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" id="settingAdsenseEnabled" class="w-4 h-4 accent-cyan-500 rounded">
+                  <div>
+                    <span class="text-xs font-bold text-white block">Enable Google AdSense on Approval Portal</span>
+                    <span class="text-[10px] text-neutral-400 block">Injects AdSense code onto <code>/approval</code> and compliance pages</span>
+                  </div>
+                </label>
+                <div class="flex items-center gap-2 text-[11px] text-neutral-400">
+                  <a href="/privacy" target="_blank" class="hover:text-cyan-400 underline">Privacy</a>
+                  <span>•</span>
+                  <a href="/terms" target="_blank" class="hover:text-cyan-400 underline">Terms</a>
+                  <span>•</span>
+                  <a href="/about" target="_blank" class="hover:text-cyan-400 underline">About</a>
+                  <span>•</span>
+                  <a href="/contact" target="_blank" class="hover:text-cyan-400 underline">Contact</a>
+                </div>
               </div>
             </div>
 
@@ -1905,6 +2097,122 @@
     </div>
   </div>
   <!-- ========================================================================= -->
+  <!-- USER DETAILS & BALANCE ADJUSTMENT MODAL -->
+  <!-- ========================================================================= -->
+  <div id="adminUserModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 border border-cyan-500/30 shadow-2xl space-y-6">
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div id="userModalAvatar" class="w-12 h-12 rounded-2xl bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 font-black text-lg flex items-center justify-center">
+            U
+          </div>
+          <div>
+            <h3 class="text-base font-black text-white flex items-center gap-2">
+              <span id="userModalName">User Profile</span>
+              <span id="userModalStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold"></span>
+            </h3>
+            <p class="text-xs text-neutral-400 font-mono" id="userModalEmail">user@gmail.com</p>
+          </div>
+        </div>
+        <button onclick="closeAdminUserModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Quick Earnings & Activity Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div class="p-3 rounded-xl bg-black/40 border border-white/10">
+          <span class="text-[10px] text-neutral-400 block mb-0.5">Coins Balance</span>
+          <span class="text-base font-bold text-amber-400 font-mono" id="userModalCoins">0</span>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/10">
+          <span class="text-[10px] text-neutral-400 block mb-0.5">Cash Wallet ($)</span>
+          <span class="text-base font-bold text-emerald-400 font-mono" id="userModalBalance">$0.00</span>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/10">
+          <span class="text-[10px] text-neutral-400 block mb-0.5">Total Watch Time</span>
+          <span class="text-sm font-bold text-purple-400 font-mono" id="userModalWatchTime">0m</span>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/10">
+          <span class="text-[10px] text-neutral-400 block mb-0.5">Videos Watched</span>
+          <span class="text-sm font-bold text-cyan-400 font-mono" id="userModalVideos">0</span>
+        </div>
+      </div>
+
+      <!-- Hardware Device Binding Lock Status -->
+      <div class="p-4 rounded-xl bg-gradient-to-r from-cyan-950/30 to-blue-950/20 border border-cyan-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-mobile-screen text-cyan-400 text-xs"></i>
+            <span class="text-xs font-bold text-white">Hardware Device Binding</span>
+            <span id="userModalDeviceStatus" class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-cyan-500/20 text-cyan-300">LOCKED</span>
+          </div>
+          <p class="text-[11px] text-neutral-400 font-mono break-all" id="userModalDeviceId">device_id: ---</p>
+          <span class="text-[10px] text-neutral-500 block">User 1 mobile/PC device se bind hai. Reset karne par user kisi bhi new device se login kar sakega.</span>
+        </div>
+        <button type="button" onclick="resetCurrentModalUserDevice()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-cyan-600/20 whitespace-nowrap self-start sm:self-center">
+          <i class="fa-solid fa-key"></i>
+          <span>Reset Device Lock</span>
+        </button>
+      </div>
+
+      <!-- Adjustment Form -->
+      <form onsubmit="submitUserAdjustment(event)" class="space-y-4 pt-2 border-t border-white/10">
+        <input type="hidden" id="adjustUserId">
+        <h4 class="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-cyan-400"></i>
+          <span>Balance & Status Adjustment</span>
+        </h4>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-amber-400 mb-1">Add / Deduct Coins (Delta)</label>
+            <input type="number" id="adjustCoinsDelta" placeholder="e.g. +500 or -200 (0 for no change)" class="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-amber-400 transition">
+            <span class="text-[10px] text-neutral-500 mt-1 block">+500 adds coins, -200 deducts</span>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-emerald-400 mb-1">Add / Deduct Cash USD (Delta)</label>
+            <input type="number" step="0.01" id="adjustBalanceDelta" placeholder="e.g. +5.00 or -2.50 (0 for no change)" class="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-400 transition">
+            <span class="text-[10px] text-neutral-500 mt-1 block">Positive adds to USD wallet, negative deducts</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-neutral-300 mb-1">Account Standing Status</label>
+            <select id="adjustAccountStatus" class="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400">
+              <option value="active">Active (Full Access)</option>
+              <option value="suspended">Suspended (Temporary Freeze)</option>
+              <option value="banned">Banned (Permanent Block)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-purple-400 mb-1">Creator Monetization Privilege</label>
+            <select id="adjustMonetization" class="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-purple-400">
+              <option value="keep">Keep Current Setting</option>
+              <option value="1">Enable (Monetized Creator - 100 Coins / 1k views)</option>
+              <option value="0">Disable (Standard Viewer)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-neutral-300 mb-1">Admin Audit Reason / Note</label>
+          <input type="text" id="adjustReason" placeholder="Reason for change (e.g. Creator bonus reward, fraud correction, manual top-up)" class="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 transition">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" onclick="closeAdminUserModal()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-neutral-300 rounded-xl text-xs font-bold transition">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-cyan-600/30 flex items-center gap-1.5">
+            <i class="fa-solid fa-check"></i>
+            <span>Apply Changes</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
   <div id="adminAuthModal" class="fixed inset-0 z-50 bg-[#06070a]/95 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="glass-panel rounded-3xl max-w-sm w-full p-8 text-center space-y-6 shadow-2xl border border-rose-500/30">
       <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-rose-600 to-purple-600 flex items-center justify-center mx-auto shadow-xl shadow-rose-600/30">
@@ -2044,6 +2352,8 @@
         loadMonetizationApplications();
       } else if (tabId === 'payouts') {
         loadAdminWithdrawals();
+      } else if (tabId === 'users') {
+        loadAdminUsers(1);
       } else if (tabId === 'overview') {
         loadAdminStats();
       } else if (tabId === 'settings') {
@@ -2640,6 +2950,10 @@
           if (sPayoutBadge) {
             sPayoutBadge.textContent = stats.pendingWithdrawalsCount || 0;
             sPayoutBadge.classList.toggle('hidden', !stats.pendingWithdrawalsCount);
+          }
+          const sUsersBadge = document.getElementById('sidebarUsersBadge');
+          if (sUsersBadge) {
+            sUsersBadge.textContent = stats.totalUsers || 0;
           }
 
           if (settings.cdnStreamUrl) {
@@ -3552,6 +3866,18 @@
           if (gIdEl) gIdEl.value = res.data.googleClientId || '';
           const keyEl = document.getElementById('settingAdminAccessKey');
           if (keyEl) keyEl.value = res.data.adminAccessKey || getAdminSecretKey() || '';
+
+          // Google AdSense & ads.txt settings
+          const adsensePubEl = document.getElementById('settingAdsensePubId');
+          if (adsensePubEl) adsensePubEl.value = res.data.adsensePubId || '';
+          const adsenseSlotEl = document.getElementById('settingAdsenseSlotId');
+          if (adsenseSlotEl) adsenseSlotEl.value = res.data.adsenseSlotId || '';
+          const adsenseHeadEl = document.getElementById('settingAdsenseHeadCode');
+          if (adsenseHeadEl) adsenseHeadEl.value = res.data.adsenseHeadCode || '';
+          const adsTxtEl = document.getElementById('settingAdsTxtContent');
+          if (adsTxtEl) adsTxtEl.value = res.data.adsTxtContent || 'google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0';
+          const adsenseEnEl = document.getElementById('settingAdsenseEnabled');
+          if (adsenseEnEl) adsenseEnEl.checked = Boolean(res.data.adsenseEnabled);
         }
       } catch (err) {
         console.error('Error loading settings:', err);
@@ -3577,11 +3903,23 @@
       const newPin = document.getElementById('settingNewPin').value.trim();
       const adminAccessKey = document.getElementById('settingAdminAccessKey')?.value?.trim() || '';
 
+      const adsensePubId = document.getElementById('settingAdsensePubId')?.value?.trim() || '';
+      const adsenseSlotId = document.getElementById('settingAdsenseSlotId')?.value?.trim() || '';
+      const adsenseHeadCode = document.getElementById('settingAdsenseHeadCode')?.value?.trim() || '';
+      const adsTxtContent = document.getElementById('settingAdsTxtContent')?.value?.trim() || '';
+      const adsenseEnabled = Boolean(document.getElementById('settingAdsenseEnabled')?.checked);
+
       try {
         const res = await adminFetch('/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cdnStreamUrl, adVideoUrl, vastTagUrl, popunderUrl, bannerAdHtml, monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, recaptchaSiteKey, recaptchaSecretKey, turnstileSiteKey, turnstileSecretKey, googleClientId, newPin, adminAccessKey })
+          body: JSON.stringify({ 
+            cdnStreamUrl, adVideoUrl, vastTagUrl, popunderUrl, bannerAdHtml, 
+            monetagMetaTag, safeModeEnabled, telegramUrl, allowInstantSkip, 
+            recaptchaSiteKey, recaptchaSecretKey, turnstileSiteKey, turnstileSecretKey, 
+            googleClientId, newPin, adminAccessKey,
+            adsensePubId, adsenseSlotId, adsenseHeadCode, adsTxtContent, adsenseEnabled
+          })
         });
         if (res.success) {
           showToast('Settings saved successfully!', 'success');
@@ -3771,6 +4109,295 @@
         document.body.removeChild(ta);
         showToast(msg, 'success');
       });
+    }
+
+    // =========================================================================
+    // USERS & LIVE EARNINGS MANAGER
+    // =========================================================================
+    let currentUsersPage = 1;
+    let currentUsersFilter = 'ALL';
+    let usersSearchDebounceTimer = null;
+    let currentModalUser = null;
+
+    function setUsersStatusFilter(status) {
+      currentUsersFilter = status;
+      ['ALL', 'ONLINE', 'OFFLINE', 'MONETIZED', 'BANNED'].forEach(s => {
+        const btn = document.getElementById(`usersFilter-${s}`);
+        if (btn) {
+          if (s === status) {
+            btn.className = 'px-2.5 py-1 rounded-lg font-bold text-white bg-cyan-600 transition text-[11px]';
+          } else {
+            btn.className = 'px-2.5 py-1 rounded-lg font-bold text-neutral-400 hover:text-white transition text-[11px]';
+          }
+        }
+      });
+      loadAdminUsers(1);
+    }
+
+    function debounceUsersSearch() {
+      clearTimeout(usersSearchDebounceTimer);
+      usersSearchDebounceTimer = setTimeout(() => {
+        loadAdminUsers(1);
+      }, 350);
+    }
+
+    function prevUsersPage() {
+      if (currentUsersPage > 1) {
+        loadAdminUsers(currentUsersPage - 1);
+      }
+    }
+
+    function nextUsersPage() {
+      loadAdminUsers(currentUsersPage + 1);
+    }
+
+    async function loadAdminUsers(page = 1) {
+      currentUsersPage = page;
+      const tbody = document.getElementById('adminUsersTableBody');
+      const q = document.getElementById('adminUsersSearchInput')?.value?.trim() || '';
+      const sort = document.getElementById('adminUsersSortSelect')?.value || 'recent';
+
+      tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-neutral-400"><i class="fa-solid fa-spinner fa-spin text-lg mb-2"></i><p>Loading users & earnings data...</p></td></tr>`;
+
+      try {
+        const res = await adminFetch(`/admin/users?page=${page}&limit=25&q=${encodeURIComponent(q)}&status=${encodeURIComponent(currentUsersFilter)}&sort=${encodeURIComponent(sort)}`);
+        if (res.success && res.data) {
+          const { users, summary, pagination } = res.data;
+
+          // Update summary metrics
+          if (summary) {
+            const totEl = document.getElementById('statUsersTotal');
+            if (totEl) totEl.textContent = Number(summary.total_users || 0).toLocaleString();
+            const onlEl = document.getElementById('statUsersOnline');
+            if (onlEl) onlEl.textContent = Number(summary.online_users || 0).toLocaleString();
+            const coinEl = document.getElementById('statUsersCoins');
+            if (coinEl) coinEl.textContent = Number(summary.total_coins || 0).toLocaleString();
+            const balEl = document.getElementById('statUsersBalance');
+            if (balEl) balEl.textContent = `$${Number(summary.total_balance || 0).toFixed(2)}`;
+            const hrsEl = document.getElementById('statUsersWatchHours');
+            if (hrsEl) hrsEl.textContent = `${Number(summary.total_watch_hours || 0).toLocaleString()} hrs`;
+            const vidEl = document.getElementById('statUsersVideos');
+            if (vidEl) vidEl.textContent = `${Number(summary.total_videos_watched || 0).toLocaleString()} videos watched`;
+
+            const sBadge = document.getElementById('sidebarUsersBadge');
+            if (sBadge) sBadge.textContent = summary.total_users || 0;
+          }
+
+          // Pagination
+          if (pagination) {
+            document.getElementById('usersPaginationText').textContent = `Showing ${users.length} of ${pagination.total} users (Page ${pagination.page} of ${pagination.pages})`;
+            document.getElementById('usersPageIndicator').textContent = `${pagination.page} / ${pagination.pages}`;
+            document.getElementById('btnUsersPrev').disabled = pagination.page <= 1;
+            document.getElementById('btnUsersNext').disabled = pagination.page >= pagination.pages;
+          }
+
+          renderAdminUsers(users);
+        } else {
+          tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-rose-400">Failed to load users: ${res.message || 'Unknown error'}</td></tr>`;
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-rose-400">Error loading users: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderAdminUsers(users) {
+      const tbody = document.getElementById('adminUsersTableBody');
+      if (!users || users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-neutral-500">No users found matching current filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => {
+        const isOnline = u.is_online;
+        const onlineBadge = isOnline 
+          ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>Online Now</span>`
+          : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-neutral-400 border border-white/10 whitespace-nowrap"><i class="fa-regular fa-clock text-[9px]"></i> ${u.last_active_human}</span>`;
+
+        const isBanned = u.account_status === 'banned';
+        const isMonetized = u.is_monetized === 1;
+        const deviceBound = u.device_id && u.device_id !== 'UNBOUND_BY_ADMIN';
+        const initial = (u.name || u.gmail || 'U').charAt(0).toUpperCase();
+
+        return `
+          <tr class="hover:bg-white/5 transition border-b border-white/5">
+            <td class="p-3.5">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-cyan-600/20 border border-cyan-500/30 text-cyan-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                  ${initial}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-white truncate max-w-[140px] sm:max-w-[180px]">${escapeHtml(u.name || u.username || 'User')}</span>
+                    ${isMonetized ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">VIP CREATOR</span>' : ''}
+                    ${isBanned ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">BANNED</span>' : ''}
+                  </div>
+                  <span class="text-[11px] text-neutral-400 font-mono truncate block">${escapeHtml(u.gmail || 'No email')}</span>
+                  <span class="text-[9px] text-neutral-500 font-mono">UID #${u.id} • Joined ${u.created_at ? u.created_at.split('T')[0] : 'N/A'}</span>
+                </div>
+              </div>
+            </td>
+            <td class="p-3.5">${onlineBadge}</td>
+            <td class="p-3.5">
+              <span class="font-mono font-bold text-amber-400">${u.coins_formatted}</span>
+              <span class="text-[10px] text-neutral-500 block">coins</span>
+            </td>
+            <td class="p-3.5">
+              <span class="font-mono font-bold text-emerald-400">${u.balance_formatted}</span>
+              <span class="text-[10px] text-neutral-500 block">Earned: ${u.total_earned_formatted}</span>
+            </td>
+            <td class="p-3.5 font-mono text-purple-300 text-xs">${u.watch_time_formatted}</td>
+            <td class="p-3.5 font-mono text-neutral-300 text-xs">${u.ads_watched || 0}</td>
+            <td class="p-3.5">
+              <span class="font-mono font-bold text-cyan-300">${u.referrals || 0}</span>
+              <span class="text-[10px] text-neutral-500 block">Ref: ${escapeHtml(u.ref_code || '---')}</span>
+            </td>
+            <td class="p-3.5">
+              ${deviceBound ? `
+                <div class="space-y-1">
+                  <span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    <i class="fa-solid fa-lock text-[8px]"></i> Bound (1-Dev)
+                  </span>
+                  <button onclick="quickResetUserDevice(${u.id}, '${escapeHtml(u.gmail).replace(/'/g, "\\'")}')" class="text-[10px] text-cyan-400 hover:text-cyan-300 underline block" title="Unlock device lock">
+                    Reset Device
+                  </button>
+                </div>
+              ` : `
+                <span class="text-[10px] font-mono text-neutral-500 italic bg-white/5 px-2 py-0.5 rounded">Unbound</span>
+              `}
+            </td>
+            <td class="p-3.5 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                <button onclick="openUserDetailsModal(${u.id})" class="px-2.5 py-1.5 rounded-lg bg-cyan-600/15 hover:bg-cyan-600 text-cyan-300 hover:text-white text-xs font-bold transition flex items-center gap-1">
+                  <i class="fa-solid fa-sliders text-[10px]"></i>
+                  <span>Manage</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function openUserDetailsModal(userId) {
+      try {
+        const res = await adminFetch(`/admin/users/${userId}`);
+        if (!res.success || !res.data) {
+          showToast(res.message || 'Failed to load user profile', 'error');
+          return;
+        }
+
+        const u = res.data;
+        currentModalUser = u;
+
+        document.getElementById('adjustUserId').value = u.id;
+        document.getElementById('userModalName').textContent = u.name || u.username || `User #${u.id}`;
+        document.getElementById('userModalEmail').textContent = `${u.gmail || 'No email'} (ID #${u.id})`;
+        document.getElementById('userModalCoins').textContent = Number(u.coins || 0).toLocaleString();
+        document.getElementById('userModalBalance').textContent = `$${Number(u.balance || 0).toFixed(2)}`;
+        document.getElementById('userModalWatchTime').textContent = u.watch_time_formatted || '0m';
+        document.getElementById('userModalVideos').textContent = u.ads_watched || 0;
+
+        const initial = (u.name || u.gmail || 'U').charAt(0).toUpperCase();
+        document.getElementById('userModalAvatar').textContent = initial;
+
+        const badgeEl = document.getElementById('userModalStatusBadge');
+        if (u.is_online) {
+          badgeEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+          badgeEl.textContent = '🟢 ONLINE NOW';
+        } else {
+          badgeEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/10 text-neutral-400';
+          badgeEl.textContent = `⚪ ${u.last_active_human}`;
+        }
+
+        const deviceBound = u.device_id && u.device_id !== 'UNBOUND_BY_ADMIN';
+        document.getElementById('userModalDeviceId').textContent = u.device_id ? `Device ID: ${u.device_id}` : 'No hardware device bound yet';
+        const dStat = document.getElementById('userModalDeviceStatus');
+        if (deviceBound) {
+          dStat.className = 'text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-500/20 text-emerald-300';
+          dStat.textContent = 'LOCKED (1-DEVICE)';
+        } else {
+          dStat.className = 'text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-amber-500/20 text-amber-300';
+          dStat.textContent = 'UNBOUND';
+        }
+
+        document.getElementById('adjustCoinsDelta').value = '';
+        document.getElementById('adjustBalanceDelta').value = '';
+        document.getElementById('adjustAccountStatus').value = u.account_status || 'active';
+        document.getElementById('adjustMonetization').value = u.is_monetized ? '1' : '0';
+        document.getElementById('adjustReason').value = '';
+
+        document.getElementById('adminUserModal').classList.remove('hidden');
+      } catch (err) {
+        showToast('Error opening user modal: ' + err.message, 'error');
+      }
+    }
+
+    function closeAdminUserModal() {
+      document.getElementById('adminUserModal').classList.add('hidden');
+      currentModalUser = null;
+    }
+
+    async function submitUserAdjustment(e) {
+      e.preventDefault();
+      const userId = document.getElementById('adjustUserId').value;
+      if (!userId) return;
+
+      const coinsDelta = parseInt(document.getElementById('adjustCoinsDelta').value, 10) || 0;
+      const balanceDelta = parseFloat(document.getElementById('adjustBalanceDelta').value) || 0;
+      const accountStatus = document.getElementById('adjustAccountStatus').value;
+      const monSelect = document.getElementById('adjustMonetization').value;
+      const reason = document.getElementById('adjustReason').value.trim();
+
+      const body = { coinsDelta, balanceDelta, accountStatus, reason };
+      if (monSelect === '1') body.isMonetized = true;
+      else if (monSelect === '0') body.isMonetized = false;
+
+      try {
+        const res = await adminFetch(`/admin/users/${userId}/balance`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (res.success) {
+          showToast(res.message || 'User profile updated!', 'success');
+          closeAdminUserModal();
+          loadAdminUsers(currentUsersPage);
+          loadAdminStats();
+        } else {
+          showToast(res.message || 'Failed to update user', 'error');
+        }
+      } catch (err) {
+        showToast('Update failed: ' + err.message, 'error');
+      }
+    }
+
+    async function resetCurrentModalUserDevice() {
+      if (!currentModalUser || !currentModalUser.id) return;
+      await quickResetUserDevice(currentModalUser.id, currentModalUser.gmail);
+      openUserDetailsModal(currentModalUser.id);
+    }
+
+    async function quickResetUserDevice(userId, email) {
+      if (!confirm(`Are you sure you want to reset hardware device binding for ${email || 'User #' + userId}?\nThis will allow them to log in from any new device.`)) {
+        return;
+      }
+
+      try {
+        const res = await adminFetch(`/admin/users/${userId}/reset-device`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (res.success) {
+          showToast(res.message || 'Device binding reset!', 'success');
+          loadAdminUsers(currentUsersPage);
+        } else {
+          showToast(res.message || 'Failed to reset device', 'error');
+        }
+      } catch (err) {
+        showToast('Reset failed: ' + err.message, 'error');
+      }
     }
 
     // Initialize

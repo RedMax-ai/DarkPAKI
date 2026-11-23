@@ -112,6 +112,47 @@ app.get(['/0c17e0da78a5c5ca5650c8c1b10977c5.html', '/42fe1541c7a22bf3c12a8c02c34
   res.send('42fe1541c7a22bf3c12a8c02c34c1573');
 });
 
+// Google AdSense & Publisher ads.txt Specification
+app.get(['/ads.txt', '/api/ads.txt'], (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  try {
+    const custom = db.prepare("SELECT value FROM settings WHERE key = 'ads_txt_content'").get();
+    const pub = db.prepare("SELECT value FROM settings WHERE key = 'adsense_pub_id'").get();
+    let content = (custom && custom.value && custom.value.trim()) ? custom.value.trim() : '';
+    if (!content && pub && pub.value && pub.value.trim()) {
+      const pubId = pub.value.trim().replace(/^ca-/, '');
+      content = `google.com, ${pubId}, DIRECT, f08c47fec0942fa0`;
+    }
+    if (!content) {
+      content = 'google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0';
+    }
+    res.send(content + '\n');
+  } catch (_) {
+    res.send('google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0\n');
+  }
+});
+
+// Google AdSense Compliance & Approval Pages
+app.get(['/approval', '/portal', '/api/approval', '/api/portal'], (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../public/approval.html'));
+});
+
+app.get(['/privacy', '/api/privacy'], (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../public/privacy.html'));
+});
+
+app.get(['/terms', '/api/terms'], (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../public/terms.html'));
+});
+
+app.get(['/about', '/api/about'], (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../public/about.html'));
+});
+
+app.get(['/contact', '/api/contact'], (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../public/contact.html'));
+});
+
 // Kadam Network Site Verification (kadam61d7e30ae7630243474e278aab32f1cb)
 app.get(['/kadam61d7e30ae7630243474e278aab32f1cb.html', '/kadam61d7e30ae7630243474e278aab32f1cb.txt', '/kadam61d7e30ae7630243474e278aab32f1cb'], (req, res) => {
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -143,6 +184,13 @@ app.get('/', (req, res) => {
       if (cleanContent) {
         html = html.replace('</head>', `    <meta name="monetag" content="${cleanContent}">\n</head>`);
       }
+    }
+    const adsensePubSetting = db.prepare("SELECT value FROM settings WHERE key = 'adsense_pub_id'").get();
+    const adsenseHeadSetting = db.prepare("SELECT value FROM settings WHERE key = 'adsense_head_code'").get();
+    if (adsenseHeadSetting && adsenseHeadSetting.value && adsenseHeadSetting.value.trim()) {
+      html = html.replace('</head>', `    ${adsenseHeadSetting.value.trim()}\n</head>`);
+    } else if (adsensePubSetting && adsensePubSetting.value && adsensePubSetting.value.trim()) {
+      html = html.replace('</head>', `    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsensePubSetting.value.trim()}" crossorigin="anonymous"></script>\n</head>`);
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('X-JuicyAds-Site-Verification', '2491dffcf8f5c242c4e221db787d650');

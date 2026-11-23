@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anizon Cinema & Video Streaming Technology Hub | Editorial Showcase</title>
+  <meta name="description" content="Discover indie cinema reviews, high-definition trailer showcases, video streaming engineering, and creator monetization insights at Anizon Media Network.">
+  <link rel="icon" href="/public/darkpaki-logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Dynamic Google AdSense Loader Placeholder (Loaded when Pub ID is configured) -->
+  <script id="adsenseLoaderScript">
+    // Dynamically injects user's AdSense ID from settings
+    fetch('/api/videos/config').then(r => r.json()).then(res => {
+      if (res.success && res.data) {
+        if (res.data.adsenseHeadCode) {
+          const div = document.createElement('div');
+          div.innerHTML = res.data.adsenseHeadCode;
+          Array.from(div.querySelectorAll('script')).forEach(s => {
+            const sc = document.createElement('script');
+            if (s.src) sc.src = s.src;
+            if (s.crossOrigin) sc.crossOrigin = s.crossOrigin;
+            sc.async = true;
+            document.head.appendChild(sc);
+          });
+        } else if (res.data.adsensePubId) {
+          const s = document.createElement('script');
+          s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${res.data.adsensePubId}`;
+          s.crossOrigin = 'anonymous';
+          s.async = true;
+          document.head.appendChild(s);
+        }
+      }
+    }).catch(()=>{});
+  </script>
+
+  <style>
+    body { background-color: #07080c; color: #cbd5e1; font-family: system-ui, -apple-system, sans-serif; }
+    .glass-panel { background: rgba(15, 18, 28, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .ad-placeholder { background: rgba(0,0,0,0.4); border: 1px dashed rgba(255,255,255,0.15); min-height: 90px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+  <!-- Top Navigation Header -->
+  <header class="w-full border-b border-white/10 bg-[#0a0c13]/95 sticky top-0 z-50 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <a href="/approval" class="flex items-center gap-2.5">
+        <img src="/public/darkpaki-logo.png" alt="Anizon" class="h-8 w-auto object-contain">
+        <div>
+          <span class="font-black text-white text-base tracking-wide">ANIZON <span class="text-rose-500">CINEMA</span></span>
+          <span class="hidden sm:inline-block text-[10px] text-neutral-400 font-mono ml-1.5">• Streaming Portal</span>
+        </div>
+      </a>
+      <nav class="flex items-center gap-3 sm:gap-5 text-xs font-semibold">
+        <a href="/approval" class="text-rose-400 font-bold">Featured Hub</a>
+        <a href="/about" class="text-neutral-400 hover:text-white transition">About Us</a>
+        <a href="/privacy" class="text-neutral-400 hover:text-white transition">Privacy Policy</a>
+        <a href="/terms" class="text-neutral-400 hover:text-white transition">Terms</a>
+        <a href="/contact" class="text-neutral-400 hover:text-white transition">Contact</a>
+        <a href="/" class="px-3 py-1.5 rounded-xl bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600 hover:text-white transition font-bold text-xs">
+          Open App
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Google AdSense Top Responsive Banner Slot (728x90 / Fluid) -->
+  <div class="max-w-6xl w-full mx-auto px-4 pt-6">
+    <div class="ad-placeholder rounded-2xl flex items-center justify-center p-3 text-center overflow-hidden">
+      <!-- Google AdSense Unit Container -->
+      <ins class="adsbygoogle"
+           style="display:block; width:100%; text-align:center;"
+           data-ad-layout="in-article"
+           data-ad-format="fluid"
+           data-ad-client="ca-pub-XXXXXXXXXXXXX"
+           data-ad-slot="1234567890"></ins>
+      <div class="text-[10px] text-neutral-500 font-mono flex items-center gap-2">
+        <i class="fa-solid fa-rectangle-ad text-rose-400"></i>
+        <span>Google AdSense Header Display Placement (728x90 / Auto Responsive)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Spotlight Section -->
+  <main class="max-w-6xl w-full mx-auto px-4 py-8 space-y-10 flex-1">
+    <div class="glass-panel rounded-3xl p-6 sm:p-10 relative overflow-hidden space-y-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold font-mono">
+        <i class="fa-solid fa-film"></i>
+        <span>EDITORIAL CINEMA & STREAMING ENGINEERING</span>
+      </div>
+      <h1 class="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+        Next-Generation Edge Video Streaming & Independent Cinema Reviews
+      </h1>
+      <p class="text-sm sm:text-base text-neutral-300 max-w-3xl leading-relaxed">
+        Anizon Media delivers an open showcase for cinema analysis, video compression standards (AV1, HEVC, HLS), and fair compensation frameworks for digital video creators worldwide.
+      </p>
+    </div>
+
+    <!-- Editorial Articles Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Article 1 -->
+      <article class="glass-panel rounded-2xl p-5 space-y-3.5 hover:border-white/20 transition flex flex-col justify-between">
+        <div class="space-y-3">
+          <div class="w-full aspect-video rounded-xl bg-neutral-900 overflow-hidden relative">
+            <img src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800" alt="Cinema Hall" class="w-full h-full object-cover">
+            <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-black/70 text-white backdrop-blur-md">
+              Cinematography
+            </span>
+          </div>
+          <h2 class="text-base font-bold text-white leading-snug">
+            The Renaissance of Independent 4K Cinema & HDR Color Grading
+          </h2>
+          <p class="text-xs text-neutral-400 leading-relaxed line-clamp-3">
+            How modern low-cost digital cinema sensors and ACES color workflows are revolutionizing independent filmmaking without massive studio budgets.
+          </p>
+        </div>
+        <div class="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-neutral-500">
+          <span>By Editorial Team</span>
+          <span>5 min read</span>
+        </div>
+      </article>
+
+      <!-- Article 2 -->
+      <article class="glass-panel rounded-2xl p-5 space-y-3.5 hover:border-white/20 transition flex flex-col justify-between">
+        <div class="space-y-3">
+          <div class="w-full aspect-video rounded-xl bg-neutral-900 overflow-hidden relative">
+            <img src="https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=800" alt="Streaming Tech" class="w-full h-full object-cover">
+            <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-black/70 text-white backdrop-blur-md">
+              Technology
+            </span>
+          </div>
+          <h2 class="text-base font-bold text-white leading-snug">
+            Optimizing Byte-Range Partial Requests for Stutter-Free MP4 Video
+          </h2>
+          <p class="text-xs text-neutral-400 leading-relaxed line-clamp-3">
+            An in-depth technical analysis of HTTP 206 Partial Content headers, Moov atom fast-start positioning, and edge server caching architectures.
+          </p>
+        </div>
+        <div class="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-neutral-500">
+          <span>By Lead Engineer</span>
+          <span>7 min read</span>
+        </div>
+      </article>
+
+      <!-- Article 3 -->
+      <article class="glass-panel rounded-2xl p-5 space-y-3.5 hover:border-white/20 transition flex flex-col justify-between">
+        <div class="space-y-3">
+          <div class="w-full aspect-video rounded-xl bg-neutral-900 overflow-hidden relative">
+            <img src="https://images.unsplash.com/photo-1518173946687-a4c8a383392e?w=800" alt="Creator Economy" class="w-full h-full object-cover">
+            <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-black/70 text-white backdrop-blur-md">
+              Monetization
+            </span>
+          </div>
+          <h2 class="text-base font-bold text-white leading-snug">
+            The Economics of Transparent Revenue Sharing for Video Publishers
+          </h2>
+          <p class="text-xs text-neutral-400 leading-relaxed line-clamp-3">
+            Exploring how decentralized payout channels (USDT, Binance Pay) empower international creators with zero transaction fees and immediate settlement.
+          </p>
+        </div>
+        <div class="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-neutral-500">
+          <span>By Finance Desk</span>
+          <span>4 min read</span>
+        </div>
+      </article>
+    </div>
+
+    <!-- Middle In-Content Ad Placement (300x250 or Responsive Display) -->
+    <div class="ad-placeholder rounded-2xl flex items-center justify-center p-4 text-center overflow-hidden">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-XXXXXXXXXXXXX"
+           data-ad-slot="9876543210"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <div class="text-[10px] text-neutral-500 font-mono flex items-center gap-2">
+        <i class="fa-solid fa-rectangle-ad text-purple-400"></i>
+        <span>Google AdSense In-Content Responsive Display Ad Placement</span>
+      </div>
+    </div>
+
+    <!-- Compliance & Trust Information -->
+    <div class="glass-panel rounded-3xl p-6 sm:p-8 space-y-4">
+      <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
+        <i class="fa-solid fa-shield-check"></i>
+        <span>Publisher Standards & Compliance Checklist</span>
+      </div>
+      <p class="text-xs text-neutral-300 leading-relaxed">
+        Anizon Media Network adheres strictly to Google Publisher Policies, DMCA standards, and data protection regulations. All displayed media conforms to safe-harbor digital distribution requirements. For inquiries regarding our advertising inventory or verification status, please review our official documentation below.
+      </p>
+      <div class="flex flex-wrap gap-3 pt-2 text-xs">
+        <a href="/privacy" class="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold transition border border-white/10">Privacy Policy</a>
+        <a href="/terms" class="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold transition border border-white/10">Terms of Service</a>
+        <a href="/about" class="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold transition border border-white/10">About Us</a>
+        <a href="/contact" class="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold transition border border-white/10">Contact Support</a>
+        <a href="/ads.txt" target="_blank" class="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 font-mono transition border border-emerald-500/20">ads.txt</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full border-t border-white/10 bg-[#06070a] py-6 text-center text-xs text-neutral-500">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p>© 2026 Anizon Media Network. All rights reserved.</p>
+      <div class="flex items-center gap-4">
+        <a href="/privacy" class="hover:text-white transition">Privacy Policy</a>
+        <a href="/terms" class="hover:text-white transition">Terms of Service</a>
+        <a href="/about" class="hover:text-white transition">About Us</a>
+        <a href="/contact" class="hover:text-white transition">Contact</a>
+        <a href="/ads.txt" class="hover:text-emerald-400 font-mono transition">ads.txt</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

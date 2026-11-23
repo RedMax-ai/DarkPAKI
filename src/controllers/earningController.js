@@ -15,8 +15,8 @@ function creditWatchBonus(req, res, next) {
     const msg = `+${coinsEarned} Coins ($${cashEarned.toFixed(4)}) Watch to Earn Bonus credited!`;
 
     // Atomic update
-    db.prepare('UPDATE users SET balance = balance + ?, coins = coins + ?, ads_watched = ads_watched + 1 WHERE id = ?')
-      .run(cashEarned, coinsEarned, userId);
+    db.prepare('UPDATE users SET balance = balance + ?, coins = coins + ?, ads_watched = ads_watched + 1, watch_time_minutes = COALESCE(watch_time_minutes, 0) + 2, total_earned_usd = COALESCE(total_earned_usd, 0) + ?, last_active_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(cashEarned, coinsEarned, cashEarned, userId);
 
     const updatedUser = db.prepare('SELECT balance, coins, ads_watched FROM users WHERE id = ?').get(userId);
 
@@ -108,7 +108,7 @@ function convertCoins(req, res, next) {
     // Atomic SQLite transaction
     db.exec('BEGIN IMMEDIATE;');
     try {
-      db.prepare('UPDATE users SET coins = coins - ?, balance = balance + ? WHERE id = ?').run(coinsDeducted, cashGained, userId);
+      db.prepare('UPDATE users SET coins = coins - ?, balance = balance + ?, total_earned_usd = COALESCE(total_earned_usd, 0) + ?, last_active_at = CURRENT_TIMESTAMP WHERE id = ?').run(coinsDeducted, cashGained, cashGained, userId);
       db.exec('COMMIT;');
 
       const updatedUser = db.prepare('SELECT balance, coins FROM users WHERE id = ?').get(userId);

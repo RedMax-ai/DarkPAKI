@@ -44,6 +44,12 @@ router.get('/withdrawals', requireAdmin, adminController.getAdminWithdrawals);
 router.post('/withdrawals/:id/complete', requireAdmin, adminController.completeWithdrawal);
 router.post('/withdrawals/:id/reject', requireAdmin, adminController.rejectWithdrawal);
 
+// Registered Users & Live Earnings Manager (Active / Offline, Watchtime, Coins, Money)
+router.get('/users', requireAdmin, adminController.getAdminUsers);
+router.get('/users/:id', requireAdmin, adminController.getAdminUserDetails);
+router.put('/users/:id/balance', requireAdmin, adminController.adjustUserBalance);
+router.post('/users/:id/reset-device', requireAdmin, adminController.adminResetUserDevice);
+
 // CDN Stream Integration
 router.post('/cdn-convert', requireAdmin, adminController.cdnConvertTelegramLink);
 router.post('/upload-direct', requireAdmin, adminController.cdnDirectUpload);

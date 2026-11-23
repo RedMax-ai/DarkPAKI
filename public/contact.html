@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us & Support | Anizon Media Network</title>
+  <meta name="description" content="Get in touch with Anizon Media Network for advertising inquiries, technical support, creator monetization, and publisher assistance.">
+  <link rel="icon" href="/public/darkpaki-logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body { background-color: #08090d; color: #cbd5e1; font-family: system-ui, -apple-system, sans-serif; }
+    .glass-card { background: rgba(18, 20, 29, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+  <!-- Top Navigation -->
+  <header class="w-full border-b border-white/10 bg-[#0c0e14]/90 sticky top-0 z-50 backdrop-blur-md">
+    <div class="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2.5">
+        <img src="/public/darkpaki-logo.png" alt="Anizon" class="h-7 w-auto object-contain">
+        <span class="font-black text-white text-base tracking-wide">ANIZON <span class="text-rose-500">MEDIA</span></span>
+      </a>
+      <nav class="flex items-center gap-4 text-xs font-semibold">
+        <a href="/" class="text-neutral-400 hover:text-white transition">Home</a>
+        <a href="/approval" class="text-neutral-400 hover:text-white transition">Showcase</a>
+        <a href="/about" class="text-neutral-400 hover:text-white transition">About</a>
+        <a href="/contact" class="text-rose-400 font-bold transition">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-4xl mx-auto px-4 py-12 flex-1 w-full space-y-8">
+    <div class="text-center space-y-3">
+      <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">
+        Get In Touch
+      </span>
+      <h1 class="text-3xl sm:text-4xl font-black text-white">Contact Our Team</h1>
+      <p class="text-sm text-neutral-400 max-w-xl mx-auto">
+        Have questions about advertising, partnership opportunities, DMCA notices, or technical integration? We're here to help 24/7.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Contact Information Cards -->
+      <div class="space-y-4">
+        <div class="glass-card rounded-2xl p-6 space-y-2">
+          <div class="flex items-center gap-3 text-rose-400 mb-1">
+            <i class="fa-solid fa-envelope text-lg"></i>
+            <h3 class="font-bold text-white text-sm">Official Email Inquiries</h3>
+          </div>
+          <p class="text-xs text-neutral-400">Direct support for publishers, advertisers, and creators:</p>
+          <p class="font-mono text-xs text-rose-300 font-bold">contact@anizon.watch</p>
+          <p class="font-mono text-xs text-neutral-400">support@anizon.watch</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6 space-y-2">
+          <div class="flex items-center gap-3 text-sky-400 mb-1">
+            <i class="fa-brands fa-telegram text-lg"></i>
+            <h3 class="font-bold text-white text-sm">Telegram Direct Support</h3>
+          </div>
+          <p class="text-xs text-neutral-400">Join our verified official channel for instantaneous support:</p>
+          <a href="https://t.me/darkpaki_official" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-sky-400 font-bold hover:underline">
+            <span>@darkpaki_official</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6 space-y-2">
+          <div class="flex items-center gap-3 text-amber-400 mb-1">
+            <i class="fa-solid fa-clock text-lg"></i>
+            <h3 class="font-bold text-white text-sm">Response Time SLA</h3>
+          </div>
+          <p class="text-xs text-neutral-400">All copyright notices, monetization reviews, and general inquiries are handled within 12 to 24 business hours.</p>
+        </div>
+      </div>
+
+      <!-- Quick Message Form -->
+      <div class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
+        <h3 class="font-bold text-white text-base">Send Us a Direct Message</h3>
+        <form onsubmit="event.preventDefault(); alert('Thank you! Your message has been received by our support team.'); this.reset();" class="space-y-4 text-xs">
+          <div>
+            <label class="block font-semibold text-neutral-300 mb-1">Your Full Name</label>
+            <input type="text" required placeholder="John Doe" class="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-rose-500 transition">
+          </div>
+          <div>
+            <label class="block font-semibold text-neutral-300 mb-1">Email Address</label>
+            <input type="email" required placeholder="john@example.com" class="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-rose-500 transition">
+          </div>
+          <div>
+            <label class="block font-semibold text-neutral-300 mb-1">Subject / Inquiry Type</label>
+            <select class="w-full bg-[#10121a] border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-rose-500 transition">
+              <option value="ads">Advertising & Google AdSense Partnerships</option>
+              <option value="creator">Creator Monetization & Payouts</option>
+              <option value="dmca">DMCA Copyright Inquiry</option>
+              <option value="tech">Technical & Streaming Issue</option>
+              <option value="general">General Support</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-neutral-300 mb-1">Message</label>
+            <textarea rows="4" required placeholder="Type your detailed inquiry here..." class="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-rose-500 transition"></textarea>
+          </div>
+          <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-rose-600/30">
+            Submit Inquiry
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full border-t border-white/10 bg-[#06070a] py-6 text-center text-xs text-neutral-500">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p>© 2026 Anizon Media Network. All rights reserved.</p>
+      <div class="flex items-center gap-4">
+        <a href="/privacy" class="hover:text-white transition">Privacy Policy</a>
+        <a href="/terms" class="hover:text-white transition">Terms of Service</a>
+        <a href="/about" class="hover:text-white transition">About Us</a>
+        <a href="/contact" class="hover:text-white transition">Contact</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
