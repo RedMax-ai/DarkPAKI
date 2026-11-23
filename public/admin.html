@@ -412,6 +412,10 @@
           <i class="fa-solid fa-chart-pie w-4 text-rose-400"></i>
           <span>Dashboard Overview</span>
         </button>
+        <button onclick="switchTab('files-create')" id="tabBtn-files-create" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
+          <i class="fa-solid fa-file-circle-plus w-4 text-emerald-400"></i>
+          <span>Files Create & Publish</span>
+        </button>
         <button onclick="switchTab('cdn-upload')" id="tabBtn-cdn-upload" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent transition text-left whitespace-nowrap">
           <i class="fa-solid fa-cloud-arrow-up w-4 text-purple-400"></i>
           <span>Direct CDN Uploader</span>
@@ -521,13 +525,230 @@
               <h3 class="text-base font-bold text-white">Latest Published Videos</h3>
               <p class="text-xs text-neutral-400">Most recent streams published to DarkPAKI</p>
             </div>
-            <button onclick="switchTab('cdn-upload')" class="bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-lg shadow-rose-600/20 flex items-center gap-2">
-              <i class="fa-solid fa-plus text-xs"></i>
-              <span>Upload New</span>
+            <button onclick="switchTab('files-create')" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center gap-2">
+              <i class="fa-solid fa-file-circle-plus text-xs"></i>
+              <span>Files Create (Publish)</span>
             </button>
           </div>
           <div id="recentVideosList" class="space-y-2.5">
             <div class="p-8 text-center text-neutral-400 text-sm">Loading recent videos...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB: FILES CREATE & PUBLISHER WITH TAGS -->
+      <!-- =================================================================== -->
+      <section id="tab-files-create" class="tab-content hidden space-y-6">
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-file-circle-plus text-emerald-400 text-xl"></i>
+                <span>Files Create & Stream Publisher</span>
+              </h3>
+              <p class="text-xs text-neutral-400 mt-1">
+                Create new content files, connect video stream links, and assign discoverable tags for DarkPAKI website.
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                <i class="fa-solid fa-tags text-[10px] mr-1"></i> Tags Enabled
+              </span>
+            </div>
+          </div>
+
+          <form id="filesCreateForm" onsubmit="handleFilesCreateSubmit(event)" class="space-y-5">
+            <!-- 1. Stream URL or File Source -->
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                <span>Video Stream URL (MP4 / CDN / HLS) *</span>
+                <span id="fcStreamStatus" class="text-[10px] text-emerald-400 font-mono hidden flex items-center gap-1">
+                  <i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Detecting stream metadata...
+                </span>
+              </label>
+              <input 
+                type="url" 
+                id="fcSrc" 
+                required 
+                oninput="handleFcStreamChange(this.value)" 
+                placeholder="https://darkpaki-stream.onrender.com/... or https://c6no5-b.cdn.cr/...mp4" 
+                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition font-mono"
+              >
+              <span class="text-[10px] text-neutral-500 mt-1 block">Supports direct .mp4, m3u8 HLS streams, Telegram CDN, Cloudflare R2, or storage links.</span>
+            </div>
+
+            <!-- 2. File Title & Category -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">File / Video Title *</label>
+                <input 
+                  type="text" 
+                  id="fcTitle" 
+                  required 
+                  placeholder="e.g. VIP Pakistani Exclusive Full HD Episode 03" 
+                  class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition"
+                >
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Primary Category *</label>
+                <select id="fcCategory" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition">
+                  <option value="TRENDING VIDEOS" selected>🔥 18+ Trending</option>
+                  <option value="VIRAL">🚀 Viral</option>
+                  <option value="ASIAN">🌏 Asian</option>
+                  <option value="SCANDAL">⚠️ Scandal</option>
+                  <option value="CELEBRITY">⭐ Celebrity</option>
+                  <option value="MODELS">💎 Models</option>
+                  <option value="BDSM">⛓️ BDSM</option>
+                  <option value="THREESOME">👥 Threesome</option>
+                  <option value="FOURSOME">👥 Foursome</option>
+                  <option value="LESBIAN">💋 Lesbian</option>
+                  <option value="GAY">🌈 Gay</option>
+                  <option value="PORN VIDEOS">🔞 Porn Videos</option>
+                  <option value="SHORTS">📱 Shorts / Reels</option>
+                  <option value="18+ ADULT">🔞 18+ Adult / VIP</option>
+                  <option value="MOVIES">🎬 Movies</option>
+                  <option value="WEB SERIES">📺 Web Series</option>
+                  <option value="ANIME">⚡ Anime</option>
+                  <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 3. TAGS SECTION (Special Requested Feature) -->
+            <div class="p-4 bg-black/30 border border-white/[0.08] rounded-2xl space-y-3">
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-hashtag text-purple-400"></i>
+                  <span>Tags & Hashtags (Discoverability & Search) *</span>
+                </label>
+                <span class="text-[10px] text-neutral-400 font-mono">Comma or space separated</span>
+              </div>
+
+              <!-- Tags Input -->
+              <input 
+                type="text" 
+                id="fcTagsInput" 
+                oninput="renderFcTagsBadges()" 
+                placeholder="Type or click quick tags below: #trending, #viral, #desi, #4k, #exclusive" 
+                class="w-full bg-black/60 border border-white/15 focus:border-purple-500 rounded-xl px-4 py-2.5 text-sm text-purple-300 font-mono outline-none transition"
+              >
+
+              <!-- Quick Tag Suggestion Chips -->
+              <div class="space-y-1.5">
+                <p class="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider">Quick Tag Suggestions (Click to Add):</p>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="addFcQuickTag('#trending')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #trending</button>
+                  <button type="button" onclick="addFcQuickTag('#viral')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #viral</button>
+                  <button type="button" onclick="addFcQuickTag('#desi')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #desi</button>
+                  <button type="button" onclick="addFcQuickTag('#4k')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #4k</button>
+                  <button type="button" onclick="addFcQuickTag('#uncut')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #uncut</button>
+                  <button type="button" onclick="addFcQuickTag('#pakistani')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #pakistani</button>
+                  <button type="button" onclick="addFcQuickTag('#exclusive')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #exclusive</button>
+                  <button type="button" onclick="addFcQuickTag('#hd')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #hd</button>
+                  <button type="button" onclick="addFcQuickTag('#webseries')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #webseries</button>
+                  <button type="button" onclick="addFcQuickTag('#vip')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #vip</button>
+                  <button type="button" onclick="addFcQuickTag('#hot')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #hot</button>
+                  <button type="button" onclick="addFcQuickTag('#movies')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #movies</button>
+                </div>
+              </div>
+
+              <!-- Active Tags Badges Display Container -->
+              <div id="fcTagsBadgesContainer" class="hidden pt-2 flex flex-wrap gap-1.5 border-t border-white/5">
+                <!-- Badges will render here dynamically -->
+              </div>
+            </div>
+
+            <!-- 4. Thumbnail & Auto Frame -->
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                <span>Thumbnail Image (Auto-captured from stream if blank)</span>
+                <span class="text-[10px] text-neutral-400">Direct image link or auto-frame</span>
+              </label>
+              <div class="flex gap-2">
+                <input 
+                  type="text" 
+                  id="fcThumb" 
+                  placeholder="Leave blank or paste image URL (Auto-detected from stream frame #t=2.0)" 
+                  class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition font-mono"
+                >
+                <button type="button" onclick="captureFcThumbnail()" class="px-3.5 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0">
+                  <i class="fa-solid fa-camera"></i>
+                  <span>Auto Frame</span>
+                </button>
+              </div>
+
+              <!-- Live Auto-Captured Thumbnail Preview -->
+              <div id="fcThumbPreviewContainer" class="hidden mt-2.5 p-2 bg-black/60 border border-white/10 rounded-xl flex items-center gap-3">
+                <img id="fcThumbPreviewImg" src="" alt="Thumbnail" class="w-24 h-16 object-cover rounded-lg border border-emerald-400/50 shadow">
+                <div class="text-[11px] text-neutral-300">
+                  <p class="font-bold text-emerald-400 flex items-center gap-1">
+                    <i class="fa-solid fa-circle-check text-[10px]"></i> Live Frame Detected
+                  </p>
+                  <p class="text-neutral-400">Captured frame from video stream</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Duration, Creator & Description -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Duration Display</label>
+                <input type="text" id="fcDuration" value="12:30" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition font-mono">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-neutral-300 mb-1.5">Creator / Studio Name</label>
+                <input type="text" id="fcCreator" value="DarkPAKI VIP Exclusive" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400 transition">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5">Description / Story / Notes (Optional)</label>
+              <textarea id="fcDescription" rows="2" placeholder="Enter video description, demand details, or story notes..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-400 transition"></textarea>
+            </div>
+
+            <!-- 6. Featured Spotlight Checkbox -->
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="fcFeatured" class="w-4 h-4 accent-emerald-500 rounded">
+              <span class="text-xs font-semibold text-neutral-300">Feature this file on the Hero Spotlight top banner on DarkPAKI</span>
+            </label>
+
+            <!-- 7. Submit Button -->
+            <button type="submit" id="fcSubmitBtn" class="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-black py-3.5 px-6 rounded-xl transition shadow-xl shadow-emerald-600/25 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-file-circle-check"></i>
+              <span>Create & Publish File to Website Now</span>
+            </button>
+          </form>
+
+          <!-- Success Result Card -->
+          <div id="fcResultCard" class="hidden mt-6 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-4 animate-enter">
+            <div class="flex items-center gap-3 text-emerald-400 font-bold text-sm">
+              <i class="fa-solid fa-circle-check text-xl"></i>
+              <span>File Successfully Created and Published to DarkPAKI Website!</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="aspect-video bg-black rounded-xl overflow-hidden border border-white/10 relative">
+                <video id="fcResultVideo" controls class="w-full h-full object-contain"></video>
+              </div>
+              <div class="space-y-2 text-xs">
+                <p class="font-bold text-white text-sm" id="fcResultTitle">File Title</p>
+                <p class="text-neutral-300">Category: <span class="text-emerald-400 font-bold" id="fcResultCategory">18+ ADULT</span></p>
+                <div id="fcResultTags" class="flex flex-wrap gap-1 pt-1"></div>
+                <div class="space-y-1 pt-1">
+                  <label class="text-[10px] text-neutral-400 font-mono">STREAM URL:</label>
+                  <input type="text" readonly id="fcResultStreamUrl" class="w-full bg-black/60 border border-white/10 rounded px-2.5 py-1.5 font-mono text-[11px] text-emerald-300 select-all">
+                </div>
+                <div class="pt-2 flex gap-2">
+                  <a href="/" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition">
+                    Open on Website
+                  </a>
+                  <button onclick="document.getElementById('fcResultCard').classList.add('hidden')" class="bg-white/10 hover:bg-white/20 text-neutral-300 px-3 py-1.5 rounded-lg text-xs transition">
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -621,6 +842,15 @@
             <div>
               <label class="block text-xs font-bold text-neutral-300 mb-1.5">Custom Thumbnail URL (Leave blank to use CDN Auto-Thumb)</label>
               <input type="url" id="cdnThumbInput" placeholder="https://... (or leave blank for CDN generated thumbnail)" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
+            </div>
+
+            <!-- Tags Section -->
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                <span>Tags & Hashtags (Discoverability)</span>
+                <span class="text-[10px] text-neutral-400 font-mono">Comma or space separated</span>
+              </label>
+              <input type="text" id="cdnTagsInput" placeholder="e.g. #trending, #viral, #desi, #4k, #exclusive" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-purple-300 focus:outline-none focus:border-rose-500 transition font-mono">
             </div>
 
             <!-- Featured Checkbox -->
@@ -983,10 +1213,6 @@
                   <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
                 </select>
               </div>
-                  <option value="TRENDING VIDEOS">🔥 Trending Videos</option>
-                  <option value="VIP PAKISTANI">🇵🇰 VIP Pakistani Exclusive</option>
-                </select>
-              </div>
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Duration</label>
                 <input type="text" id="manualDuration" value="12:30" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition">
@@ -995,6 +1221,15 @@
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5">Creator Name</label>
                 <input type="text" id="manualCreator" value="DarkPAKI VIP Exclusive" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition">
               </div>
+            </div>
+
+            <!-- Tags Section -->
+            <div>
+              <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
+                <span>Tags & Hashtags (Discoverability)</span>
+                <span class="text-[10px] text-neutral-400 font-mono">Comma or space separated</span>
+              </label>
+              <input type="text" id="manualTags" placeholder="e.g. #trending, #viral, #desi, #4k, #exclusive" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-purple-300 focus:outline-none focus:border-amber-400 transition font-mono">
             </div>
 
             <label class="flex items-center gap-2 cursor-pointer select-none">
@@ -1354,6 +1589,10 @@
             <label class="block font-bold text-neutral-300 mb-1">Creator</label>
             <input type="text" id="editCreator" class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white">
           </div>
+        </div>
+        <div>
+          <label class="block font-bold text-neutral-300 mb-1">Tags & Hashtags (Discoverability)</label>
+          <input type="text" id="editTags" placeholder="#trending, #desi, #4k" class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-purple-300 font-mono">
         </div>
         <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl transition">
           Update Video
@@ -1783,6 +2022,7 @@
       const creator = document.getElementById('cdnCreatorInput').value.trim() || 'DarkPAKI VIP Exclusive';
       const duration = document.getElementById('cdnDurationInput').value.trim() || '15:00';
       const thumb = document.getElementById('cdnThumbInput').value.trim();
+      const tags = document.getElementById('cdnTagsInput')?.value?.trim() || '';
       const isFeatured = document.getElementById('cdnFeaturedInput').checked;
 
       const progressContainer = document.getElementById('uploadProgressContainer');
@@ -1804,6 +2044,7 @@
         creator: creator || 'DarkPAKI VIP Exclusive',
         duration: duration || '14:20',
         thumb: thumb || '',
+        tags: tags || '',
         featured: isFeatured ? '1' : '0'
       });
 
@@ -2075,6 +2316,7 @@
       const src = document.getElementById('manualSrc').value.trim();
       let thumbImg = document.getElementById('manualThumb').value.trim();
       const tag = document.getElementById('manualTag').value;
+      const tags = document.getElementById('manualTags')?.value?.trim() || '';
       const duration = document.getElementById('manualDuration').value.trim() || '12:00';
       const creator = document.getElementById('manualCreator').value.trim() || 'DarkPAKI VIP Exclusive';
       const isFeatured = document.getElementById('manualFeatured').checked;
@@ -2088,7 +2330,7 @@
         const res = await adminFetch('/admin/videos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, src, thumbImg, tag, duration, creator, isFeatured })
+          body: JSON.stringify({ title, src, thumbImg, tag, tags, duration, creator, isFeatured })
         });
         if (res.success) {
           showToast(`Published "${title}" successfully!`, 'success');
@@ -2104,6 +2346,224 @@
         }
       } catch (err) {
         showToast('Error publishing: ' + err.message, 'error');
+      }
+    }
+
+    // =========================================================================
+    // FILES CREATE & STREAM PUBLISHER HANDLERS (WITH TAGS)
+    // =========================================================================
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatMediaFragmentUrl(src, time = 2.0) {
+      if (!src) return '';
+      const hashIdx = src.indexOf('#');
+      const base = hashIdx !== -1 ? src.substring(0, hashIdx) : src;
+      return `${base}#t=${time}`;
+    }
+
+    function addFcQuickTag(tagStr) {
+      const input = document.getElementById('fcTagsInput');
+      if (!input) return;
+      let current = input.value.trim();
+      const existing = current.split(/[\s,]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
+      if (!existing.includes(tagStr.toLowerCase())) {
+        input.value = current ? `${current}, ${tagStr}` : tagStr;
+      }
+      renderFcTagsBadges();
+    }
+
+    function removeFcTag(tagToRemove) {
+      const input = document.getElementById('fcTagsInput');
+      if (!input) return;
+      const tags = input.value.split(/[\s,]+/)
+        .map(t => t.trim())
+        .filter(t => t && t.toLowerCase() !== tagToRemove.toLowerCase());
+      input.value = tags.join(', ');
+      renderFcTagsBadges();
+    }
+
+    function renderFcTagsBadges() {
+      const input = document.getElementById('fcTagsInput');
+      const container = document.getElementById('fcTagsBadgesContainer');
+      if (!input || !container) return;
+
+      const raw = input.value.trim();
+      if (!raw) {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+        return;
+      }
+
+      const tags = raw.split(/[\s,]+/)
+        .map(t => t.trim())
+        .filter(t => t.length > 0)
+        .map(t => t.startsWith('#') ? t : `#${t}`);
+
+      if (tags.length === 0) {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
+      container.innerHTML = tags.map(t => `
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+          <span>${escapeHtml(t)}</span>
+          <button type="button" onclick="removeFcTag('${escapeHtml(t)}')" class="hover:text-white ml-0.5 text-[10px]">✕</button>
+        </span>
+      `).join('');
+    }
+
+    function handleFcStreamChange(url) {
+      const cleanUrl = (url || '').trim();
+      const statusEl = document.getElementById('fcStreamStatus');
+      const prevCont = document.getElementById('fcThumbPreviewContainer');
+      const prevImg = document.getElementById('fcThumbPreviewImg');
+
+      if (!cleanUrl) {
+        if (statusEl) statusEl.classList.add('hidden');
+        if (prevCont) prevCont.classList.add('hidden');
+        return;
+      }
+
+      if (statusEl) statusEl.classList.remove('hidden');
+
+      // Auto-populate thumbnail preview with #t=2.0
+      const thumbUrl = formatMediaFragmentUrl(cleanUrl, 2.0);
+      if (prevImg) prevImg.src = thumbUrl;
+      if (prevCont) prevCont.classList.remove('hidden');
+
+      // Quick test video metadata
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      v.src = cleanUrl;
+      v.onloadedmetadata = () => {
+        if (statusEl) statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Stream active (${Math.round(v.duration || 0)}s)`;
+        const durInput = document.getElementById('fcDuration');
+        if (durInput && v.duration && !isNaN(v.duration)) {
+          const m = Math.floor(v.duration / 60);
+          const s = Math.floor(v.duration % 60);
+          durInput.value = `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+      };
+      v.onerror = () => {
+        if (statusEl) statusEl.innerHTML = `<span class="text-amber-400"><i class="fa-solid fa-circle-info"></i> Stream URL saved</span>`;
+      };
+    }
+
+    function captureFcThumbnail() {
+      const src = document.getElementById('fcSrc')?.value?.trim();
+      const thumbInput = document.getElementById('fcThumb');
+      if (!src) {
+        showToast('Please enter a video stream URL first!', 'error');
+        return;
+      }
+      const thumbVal = formatMediaFragmentUrl(src, 2.0);
+      if (thumbInput) thumbInput.value = thumbVal;
+      const prevCont = document.getElementById('fcThumbPreviewContainer');
+      const prevImg = document.getElementById('fcThumbPreviewImg');
+      if (prevImg) prevImg.src = thumbVal;
+      if (prevCont) prevCont.classList.remove('hidden');
+      showToast('Thumbnail frame auto-detected from stream (#t=2.0)', 'success');
+    }
+
+    async function handleFilesCreateSubmit(e) {
+      e.preventDefault();
+      const title = document.getElementById('fcTitle').value.trim();
+      const src = document.getElementById('fcSrc').value.trim();
+      let thumbImg = document.getElementById('fcThumb').value.trim();
+      const tag = document.getElementById('fcCategory').value;
+      const tags = document.getElementById('fcTagsInput').value.trim();
+      const description = document.getElementById('fcDescription').value.trim();
+      const duration = document.getElementById('fcDuration').value.trim() || '12:30';
+      const creator = document.getElementById('fcCreator').value.trim() || 'DarkPAKI VIP Exclusive';
+      const isFeatured = document.getElementById('fcFeatured').checked;
+      const submitBtn = document.getElementById('fcSubmitBtn');
+
+      if (!src) {
+        showToast('Video stream URL is required!', 'error');
+        return;
+      }
+
+      if (!thumbImg) {
+        thumbImg = formatMediaFragmentUrl(src, 2.0);
+        document.getElementById('fcThumb').value = thumbImg;
+      }
+
+      try {
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Creating File & Publishing...';
+        }
+
+        const res = await adminFetch('/admin/videos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            src,
+            thumbImg,
+            tag,
+            tags,
+            description,
+            duration,
+            creator,
+            isFeatured
+          })
+        });
+
+        if (res.success && res.data) {
+          showToast(`File "${title}" successfully created with tags!`, 'success');
+          
+          // Show Success Result Card
+          const card = document.getElementById('fcResultCard');
+          if (card) {
+            document.getElementById('fcResultTitle').textContent = res.data.title || title;
+            document.getElementById('fcResultCategory').textContent = res.data.tag || tag;
+            document.getElementById('fcResultStreamUrl').value = res.data.src || src;
+            
+            const vid = document.getElementById('fcResultVideo');
+            if (vid) vid.src = res.data.src || src;
+
+            const tagsContainer = document.getElementById('fcResultTags');
+            if (tagsContainer) {
+              const tagList = (res.data.tags || tags).split(/[\s,]+/).filter(Boolean);
+              tagsContainer.innerHTML = tagList.map(t => `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">${escapeHtml(t.startsWith('#')?t:`#${t}`)}</span>`).join('');
+            }
+            card.classList.remove('hidden');
+          }
+
+          // Reset form
+          e.target.reset();
+          document.getElementById('fcDuration').value = '12:30';
+          document.getElementById('fcCreator').value = 'DarkPAKI VIP Exclusive';
+          renderFcTagsBadges();
+          
+          const prevCont = document.getElementById('fcThumbPreviewContainer');
+          if (prevCont) prevCont.classList.add('hidden');
+          const statusEl = document.getElementById('fcStreamStatus');
+          if (statusEl) statusEl.classList.add('hidden');
+
+          loadAdminStats();
+          loadAdminVideos();
+        } else {
+          showToast(res.message || 'Failed to create file', 'error');
+        }
+      } catch (err) {
+        showToast('Error creating file: ' + err.message, 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa-solid fa-file-circle-check mr-2"></i><span>Create & Publish File to Website Now</span>';
+        }
       }
     }
 
@@ -2257,6 +2717,8 @@
       document.getElementById('editSrc').value = v.src;
       document.getElementById('editDuration').value = v.duration;
       document.getElementById('editCreator').value = v.creator;
+      const tagsEl = document.getElementById('editTags');
+      if (tagsEl) tagsEl.value = v.tags || '';
       document.getElementById('editVideoModal').classList.remove('hidden');
     }
 
@@ -2273,12 +2735,13 @@
       const src = document.getElementById('editSrc').value.trim();
       const duration = document.getElementById('editDuration').value.trim();
       const creator = document.getElementById('editCreator').value.trim();
+      const tags = document.getElementById('editTags')?.value?.trim() || '';
 
       try {
         const res = await adminFetch(`/admin/videos/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, tag, thumbImg, src, duration, creator })
+          body: JSON.stringify({ title, tag, thumbImg, src, duration, creator, tags })
         });
         if (res.success) {
           showToast('Video updated successfully!', 'success');

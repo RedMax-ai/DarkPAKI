@@ -47,21 +47,21 @@ function simulateReferral(req, res, next) {
   try {
     const userId = req.user.id;
 
-    // +1,100 Coins (100 Coins + 1,000 Coins from $0.11 USD value = 1,100 Coins), +1 to referrals
-    db.prepare('UPDATE users SET coins = coins + 1100, referrals = referrals + 1 WHERE id = ?').run(userId);
+    // +200 Coins, +1 to referrals
+    db.prepare('UPDATE users SET coins = coins + 200, referrals = referrals + 1 WHERE id = ?').run(userId);
 
     const updatedUser = db.prepare('SELECT balance, coins, referrals FROM users WHERE id = ?').get(userId);
 
     db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
       'TEST_REFERRAL_CREDITED',
-      `User ID ${userId} tested referral: +1,100 Coins credited`,
+      `User ID ${userId} tested referral: +200 Coins credited`,
       req.ip,
       req.user.device_id
     );
 
     res.json({
       success: true,
-      message: '+1,100 Coins Referral Bonus credited for 1 verified friend!',
+      message: '+200 Coins Referral Bonus credited for 1 verified friend!',
       data: {
         balance: updatedUser.balance,
         coins: updatedUser.coins,

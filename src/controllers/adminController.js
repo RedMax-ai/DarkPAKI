@@ -692,12 +692,14 @@ function cdnDirectUpload(req, res, next) {
           }
           const isFeatured = req.query.featured === '1' ? 1 : 0;
           const requestedBy = sanitizeString(req.query.requestedBy) || 'Demanded by VIP Users';
+          const tags = sanitizeString(req.query.tags) || '';
+          const description = sanitizeString(req.query.description) || '';
 
           const insertVideo = db.prepare(`
-            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, views_count)
-            VALUES (?, ?, '0 views', ?, ?, ?, ?, ?, ?, 0)
+            INSERT INTO videos (title, creator, views, duration, src, thumb_img, tag, requested_by, is_featured, description, tags, views_count)
+            VALUES (?, ?, '0 views', ?, ?, ?, ?, ?, ?, ?, ?, 0)
           `);
-          const result = insertVideo.run(title, creator, duration, cdnData.stream_url, thumb, tag, requestedBy, isFeatured);
+          const result = insertVideo.run(title, creator, duration, cdnData.stream_url, thumb, tag, requestedBy, isFeatured, description, tags);
           const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);
 
           db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(

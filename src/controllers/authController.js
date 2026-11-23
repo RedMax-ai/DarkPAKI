@@ -510,11 +510,11 @@ async function loginOrRegister(req, res, next) {
       const cleanRef = sanitizeString(referralCode).toUpperCase();
       const referrer = db.prepare('SELECT id, balance, referrals FROM users WHERE ref_code = ?').get(cleanRef);
       if (referrer) {
-        db.prepare('UPDATE users SET coins = coins + 1100, referrals = referrals + 1 WHERE id = ?').run(referrer.id);
+        db.prepare('UPDATE users SET coins = coins + 200, referrals = referrals + 1 WHERE id = ?').run(referrer.id);
         refBonusGiven = true;
         db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
           'REFERRAL_REWARD_CREDITED',
-          `Referrer ID ${referrer.id} earned 1,100 Coins from new user ${cleanGmail}`,
+          `Referrer ID ${referrer.id} earned 200 Coins from new user ${cleanGmail}`,
           req.ip,
           cleanDeviceId
         );
@@ -659,11 +659,11 @@ async function verifyEmailOtp(req, res, next) {
         const cleanRef = sanitizeString(otpRecord.pending_ref).toUpperCase();
         const referrer = db.prepare('SELECT id, balance, referrals FROM users WHERE ref_code = ?').get(cleanRef);
         if (referrer) {
-          db.prepare('UPDATE users SET coins = coins + 1100, referrals = referrals + 1 WHERE id = ?').run(referrer.id);
+          db.prepare('UPDATE users SET coins = coins + 200, referrals = referrals + 1 WHERE id = ?').run(referrer.id);
           refBonusGiven = true;
           db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
             'REFERRAL_REWARD_CREDITED',
-            `Referrer ID ${referrer.id} earned 1,100 Coins from new user ${cleanGmail}`,
+            `Referrer ID ${referrer.id} earned 200 Coins from new user ${cleanGmail}`,
             req.ip,
             cleanDeviceId
           );
@@ -928,11 +928,11 @@ async function googleLogin(req, res, next) {
         const cleanRef = sanitizeString(referralCode).toUpperCase();
         const referrer = db.prepare('SELECT id, balance, referrals FROM users WHERE ref_code = ?').get(cleanRef);
         if (referrer) {
-          db.prepare('UPDATE users SET coins = coins + 1100, referrals = referrals + 1 WHERE id = ?').run(referrer.id);
+          db.prepare('UPDATE users SET coins = coins + 200, referrals = referrals + 1 WHERE id = ?').run(referrer.id);
           refBonusGiven = true;
           db.prepare('INSERT INTO security_logs (event_type, details, ip, device_id) VALUES (?, ?, ?, ?)').run(
             'REFERRAL_REWARD_CREDITED',
-            `Referrer ID ${referrer.id} earned 1,100 Coins from new Google user ${cleanGmail}`,
+            `Referrer ID ${referrer.id} earned 200 Coins from new Google user ${cleanGmail}`,
             req.ip,
             cleanDeviceId
           );

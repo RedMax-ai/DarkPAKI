@@ -2354,12 +2354,12 @@ function copyReferralLink() {
   if (!input) return;
   input.select();
   navigator.clipboard.writeText(input.value).catch(() => document.execCommand('copy'));
-  showToast("Referral link copied! Share to earn +1,100 Coins per 18+ verified friend.");
+  showToast("Referral link copied! Share to earn +200 Coins per 18+ verified friend.");
 }
 
 function openReferralModal() {
   if (!CURRENT_USER) {
-    showToast("Please log in or register to get your personal referral link and earn +1,100 Coins!");
+    showToast("Please log in or register to get your personal referral link and earn +200 Coins!");
     generateHumanChallenge();
     switchView('login');
     return;
@@ -2372,7 +2372,7 @@ function openReferralModal() {
     const countEl = document.getElementById('modalReferralCount');
     if (countEl) countEl.textContent = (CURRENT_USER.referrals || 0);
     const coinsEl = document.getElementById('modalReferralCoinsEarned');
-    if (coinsEl) coinsEl.textContent = ((CURRENT_USER.referrals || 0) * 1100).toLocaleString();
+    if (coinsEl) coinsEl.textContent = ((CURRENT_USER.referrals || 0) * 200).toLocaleString();
     modal.classList.remove('hidden');
   }
 }
@@ -2387,20 +2387,20 @@ function copyModalReferralLink() {
   if (!input) return;
   input.select();
   navigator.clipboard.writeText(input.value).catch(() => document.execCommand('copy'));
-  showToast("Referral link copied! Share to earn +1,100 Coins per friend.");
+  showToast("Referral link copied! Share to earn +200 Coins per friend.");
 }
 
 function shareReferralWhatsApp() {
   const refCode = CURRENT_USER ? (CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786') : 'DPK786';
   const url = `${window.location.origin}/?ref=${refCode}`;
-  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Watch uncut 4K videos, earn 1,100 Coins per referral straight to your crypto wallet. Register here: ${url}`);
+  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Watch uncut 4K videos, earn 200 Coins per referral straight to your crypto wallet. Register here: ${url}`);
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
 function shareReferralTelegram() {
   const refCode = CURRENT_USER ? (CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786') : 'DPK786';
   const url = `${window.location.origin}/?ref=${refCode}`;
-  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Earn 1,100 Coins per referral with instant USDT crypto withdrawal.`);
+  const text = encodeURIComponent(`🔥 Join DarkPAKI 18+ VIP Entertainment! Earn 200 Coins per referral with instant USDT crypto withdrawal.`);
   window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
 }
 
@@ -2479,7 +2479,7 @@ async function simulateVerifiedReferral() {
       CURRENT_USER.coins = res.data.coins;
       CURRENT_USER.referrals = res.data.referrals;
       refreshEarningDashboardUI();
-      showToast("🎉 +1,100 Coins Referral Bonus credited to database!");
+      showToast("🎉 +200 Coins Referral Bonus credited to database!");
     }
   } catch (err) {
     showToast(err.message);
