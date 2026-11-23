@@ -595,6 +595,24 @@ async function runTests() {
     const unlinkedVideo = db.prepare('SELECT folder_id, folder_name FROM videos WHERE id = ?').get(folderVideoRes.body.data.id);
     assert(unlinkedVideo && unlinkedVideo.folder_id === null, 'Deleting folder unlinks videos without deleting the video records');
 
+    // ----------------------------------------------------
+    // TEST 14: TAG BANK & MANAGEMENT SYSTEM
+    // ----------------------------------------------------
+    console.log('\n--- TEST 14: TAG BANK & MANAGEMENT SYSTEM ---');
+
+    // 14a. Get Admin Tags
+    const getTagsRes = await request('GET', '/admin/tags', null, { Authorization: `Bearer ${adminToken}` });
+    assert(getTagsRes.status === 200 && Array.isArray(getTagsRes.body.data) && getTagsRes.body.data.length >= 1, 'GET /admin/tags returns list of persistent tags');
+
+    // 14b. Create New Tag in Bank
+    const createTagRes = await request('POST', '/admin/tags', { name: '#customtagtest' }, { Authorization: `Bearer ${adminToken}` });
+    assert(createTagRes.status === 200 && createTagRes.body.data.name === '#customtagtest', 'POST /admin/tags persists new tag in SQLite database');
+    const newTagId = createTagRes.body.data.id;
+
+    // 14c. Delete Tag from Bank
+    const deleteTagRes = await request('DELETE', `/admin/tags/${newTagId}`, null, { Authorization: `Bearer ${adminToken}` });
+    assert(deleteTagRes.status === 200, 'DELETE /admin/tags/:id removes tag from database');
+
     // Cleanup reaction & follow & test video
     db.prepare('DELETE FROM video_reactions WHERE device_id = ?').run('TEST-YOUTUBE-DEVICE-1');
     db.prepare('DELETE FROM follows WHERE follower_device_id = ?').run('TEST-YOUTUBE-DEVICE-1');

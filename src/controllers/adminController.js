@@ -275,23 +275,27 @@ function updateFolder(req, res, next) {
 
 function deleteFolder(req, res, next) {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      return res.status(400).json({ success: false, message: 'Invalid folder ID.' });
+    const rawId = req.params.id;
+    let folder = null;
+    const numId = parseInt(rawId, 10);
+    if (!isNaN(numId)) {
+      folder = db.prepare('SELECT * FROM folders WHERE id = ?').get(numId);
+    }
+    if (!folder) {
+      folder = db.prepare('SELECT * FROM folders WHERE name = ? COLLATE NOCASE OR slug = ?').get(rawId, rawId);
     }
 
-    const folder = db.prepare('SELECT * FROM folders WHERE id = ?').get(id);
     if (!folder) {
       return res.status(404).json({ success: false, message: 'Folder not found.' });
     }
 
     // Unlink any videos from this folder without deleting the videos
-    db.prepare("UPDATE videos SET folder_id = NULL, folder_name = '' WHERE folder_id = ?").run(id);
-    db.prepare('DELETE FROM folders WHERE id = ?').run(id);
+    db.prepare("UPDATE videos SET folder_id = NULL, folder_name = '' WHERE folder_id = ? OR folder_name = ? COLLATE NOCASE").run(folder.id, folder.name);
+    db.prepare('DELETE FROM folders WHERE id = ?').run(folder.id);
 
     db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
       'FOLDER_DELETED',
-      `Admin deleted folder #${id}: "${folder.name}"`,
+      `Admin deleted folder #${folder.id}: "${folder.name}"`,
       req.ip
     );
 
@@ -302,6 +306,88 @@ function deleteFolder(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+function getAdminTags(req, res, next) {
+  try {
+    const tags = db.prepare('SELECT * FROM tags ORDER BY usage_count DESC, id ASC').all();
+    res.json({
+      success: true,
+      data: tags
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function createAdminTag(req, res, next) {
+  try {
+    const { name } = req.body;
+    const raw = sanitizeString(name).trim();
+    if (!raw) {
+      return res.status(400).json({ success: false, message: 'Tag name is required.' });
+    }
+
+    const parts = raw.split(/[\s,]+/).map(t => t.trim()).filter(Boolean);
+    const ins = db.prepare('INSERT OR IGNORE INTO tags (name, usage_count) VALUES (?, 1)');
+    const inc = db.prepare('UPDATE tags SET usage_count = usage_count + 1 WHERE name = ? COLLATE NOCASE');
+
+    for (let p of parts) {
+      const cleanTag = p.startsWith('#') ? p.toLowerCase() : `#${p.toLowerCase()}`;
+      const r = ins.run(cleanTag);
+      if (r.changes === 0) {
+        inc.run(cleanTag);
+      }
+    }
+
+    const firstPart = parts[0] ? (parts[0].startsWith('#') ? parts[0].toLowerCase() : `#${parts[0].toLowerCase()}`) : '';
+    const tagRecord = db.prepare('SELECT * FROM tags WHERE name = ? COLLATE NOCASE').get(firstPart);
+    const allTags = db.prepare('SELECT * FROM tags ORDER BY usage_count DESC, id ASC').all();
+    res.json({
+      success: true,
+      message: 'Tag(s) saved successfully!',
+      data: tagRecord || (allTags.length > 0 ? allTags[0] : null),
+      tags: allTags
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function deleteAdminTag(req, res, next) {
+  try {
+    const raw = req.params.id;
+    const id = parseInt(raw, 10);
+    if (!isNaN(id)) {
+      db.prepare('DELETE FROM tags WHERE id = ?').run(id);
+    } else {
+      db.prepare('DELETE FROM tags WHERE name = ? COLLATE NOCASE').run(raw);
+    }
+    const allTags = db.prepare('SELECT * FROM tags ORDER BY usage_count DESC, id ASC').all();
+    res.json({
+      success: true,
+      message: 'Tag deleted successfully.',
+      data: allTags
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function syncTagsToDatabase(tagsStr) {
+  if (!tagsStr) return;
+  try {
+    const parts = String(tagsStr).split(/[\s,]+/).map(t => t.trim()).filter(Boolean);
+    const ins = db.prepare('INSERT OR IGNORE INTO tags (name, usage_count) VALUES (?, 1)');
+    const inc = db.prepare('UPDATE tags SET usage_count = usage_count + 1 WHERE name = ? COLLATE NOCASE');
+    for (let p of parts) {
+      const clean = p.startsWith('#') ? p.toLowerCase() : `#${p.toLowerCase()}`;
+      const r = ins.run(clean);
+      if (r.changes === 0) {
+        inc.run(clean);
+      }
+    }
+  } catch (e) {}
 }
 
 function getAdminVideos(req, res, next) {
@@ -416,6 +502,7 @@ function createVideo(req, res, next) {
 
     const result = insertVideo.run(cleanTitle, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanTag, cleanReqBy, featuredFlag, cleanDescription, cleanTags, targetFolderId, targetFolderName);
     const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);
+    syncTagsToDatabase(cleanTags);
 
     db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
       'VIDEO_UPLOADED',
@@ -497,6 +584,7 @@ function updateVideo(req, res, next) {
     `).run(cleanTitle, cleanTag, cleanCreator, cleanDuration, cleanSrc, cleanThumb, cleanFeatured, cleanViews, cleanDescription, cleanTags, targetFolderId, targetFolderName, id);
 
     const updated = db.prepare('SELECT * FROM videos WHERE id = ?').get(id);
+    syncTagsToDatabase(cleanTags);
 
     db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
       'VIDEO_UPDATED',
@@ -938,6 +1026,7 @@ function cdnDirectUpload(req, res, next) {
           `);
           const result = insertVideo.run(title, creator, duration, cdnData.stream_url, thumb, tag, requestedBy, isFeatured, description, tags, targetFolderId, targetFolderName);
           const newVideo = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid);
+          syncTagsToDatabase(tags);
 
           db.prepare('INSERT INTO security_logs (event_type, details, ip) VALUES (?, ?, ?)').run(
             'VIDEO_UPLOADED_DIRECT_CDN',
@@ -1288,6 +1377,9 @@ module.exports = {
   createFolder,
   updateFolder,
   deleteFolder,
+  getAdminTags,
+  createAdminTag,
+  deleteAdminTag,
   getAdminVideos,
   createVideo,
   updateVideo,

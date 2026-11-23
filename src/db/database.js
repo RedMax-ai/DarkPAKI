@@ -285,6 +285,14 @@ function initializeSchema() {
     );
     CREATE INDEX IF NOT EXISTS idx_folders_slug ON folders(slug);
 
+    CREATE TABLE IF NOT EXISTS tags (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL COLLATE NOCASE,
+      usage_count INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
+
     CREATE TABLE IF NOT EXISTS video_views_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       video_id INTEGER NOT NULL,
@@ -382,6 +390,23 @@ function initializeSchema() {
       const ins = db.prepare('INSERT OR IGNORE INTO folders (name, slug, color, icon, description) VALUES (?, ?, ?, ?, ?)');
       for (const [fn, fs, fc, fi, fd] of initFolders) {
         ins.run(fn, fs, fc, fi, fd);
+      }
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  // Default tags seed if empty
+  try {
+    const tCount = db.prepare('SELECT COUNT(*) as count FROM tags').get()?.count || 0;
+    if (tCount === 0) {
+      const initTags = [
+        '#trending', '#viral', '#desi', '#4k', '#uncut', '#exclusive',
+        '#hd', '#webseries', '#vip', '#hot', '#movies', '#pakistani'
+      ];
+      const insTag = db.prepare('INSERT OR IGNORE INTO tags (name, usage_count) VALUES (?, 1)');
+      for (const t of initTags) {
+        insTag.run(t);
       }
     }
   } catch (err) {

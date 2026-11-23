@@ -17,6 +17,11 @@ router.post('/folders', requireAdmin, adminController.createFolder);
 router.put('/folders/:id', requireAdmin, adminController.updateFolder);
 router.delete('/folders/:id', requireAdmin, adminController.deleteFolder);
 
+// Tag Management (Pre-saved & Clickable Selection)
+router.get('/tags', requireAdmin, adminController.getAdminTags);
+router.post('/tags', requireAdmin, adminController.createAdminTag);
+router.delete('/tags/:id', requireAdmin, adminController.deleteAdminTag);
+
 // Content Management & Review Queue
 router.get('/videos', requireAdmin, adminController.getAdminVideos);
 router.post('/videos', requireAdmin, adminController.createVideo);

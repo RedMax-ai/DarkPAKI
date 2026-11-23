@@ -713,9 +713,14 @@
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
                   <span class="flex items-center gap-1.5"><i class="fa-solid fa-folder-open text-amber-400"></i> Target Folder *</span>
-                  <button type="button" onclick="promptCreateQuickFolder('fcFolderSelect')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-plus text-[9px]"></i> New
-                  </button>
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="promptCreateQuickFolder('fcFolderSelect')" class="px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[10px] font-bold flex items-center gap-1 transition">
+                      <i class="fa-solid fa-plus text-[9px]"></i> New
+                    </button>
+                    <button type="button" onclick="quickDeleteFolderFromSelect('fcFolderSelect')" class="px-2 py-0.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1 transition" title="Delete Folder">
+                      <i class="fa-solid fa-trash text-[9px]"></i> Delete
+                    </button>
+                  </div>
                 </label>
                 <select id="fcFolderSelect" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
                   <option value="">📁 Select Folder...</option>
@@ -747,48 +752,41 @@
               </div>
             </div>
 
-            <!-- 3. TAGS SECTION (Special Requested Feature) -->
+            <!-- 3. TAGS SECTION: Interactive Selectable Tag Bank -->
             <div class="p-4 bg-black/30 border border-white/[0.08] rounded-2xl space-y-3">
               <div class="flex items-center justify-between">
                 <label class="block text-xs font-bold text-white flex items-center gap-1.5">
-                  <i class="fa-solid fa-hashtag text-purple-400"></i>
-                  <span>Tags & Hashtags (Discoverability & Search) *</span>
+                  <i class="fa-solid fa-tags text-purple-400"></i>
+                  <span>Tags (1-Click Select / Unselect) *</span>
                 </label>
-                <span class="text-[10px] text-neutral-400 font-mono">Comma or space separated</span>
+                <span id="fcSelectedCount" class="text-[10px] font-mono text-purple-300 font-bold">0 selected</span>
               </div>
 
-              <!-- Tags Input -->
-              <input 
-                type="text" 
-                id="fcTagsInput" 
-                oninput="renderFcTagsBadges()" 
-                placeholder="Type or click quick tags below: #trending, #viral, #desi, #4k, #exclusive" 
-                class="w-full bg-black/60 border border-white/15 focus:border-purple-500 rounded-xl px-4 py-2.5 text-sm text-purple-300 font-mono outline-none transition"
-              >
-
-              <!-- Quick Tag Suggestion Chips -->
-              <div class="space-y-1.5">
-                <p class="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider">Quick Tag Suggestions (Click to Add):</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <button type="button" onclick="addFcQuickTag('#trending')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #trending</button>
-                  <button type="button" onclick="addFcQuickTag('#viral')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #viral</button>
-                  <button type="button" onclick="addFcQuickTag('#desi')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #desi</button>
-                  <button type="button" onclick="addFcQuickTag('#4k')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #4k</button>
-                  <button type="button" onclick="addFcQuickTag('#uncut')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #uncut</button>
-                  <button type="button" onclick="addFcQuickTag('#pakistani')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #pakistani</button>
-                  <button type="button" onclick="addFcQuickTag('#exclusive')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #exclusive</button>
-                  <button type="button" onclick="addFcQuickTag('#hd')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #hd</button>
-                  <button type="button" onclick="addFcQuickTag('#webseries')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #webseries</button>
-                  <button type="button" onclick="addFcQuickTag('#vip')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #vip</button>
-                  <button type="button" onclick="addFcQuickTag('#hot')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #hot</button>
-                  <button type="button" onclick="addFcQuickTag('#movies')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-purple-500/20 text-neutral-300 hover:text-purple-300 border border-white/10 hover:border-purple-500/40 text-xs font-mono transition">+ #movies</button>
-                </div>
+              <!-- Clickable Tag Chips Container -->
+              <div id="fcTagBank" class="flex flex-wrap gap-1.5 min-h-[36px] p-2 bg-black/50 border border-white/5 rounded-xl">
+                <!-- Rendered dynamically via renderTagBank('fc') -->
               </div>
 
-              <!-- Active Tags Badges Display Container -->
-              <div id="fcTagsBadgesContainer" class="hidden pt-2 flex flex-wrap gap-1.5 border-t border-white/5">
-                <!-- Badges will render here dynamically -->
+              <!-- Add New Tag Input + Button -->
+              <div class="flex gap-2">
+                <input 
+                  type="text" 
+                  id="fcNewTagInput" 
+                  placeholder="Type new tag (e.g. #blowjob, #desi)..." 
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addNewTagToBank('fc');}"
+                  class="flex-1 bg-black/60 border border-white/15 focus:border-purple-400 rounded-xl px-3 py-1.5 text-xs text-white placeholder-neutral-500 font-mono outline-none transition"
+                >
+                <button 
+                  type="button" 
+                  onclick="addNewTagToBank('fc')" 
+                  class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition flex items-center gap-1 shrink-0 shadow-md shadow-purple-600/25"
+                >
+                  <i class="fa-solid fa-plus text-[10px]"></i>
+                  <span>Add Tag</span>
+                </button>
               </div>
+
+              <input type="hidden" id="fcTagsInput" name="tags" value="">
             </div>
 
             <!-- 4. Thumbnail & Auto Frame -->
@@ -937,9 +935,14 @@
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
                   <span class="flex items-center gap-1.5"><i class="fa-solid fa-folder-open text-amber-400"></i> Target Folder *</span>
-                  <button type="button" onclick="promptCreateQuickFolder('cdnFolderSelect')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-plus text-[9px]"></i> New
-                  </button>
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="promptCreateQuickFolder('cdnFolderSelect')" class="px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[10px] font-bold flex items-center gap-1 transition">
+                      <i class="fa-solid fa-plus text-[9px]"></i> New
+                    </button>
+                    <button type="button" onclick="quickDeleteFolderFromSelect('cdnFolderSelect')" class="px-2 py-0.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1 transition" title="Delete Folder">
+                      <i class="fa-solid fa-trash text-[9px]"></i> Delete
+                    </button>
+                  </div>
                 </label>
                 <select id="cdnFolderSelect" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition font-mono">
                   <option value="">📁 Select Folder...</option>
@@ -987,13 +990,41 @@
               <input type="url" id="cdnThumbInput" placeholder="https://... (or leave blank for CDN generated thumbnail)" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 transition">
             </div>
 
-            <!-- Tags Section -->
-            <div>
-              <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
-                <span>Tags & Hashtags (Discoverability)</span>
-                <span class="text-[10px] text-neutral-400 font-mono">Comma or space separated</span>
-              </label>
-              <input type="text" id="cdnTagsInput" placeholder="e.g. #trending, #viral, #desi, #4k, #exclusive" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-purple-300 focus:outline-none focus:border-rose-500 transition font-mono">
+            <!-- Tags Section: Interactive Selectable Tag Bank -->
+            <div class="p-3.5 bg-black/30 border border-white/10 rounded-2xl space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-tags text-purple-400"></i>
+                  <span>Tags (1-Click Select / Unselect) *</span>
+                </label>
+                <span id="cdnSelectedCount" class="text-[10px] font-mono text-purple-300 font-bold">0 selected</span>
+              </div>
+
+              <!-- Clickable Tag Chips Container -->
+              <div id="cdnTagBank" class="flex flex-wrap gap-1.5 min-h-[36px] p-2 bg-black/50 border border-white/5 rounded-xl">
+                <!-- Rendered dynamically via renderTagBank('cdn') -->
+              </div>
+
+              <!-- Add New Tag Input + Button -->
+              <div class="flex gap-2">
+                <input 
+                  type="text" 
+                  id="cdnNewTagInput" 
+                  placeholder="Type new tag (e.g. #blowjob, #desi)..." 
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addNewTagToBank('cdn');}"
+                  class="flex-1 bg-black/60 border border-white/15 focus:border-purple-400 rounded-xl px-3 py-1.5 text-xs text-white placeholder-neutral-500 font-mono outline-none transition"
+                >
+                <button 
+                  type="button" 
+                  onclick="addNewTagToBank('cdn')" 
+                  class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition flex items-center gap-1 shrink-0 shadow-md shadow-purple-600/25"
+                >
+                  <i class="fa-solid fa-plus text-[10px]"></i>
+                  <span>Add Tag</span>
+                </button>
+              </div>
+
+              <input type="hidden" id="cdnTagsInput" name="tags" value="">
             </div>
 
             <!-- Featured Checkbox -->
@@ -1336,9 +1367,14 @@
               <div>
                 <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
                   <span class="flex items-center gap-1.5"><i class="fa-solid fa-folder-open text-amber-400"></i> Target Folder *</span>
-                  <button type="button" onclick="promptCreateQuickFolder('manualFolderSelect')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-plus text-[9px]"></i> New
-                  </button>
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="promptCreateQuickFolder('manualFolderSelect')" class="px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[10px] font-bold flex items-center gap-1 transition">
+                      <i class="fa-solid fa-plus text-[9px]"></i> New
+                    </button>
+                    <button type="button" onclick="quickDeleteFolderFromSelect('manualFolderSelect')" class="px-2 py-0.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1 transition" title="Delete Folder">
+                      <i class="fa-solid fa-trash text-[9px]"></i> Delete
+                    </button>
+                  </div>
                 </label>
                 <select id="manualFolderSelect" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition font-mono">
                   <option value="">📁 Select Folder...</option>
@@ -1377,13 +1413,41 @@
               </div>
             </div>
 
-            <!-- Tags Section -->
-            <div>
-              <label class="block text-xs font-bold text-neutral-300 mb-1.5 flex items-center justify-between">
-                <span>Tags & Hashtags (Discoverability)</span>
-                <span class="text-[10px] text-neutral-400 font-mono">Comma or space separated</span>
-              </label>
-              <input type="text" id="manualTags" placeholder="e.g. #trending, #viral, #desi, #4k, #exclusive" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-purple-300 focus:outline-none focus:border-amber-400 transition font-mono">
+            <!-- Tags Section: Interactive Selectable Tag Bank -->
+            <div class="p-3.5 bg-black/30 border border-white/10 rounded-2xl space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-white flex items-center gap-1.5">
+                  <i class="fa-solid fa-tags text-purple-400"></i>
+                  <span>Tags (1-Click Select / Unselect) *</span>
+                </label>
+                <span id="manualSelectedCount" class="text-[10px] font-mono text-purple-300 font-bold">0 selected</span>
+              </div>
+
+              <!-- Clickable Tag Chips Container -->
+              <div id="manualTagBank" class="flex flex-wrap gap-1.5 min-h-[36px] p-2 bg-black/50 border border-white/5 rounded-xl">
+                <!-- Rendered dynamically via renderTagBank('manual') -->
+              </div>
+
+              <!-- Add New Tag Input + Button -->
+              <div class="flex gap-2">
+                <input 
+                  type="text" 
+                  id="manualNewTagInput" 
+                  placeholder="Type new tag (e.g. #blowjob, #desi)..." 
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addNewTagToBank('manual');}"
+                  class="flex-1 bg-black/60 border border-white/15 focus:border-purple-400 rounded-xl px-3 py-1.5 text-xs text-white placeholder-neutral-500 font-mono outline-none transition"
+                >
+                <button 
+                  type="button" 
+                  onclick="addNewTagToBank('manual')" 
+                  class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition flex items-center gap-1 shrink-0 shadow-md shadow-purple-600/25"
+                >
+                  <i class="fa-solid fa-plus text-[10px]"></i>
+                  <span>Add Tag</span>
+                </button>
+              </div>
+
+              <input type="hidden" id="manualTags" name="tags" value="">
             </div>
 
             <label class="flex items-center gap-2 cursor-pointer select-none">
@@ -1690,6 +1754,8 @@
     </div>
   </div>
 
+
+
   <!-- ========================================================================= -->
   <!-- EDIT VIDEO MODAL -->
   <!-- ========================================================================= -->
@@ -1733,9 +1799,14 @@
         <div>
           <label class="block font-bold text-neutral-300 mb-1 flex items-center justify-between">
             <span class="flex items-center gap-1.5"><i class="fa-solid fa-folder-open text-amber-400"></i> Folder / Collection</span>
-            <button type="button" onclick="promptCreateQuickFolder('editFolderSelect')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1">
-              <i class="fa-solid fa-plus text-[9px]"></i> New
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="promptCreateQuickFolder('editFolderSelect')" class="px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[10px] font-bold flex items-center gap-1 transition">
+                <i class="fa-solid fa-plus text-[9px]"></i> New
+              </button>
+              <button type="button" onclick="quickDeleteFolderFromSelect('editFolderSelect')" class="px-2 py-0.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-[10px] font-bold flex items-center gap-1 transition" title="Delete Folder">
+                <i class="fa-solid fa-trash text-[9px]"></i> Delete
+              </button>
+            </div>
           </label>
           <select id="editFolderSelect" class="w-full bg-[#0c0d14] border border-white/10 rounded-xl px-3 py-2 text-white font-mono">
             <option value="">📁 No Folder (Root)</option>
@@ -1759,9 +1830,42 @@
             <input type="text" id="editCreator" class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white">
           </div>
         </div>
-        <div>
-          <label class="block font-bold text-neutral-300 mb-1">Tags & Hashtags (Discoverability)</label>
-          <input type="text" id="editTags" placeholder="#trending, #desi, #4k" class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-purple-300 font-mono">
+
+        <!-- Tags Section: Interactive Selectable Tag Bank -->
+        <div class="p-3 bg-black/40 border border-white/10 rounded-xl space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-neutral-300 flex items-center gap-1">
+              <i class="fa-solid fa-tags text-purple-400"></i>
+              <span>Tags (1-Click Select / Unselect)</span>
+            </label>
+            <span id="editSelectedCount" class="text-[10px] font-mono text-purple-300 font-bold">0 selected</span>
+          </div>
+
+          <!-- Clickable Tag Chips Container -->
+          <div id="editTagBank" class="flex flex-wrap gap-1.5 min-h-[32px] p-2 bg-black/50 border border-white/5 rounded-xl">
+            <!-- Rendered dynamically via renderTagBank('edit') -->
+          </div>
+
+          <!-- Add New Tag Input + Button -->
+          <div class="flex gap-2">
+            <input 
+              type="text" 
+              id="editNewTagInput" 
+              placeholder="Type new tag (e.g. #blowjob, #desi)..." 
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addNewTagToBank('edit');}"
+              class="flex-1 bg-black/60 border border-white/15 focus:border-purple-400 rounded-xl px-2.5 py-1 text-xs text-white placeholder-neutral-500 font-mono outline-none transition"
+            >
+            <button 
+              type="button" 
+              onclick="addNewTagToBank('edit')" 
+              class="px-2.5 py-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition flex items-center gap-1 shrink-0"
+            >
+              <i class="fa-solid fa-plus text-[10px]"></i>
+              <span>Add</span>
+            </button>
+          </div>
+
+          <input type="hidden" id="editTags" name="tags" value="">
         </div>
         <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl transition">
           Update Video
@@ -1771,7 +1875,35 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- ADMIN PIN AUTHENTICATION MODAL -->
+  <!-- QUICK FOLDER DELETE & MANAGER MODAL -->
+  <!-- ========================================================================= -->
+  <div id="folderDeleteModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-md w-full p-6 relative space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h4 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-trash-can text-rose-400"></i>
+          <span>Delete / Manage Folders</span>
+        </h4>
+        <button onclick="closeFolderDeleteModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-neutral-400">
+        Tap Delete on any folder you want to remove. Videos inside deleted folders will NOT be deleted; they will simply be unassigned to root.
+      </p>
+
+      <div id="folderDeleteListContainer" class="max-h-64 overflow-y-auto space-y-2 pr-1">
+        <!-- Rendered dynamically via openFolderDeleteModal() -->
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button onclick="closeFolderDeleteModal()" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
   <!-- ========================================================================= -->
   <div id="adminAuthModal" class="fixed inset-0 z-50 bg-[#06070a]/95 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="glass-panel rounded-3xl max-w-sm w-full p-8 text-center space-y-6 shadow-2xl border border-rose-500/30">
@@ -1803,6 +1935,8 @@
       <p class="text-[10px] text-neutral-500">Secured with bcrypt and persistent JWT authentication</p>
     </div>
   </div>
+
+
 
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
@@ -1968,6 +2102,7 @@
           showToast('Master PIN Verified! Welcome to DarkPAKI Admin.', 'success');
           loadAdminStats();
           loadAdminFolders();
+          loadAdminTags();
         } else {
           showToast(data.message || 'Invalid PIN', 'error');
         }
@@ -1998,6 +2133,7 @@
           document.getElementById('adminAuthModal').classList.add('hidden');
           loadAdminStats();
           loadAdminFolders();
+          loadAdminTags();
         } else {
           document.getElementById('adminAuthModal').classList.remove('hidden');
         }
@@ -2224,6 +2360,253 @@
       if (sel) {
         sel.value = String(folderId);
       }
+    }
+
+    // =========================================================================
+    // QUICK FOLDER DELETE & MANAGEMENT FROM SELECTORS
+    // =========================================================================
+    let _activeFolderDeleteSelectId = null;
+
+    async function quickDeleteFolderFromSelect(selectId) {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      const selectedVal = sel.value;
+
+      if (selectedVal) {
+        // Find folder by ID or name
+        const folder = ADMIN_FOLDERS.find(f => String(f.id) === String(selectedVal) || f.name === selectedVal);
+        const folderName = folder ? folder.name : (sel.options[sel.selectedIndex]?.text?.replace(/📁\s*|\s*\(\d+\)/g, '').trim() || selectedVal);
+        const folderId = folder ? folder.id : selectedVal;
+
+        if (confirm(`Delete folder "${folderName}"?\nVideos will NOT be deleted; they will simply be unassigned to root.`)) {
+          try {
+            const res = await adminFetch(`/admin/folders/${folderId}`, { method: 'DELETE' });
+            if (res.success) {
+              showToast(`Folder "${folderName}" deleted.`, 'success');
+              await loadAdminFolders();
+              sel.value = '';
+            } else {
+              showToast(res.message || 'Failed to delete folder', 'error');
+            }
+          } catch (err) {
+            showToast('Error deleting folder: ' + err.message, 'error');
+          }
+        }
+      } else {
+        openFolderDeleteModal(selectId);
+      }
+    }
+
+    function openFolderDeleteModal(selectId) {
+      _activeFolderDeleteSelectId = selectId || null;
+      const modal = document.getElementById('folderDeleteModal');
+      const listContainer = document.getElementById('folderDeleteListContainer');
+      if (!modal || !listContainer) return;
+
+      if (!ADMIN_FOLDERS || ADMIN_FOLDERS.length === 0) {
+        listContainer.innerHTML = `
+          <div class="p-6 text-center text-xs text-neutral-400 border border-dashed border-white/10 rounded-xl bg-black/30">
+            <i class="fa-solid fa-folder-open text-2xl text-neutral-600 mb-2"></i>
+            <p class="font-bold text-white">No folders created yet.</p>
+          </div>
+        `;
+      } else {
+        listContainer.innerHTML = ADMIN_FOLDERS.map(f => {
+          const count = f.video_count || 0;
+          return `
+            <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style="background-color: ${f.color || '#7C3AED'}20; color: ${f.color || '#7C3AED'};">
+                  <i class="fa-solid ${f.icon || 'fa-folder'} text-xs"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs font-bold text-white truncate">${escapeHtml(f.name)}</p>
+                  <p class="text-[10px] text-neutral-400 font-mono">${count} ${count === 1 ? 'video' : 'videos'}</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onclick="confirmAndDeleteFolderFromModal(${f.id}, '${escapeHtml(f.name).replace(/'/g, "\\'")}')" 
+                class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition flex items-center gap-1 shrink-0"
+              >
+                <i class="fa-solid fa-trash text-[10px]"></i>
+                <span>Delete</span>
+              </button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeFolderDeleteModal() {
+      const modal = document.getElementById('folderDeleteModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function confirmAndDeleteFolderFromModal(id, name) {
+      if (!confirm(`Are you sure you want to delete folder "${name}"?\nVideos will NOT be deleted, only unassigned.`)) {
+        return;
+      }
+      try {
+        const res = await adminFetch(`/admin/folders/${id}`, { method: 'DELETE' });
+        if (res.success) {
+          showToast(`Folder "${name}" deleted.`, 'success');
+          await loadAdminFolders();
+          if (_activeFolderDeleteSelectId) {
+            const sel = document.getElementById(_activeFolderDeleteSelectId);
+            if (sel && String(sel.value) === String(id)) {
+              sel.value = '';
+            }
+          }
+          openFolderDeleteModal(_activeFolderDeleteSelectId);
+        } else {
+          showToast(res.message || 'Failed to delete folder', 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    // =========================================================================
+    // TAGS MANAGEMENT & INTERACTIVE 1-CLICK SELECTABLE TAG BANK
+    // =========================================================================
+    let ADMIN_TAGS = [];
+    const SELECTED_TAGS = {
+      cdn: new Set(),
+      fc: new Set(),
+      manual: new Set(),
+      edit: new Set()
+    };
+
+    async function loadAdminTags() {
+      try {
+        const res = await adminFetch('/admin/tags');
+        if (res.success && Array.isArray(res.data)) {
+          ADMIN_TAGS = res.data;
+          renderAllTagBanks();
+        }
+      } catch (err) {
+        console.error('Error loading tags:', err);
+      }
+    }
+
+    function renderAllTagBanks() {
+      ['cdn', 'fc', 'manual', 'edit'].forEach(prefix => renderTagBank(prefix));
+    }
+
+    function renderTagBank(prefix) {
+      const container = document.getElementById(`${prefix}TagBank`);
+      const countEl = document.getElementById(`${prefix}SelectedCount`);
+      const inputId = prefix === 'cdn' ? 'cdnTagsInput' :
+                      prefix === 'fc' ? 'fcTagsInput' :
+                      prefix === 'manual' ? 'manualTags' : 'editTags';
+      const hiddenInput = document.getElementById(inputId) || document.getElementById(inputId + 'Input');
+      if (!container) return;
+
+      const selectedSet = SELECTED_TAGS[prefix] || new Set();
+
+      if (countEl) {
+        countEl.textContent = `${selectedSet.size} selected`;
+      }
+      if (hiddenInput) {
+        hiddenInput.value = Array.from(selectedSet).join(', ');
+      }
+
+      if (!ADMIN_TAGS || ADMIN_TAGS.length === 0) {
+        container.innerHTML = `<span class="text-xs text-neutral-500 italic">No tags in bank yet. Type below to add one!</span>`;
+        return;
+      }
+
+      container.innerHTML = ADMIN_TAGS.map(t => {
+        const tagName = t.name.startsWith('#') ? t.name : '#' + t.name;
+        const isSelected = selectedSet.has(tagName) || selectedSet.has(tagName.replace(/^#/, ''));
+        const activeClass = isSelected
+          ? 'bg-purple-600 border-purple-400 text-white font-bold shadow-lg shadow-purple-600/30'
+          : 'bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:border-white/20';
+
+        return `
+          <button 
+            type="button" 
+            onclick="toggleTagSelection('${prefix}', '${escapeHtml(tagName).replace(/'/g, "\\'")}')" 
+            class="px-2.5 py-1 rounded-lg border text-xs font-mono transition flex items-center gap-1.5 ${activeClass}"
+          >
+            <span>${isSelected ? '✓' : ''} ${escapeHtml(tagName)}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleTagSelection(prefix, tagName) {
+      if (!SELECTED_TAGS[prefix]) SELECTED_TAGS[prefix] = new Set();
+      const set = SELECTED_TAGS[prefix];
+      const normalized = tagName.startsWith('#') ? tagName : '#' + tagName;
+
+      if (set.has(normalized)) {
+        set.delete(normalized);
+      } else if (set.has(normalized.replace(/^#/, ''))) {
+        set.delete(normalized.replace(/^#/, ''));
+      } else {
+        set.add(normalized);
+      }
+
+      renderTagBank(prefix);
+    }
+
+    async function addNewTagToBank(prefix) {
+      const input = document.getElementById(`${prefix}NewTagInput`);
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) {
+        showToast('Please type a tag name to add.', 'info');
+        return;
+      }
+
+      const formattedTag = val.startsWith('#') ? val : '#' + val;
+
+      try {
+        const res = await adminFetch('/admin/tags', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: formattedTag })
+        });
+
+        if (res.success && res.data) {
+          showToast(`Tag "${res.data.name}" added to bank!`, 'success');
+          input.value = '';
+          await loadAdminTags();
+          // Auto select this new tag for current form
+          if (!SELECTED_TAGS[prefix]) SELECTED_TAGS[prefix] = new Set();
+          SELECTED_TAGS[prefix].add(res.data.name);
+          renderTagBank(prefix);
+        } else {
+          showToast(res.message || 'Failed to add tag', 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function setSelectedTags(prefix, tagsString) {
+      if (!SELECTED_TAGS[prefix]) SELECTED_TAGS[prefix] = new Set();
+      SELECTED_TAGS[prefix].clear();
+
+      if (tagsString) {
+        const items = String(tagsString).split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
+        items.forEach(t => {
+          const norm = t.startsWith('#') ? t : '#' + t;
+          SELECTED_TAGS[prefix].add(norm);
+        });
+      }
+      renderTagBank(prefix);
+    }
+
+    function clearSelectedTags(prefix) {
+      if (SELECTED_TAGS[prefix]) {
+        SELECTED_TAGS[prefix].clear();
+      }
+      renderTagBank(prefix);
     }
 
     // Load Stats
@@ -2493,8 +2876,10 @@
               fileInput.value = '';
               document.getElementById('selectedFileInfo').classList.add('hidden');
               document.getElementById('cdnVideoTitle').value = '';
+              clearSelectedTags('cdn');
               loadAdminStats();
               loadAdminVideos();
+              loadAdminTags();
             } else {
               showToast(res.message || 'Upload failed', 'error');
               progressStatus.textContent = 'Error: ' + (res.message || 'Upload failed');
@@ -2731,6 +3116,7 @@
         if (res.success) {
           showToast(`Published "${title}" successfully!`, 'success');
           e.target.reset();
+          clearSelectedTags('manual');
           const prevCont = document.getElementById('manualThumbPreviewContainer');
           if (prevCont) prevCont.classList.add('hidden');
           const statusEl = document.getElementById('manualStreamStatus');
@@ -2738,6 +3124,7 @@
           loadAdminStats();
           loadAdminFolders();
           loadAdminVideos();
+          loadAdminTags();
         } else {
           showToast(res.message || 'Failed to publish', 'error');
         }
@@ -2767,56 +3154,23 @@
     }
 
     function addFcQuickTag(tagStr) {
-      const input = document.getElementById('fcTagsInput');
-      if (!input) return;
-      let current = input.value.trim();
-      const existing = current.split(/[\s,]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
-      if (!existing.includes(tagStr.toLowerCase())) {
-        input.value = current ? `${current}, ${tagStr}` : tagStr;
-      }
-      renderFcTagsBadges();
+      if (!tagStr) return;
+      if (!SELECTED_TAGS['fc']) SELECTED_TAGS['fc'] = new Set();
+      const norm = tagStr.startsWith('#') ? tagStr : '#' + tagStr;
+      SELECTED_TAGS['fc'].add(norm);
+      renderTagBank('fc');
     }
 
     function removeFcTag(tagToRemove) {
-      const input = document.getElementById('fcTagsInput');
-      if (!input) return;
-      const tags = input.value.split(/[\s,]+/)
-        .map(t => t.trim())
-        .filter(t => t && t.toLowerCase() !== tagToRemove.toLowerCase());
-      input.value = tags.join(', ');
-      renderFcTagsBadges();
+      if (!tagToRemove) return;
+      if (!SELECTED_TAGS['fc']) return;
+      const norm = tagToRemove.startsWith('#') ? tagToRemove : '#' + tagToRemove;
+      SELECTED_TAGS['fc'].delete(norm);
+      renderTagBank('fc');
     }
 
     function renderFcTagsBadges() {
-      const input = document.getElementById('fcTagsInput');
-      const container = document.getElementById('fcTagsBadgesContainer');
-      if (!input || !container) return;
-
-      const raw = input.value.trim();
-      if (!raw) {
-        container.innerHTML = '';
-        container.classList.add('hidden');
-        return;
-      }
-
-      const tags = raw.split(/[\s,]+/)
-        .map(t => t.trim())
-        .filter(t => t.length > 0)
-        .map(t => t.startsWith('#') ? t : `#${t}`);
-
-      if (tags.length === 0) {
-        container.innerHTML = '';
-        container.classList.add('hidden');
-        return;
-      }
-
-      container.classList.remove('hidden');
-      container.innerHTML = tags.map(t => `
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-          <span>${escapeHtml(t)}</span>
-          <button type="button" onclick="removeFcTag('${escapeHtml(t)}')" class="hover:text-white ml-0.5 text-[10px]">✕</button>
-        </span>
-      `).join('');
+      renderTagBank('fc');
     }
 
     function handleFcStreamChange(url) {
@@ -2944,7 +3298,7 @@
           e.target.reset();
           document.getElementById('fcDuration').value = '12:30';
           document.getElementById('fcCreator').value = 'DarkPAKI VIP Exclusive';
-          renderFcTagsBadges();
+          clearSelectedTags('fc');
           
           const prevCont = document.getElementById('fcThumbPreviewContainer');
           if (prevCont) prevCont.classList.add('hidden');
@@ -2954,6 +3308,7 @@
           loadAdminStats();
           loadAdminFolders();
           loadAdminVideos();
+          loadAdminTags();
         } else {
           showToast(res.message || 'Failed to create file', 'error');
         }
@@ -3131,10 +3486,12 @@
       document.getElementById('editCreator').value = v.creator;
       const tagsEl = document.getElementById('editTags');
       if (tagsEl) tagsEl.value = v.tags || '';
+      setSelectedTags('edit', v.tags || '');
       document.getElementById('editVideoModal').classList.remove('hidden');
     }
 
     function closeEditModal() {
+      clearSelectedTags('edit');
       document.getElementById('editVideoModal').classList.add('hidden');
     }
 
@@ -3161,6 +3518,7 @@
           closeEditModal();
           loadAdminFolders();
           loadAdminVideos();
+          loadAdminTags();
         } else {
           showToast(res.message || 'Update failed', 'error');
         }
