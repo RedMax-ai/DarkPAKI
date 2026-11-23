@@ -345,17 +345,19 @@
                 </div>
             </div>
 
-            <!-- 2. Refer to Earn & Convert Coins to Cash -->
-            <div onclick="openEarningOrLogin()" class="bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/50 rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 cursor-pointer transition shadow-lg group">
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 group-hover:scale-105 flex items-center justify-center shrink-0 transition">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-                        <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
-                        <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+            <!-- 2. Refer & Earn (+1,100 Coins per friend) -->
+            <div onclick="openReferralModal()" class="bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/50 rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 cursor-pointer transition shadow-lg group">
+                <div class="w-9 h-9 rounded-xl bg-[#7C3AED]/15 text-[#A78BFA] group-hover:scale-105 flex items-center justify-center shrink-0 transition">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <line x1="19" y1="8" x2="19" y2="14"/>
+                        <line x1="22" y1="11" x2="16" y2="11"/>
                     </svg>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Monetization</p>
-                    <p class="text-xs sm:text-sm font-semibold text-[#F8FAFC] truncate">Coins ➔ Cash Out</p>
+                    <p class="text-[10px] text-[#A78BFA] font-bold uppercase tracking-wider">Refer & Earn</p>
+                    <p class="text-xs sm:text-sm font-semibold text-[#F8FAFC] truncate">Invite ➔ +1,100 Coins</p>
                 </div>
             </div>
         </div>
@@ -2179,7 +2181,7 @@
         window._pendingProfileTab = t;
       };
     </script>
-    <script src="public/app.js?v=20261122_1435"></script>
+    <script src="public/app.js?v=20261123_1535"></script>
 
     <!-- ============================================================================
          MODAL: USER VIDEO & SHORT UPLOADER (YOUTUBE SHORTS STYLE WITH ADMIN REVIEW)
@@ -2390,6 +2392,73 @@
                     <span>Submit for Admin Audit & Monetization</span>
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MODAL: REFER & EARN (+1,100 COINS PER FRIEND)
+         ============================================================================ -->
+    <div id="referralShareModal" class="hidden fixed inset-0 z-[120] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-[#10121a] border border-[#7C3AED]/40 rounded-3xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-4 animate-enter">
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-[#7C3AED]/20 text-[#A78BFA] flex items-center justify-center font-black">
+                        <i class="fa-solid fa-gift text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-base text-white">Refer & Earn Coins</h3>
+                        <p class="text-[10px] text-[#A78BFA] font-mono">+1,100 Coins per invited friend</p>
+                    </div>
+                </div>
+                <button onclick="closeReferralModal()" class="text-neutral-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Reward Summary Cards -->
+            <div class="grid grid-cols-2 gap-2 text-center">
+                <div class="bg-[#131822] border border-white/[0.08] rounded-xl p-3">
+                    <p class="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">Per Friend</p>
+                    <p class="text-base font-black text-[#A78BFA] mt-0.5">+1,100</p>
+                    <p class="text-[9px] text-neutral-500 font-mono">Coins Instant</p>
+                </div>
+                <div class="bg-[#131822] border border-white/[0.08] rounded-xl p-3">
+                    <p class="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">Total Invited</p>
+                    <p id="modalReferralCount" class="text-base font-black text-white mt-0.5">0</p>
+                    <p class="text-[9px] text-emerald-400 font-mono"><span id="modalReferralCoinsEarned">0</span> Coins Won</p>
+                </div>
+            </div>
+
+            <!-- Referral Link Input & Copy Button -->
+            <div class="space-y-1.5">
+                <label class="text-[11px] font-bold text-neutral-300 block">Your Unique Referral Link</label>
+                <div class="flex items-center gap-2">
+                    <input id="modalReferralLinkInput" type="text" readonly value="https://dark.anizon.watch/?ref=DPK786" class="flex-1 bg-[#131822] border border-white/[0.12] rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#A78BFA] outline-none">
+                    <button onclick="copyModalReferralLink()" class="bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-semibold text-xs px-4 py-2.5 rounded-xl shrink-0 transition flex items-center gap-1.5 shadow-lg shadow-[#7C3AED]/25">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copy</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Share Buttons: WhatsApp & Telegram -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="shareReferralWhatsApp()" class="bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 text-[#25D366] text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                    <span>WhatsApp</span>
+                </button>
+                <button onclick="shareReferralTelegram()" class="bg-[#229ED9]/20 hover:bg-[#229ED9]/30 border border-[#229ED9]/40 text-[#229ED9] text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-telegram text-sm"></i>
+                    <span>Telegram</span>
+                </button>
+            </div>
+
+            <!-- Security Note -->
+            <p class="text-[10px] text-neutral-400 text-center leading-relaxed">
+                <i class="fa-solid fa-shield-check text-emerald-400 mr-1"></i>
+                Reward credited instantly after friend completes 1-device verification.
+            </p>
         </div>
     </div>
 

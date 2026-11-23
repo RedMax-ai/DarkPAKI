@@ -542,6 +542,113 @@ async function generateHumanChallenge() {
 }
 
 // ============================================================================
+// AUTOMATIC VIDEO STREAM FRAME THUMBNAIL AUTO-DETECTION & PREVIEW HELPERS
+// ============================================================================
+function isRealCustomThumbnail(url) {
+  if (!url || typeof url !== 'string') return false;
+  const clean = url.trim().toLowerCase();
+  if (clean === '' || clean === 'null' || clean === 'undefined') return false;
+  if (clean.includes('/api/thumb/')) return false;
+  if (clean.includes('darkpaki-logo')) return false;
+  if (clean.includes('placehold.co')) return false;
+  if (clean.includes('unsplash.com')) return false;
+  if (clean.startsWith('data:image/')) return true;
+  if (clean.startsWith('http://') || clean.startsWith('https://')) return true;
+  return false;
+}
+
+function formatMediaFragmentUrl(src, time = 2.0) {
+  if (!src) return '';
+  const hashIdx = src.indexOf('#');
+  const base = hashIdx !== -1 ? src.substring(0, hashIdx) : src;
+  return `${base}#t=${time}`;
+}
+
+function handleThumbImgError(imgEl, videoSrc) {
+  if (!imgEl) return;
+  const parent = imgEl.parentElement;
+  if (!parent) return;
+  if (videoSrc) {
+    const videoPreview = document.createElement('video');
+    videoPreview.src = formatMediaFragmentUrl(videoSrc, 2.0);
+    videoPreview.preload = 'metadata';
+    videoPreview.muted = true;
+    videoPreview.playsInline = true;
+    videoPreview.className = imgEl.className;
+    videoPreview.setAttribute('playsinline', '');
+    videoPreview.setAttribute('muted', '');
+    videoPreview.style.pointerEvents = 'none';
+    videoPreview.onerror = () => {
+      videoPreview.outerHTML = `<img src="/public/darkpaki-logo.png" alt="DarkPAKI Video" class="${imgEl.className} opacity-60" />`;
+    };
+    parent.replaceChild(videoPreview, imgEl);
+  } else {
+    imgEl.src = '/public/darkpaki-logo.png';
+  }
+}
+
+function handleVideoThumbError(videoEl) {
+  if (!videoEl) return;
+  const parent = videoEl.parentElement;
+  if (!parent) return;
+  const fallbackImg = document.createElement('img');
+  fallbackImg.src = '/public/darkpaki-logo.png';
+  fallbackImg.alt = 'DarkPAKI VIP Video';
+  fallbackImg.className = (videoEl.className || 'w-full h-full object-cover') + ' opacity-60';
+  parent.replaceChild(fallbackImg, videoEl);
+}
+
+function getVideoThumbnailHtml(video, extraClass = '') {
+  if (!video) return `<img src="/public/darkpaki-logo.png" alt="Video" class="w-full h-full object-cover opacity-60 ${extraClass}" />`;
+  
+  const thumbUrl = video.thumbImg || video.thumb_img || video.thumbnail_url || '';
+  const videoSrc = video.src || video.video_url || video.stream_url || '';
+  const title = escapeHtml(video.title || 'DarkPAKI VIP Video');
+
+  if (isRealCustomThumbnail(thumbUrl)) {
+    return `<img 
+      src="${escapeHtml(thumbUrl)}" 
+      alt="${title}" 
+      loading="lazy" 
+      onerror="handleThumbImgError(this, '${escapeHtml(videoSrc)}')"
+      class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ease-out ${extraClass}"
+    />`;
+  }
+
+  if (videoSrc) {
+    const streamFragUrl = formatMediaFragmentUrl(videoSrc, 2.0);
+    return `<video 
+      src="${escapeHtml(streamFragUrl)}" 
+      preload="metadata" 
+      muted 
+      playsinline 
+      class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ease-out pointer-events-none ${extraClass}"
+      onerror="handleVideoThumbError(this)"
+    ></video>`;
+  }
+
+  return `<img src="/public/darkpaki-logo.png" alt="${title}" class="w-full h-full object-cover opacity-60 ${extraClass}" />`;
+}
+
+function previewCardVideo(cardEl, play) {
+  if (!cardEl) return;
+  const vid = cardEl.querySelector('video');
+  if (!vid) return;
+  if (play) {
+    vid.muted = true;
+    const p = vid.play();
+    if (p !== undefined) {
+      p.catch(() => {});
+    }
+  } else {
+    vid.pause();
+    try {
+      vid.currentTime = 2.0;
+    } catch (e) {}
+  }
+}
+
+// ============================================================================
 // 1000X RENDERING FUNCTIONS (FEATURED SPOTLIGHT, HOME GRID & PLAYER QUEUE)
 // ============================================================================
 function renderFeaturedSpotlight() {
@@ -559,15 +666,10 @@ function renderFeaturedSpotlight() {
   const video = MEDIA_SOURCES.mainVideos[featIndex];
 
   container.innerHTML = `
-    <div onclick="launchFeaturedFromHome(${featIndex})" class="relative w-full rounded-2xl overflow-hidden border border-white/[0.08] hover:border-[#7C3AED]/50 group cursor-pointer shadow-2xl transition duration-300">
+    <div onclick="launchFeaturedFromHome(${featIndex})" onmouseenter="previewCardVideo(this, true)" onmouseleave="previewCardVideo(this, false)" class="relative w-full rounded-2xl overflow-hidden border border-white/[0.08] hover:border-[#7C3AED]/50 group cursor-pointer shadow-2xl transition duration-300">
       <div class="aspect-[16/8] sm:aspect-[21/8] w-full bg-[#0B0E14] relative overflow-hidden">
-        <img 
-          src="${video.thumbImg || '/public/darkpaki-logo.png'}" 
-          alt="${escapeHtml(video.title)}" 
-          onerror="this.src='/public/darkpaki-logo.png'"
-          class="w-full h-full object-cover group-hover:scale-105 transition duration-700 opacity-80"
-        >
-        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/40 to-transparent"></div>
+        ${getVideoThumbnailHtml(video, 'opacity-80')}
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/40 to-transparent pointer-events-none"></div>
 
         <!-- Top Badges -->
         <div class="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
@@ -636,17 +738,14 @@ function renderHomeVideoGrid(searchQuery = '') {
   MEDIA_SOURCES.mainVideos.forEach((video, index) => {
     const card = document.createElement('div');
     card.className = "bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/50 rounded-2xl p-2.5 group flex flex-col cursor-pointer select-none transition-all duration-300 shadow-xl";
+    card.onmouseenter = () => previewCardVideo(card, true);
+    card.onmouseleave = () => previewCardVideo(card, false);
     card.onclick = () => launchFeaturedFromHome(index);
 
     card.innerHTML = `
       <div class="relative w-full aspect-video bg-[#0B0E14] rounded-xl overflow-hidden mb-2.5">
-        <img 
-          src="${video.thumbImg || '/public/darkpaki-logo.png'}" 
-          alt="${escapeHtml(video.title)}" 
-          onerror="this.src='/public/darkpaki-logo.png'"
-          class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ease-out"
-        >
-        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0E14]/90 via-transparent to-transparent"></div>
+        ${getVideoThumbnailHtml(video)}
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0E14]/90 via-transparent to-transparent pointer-events-none"></div>
         
         <!-- Top Badges -->
         <div class="absolute top-2 left-2 flex items-center gap-1">
@@ -722,19 +821,16 @@ function renderUpNextQueue() {
     const isCurrent = index === currentVideoIndex;
     const card = document.createElement('div');
     card.className = `neon-card group flex flex-col rounded-2xl p-2.5 border cursor-pointer transition ${isCurrent ? 'border-rose-500 bg-rose-500/10' : 'border-white/10'}`;
+    card.onmouseenter = () => previewCardVideo(card, true);
+    card.onmouseleave = () => previewCardVideo(card, false);
     card.onclick = () => launchFeaturedFromHome(index);
     card.innerHTML = `
       <div class="relative w-full aspect-[16/10] bg-neutral-900 rounded-xl overflow-hidden mb-2">
-        <img 
-          src="${item.thumbImg}" 
-          alt="${item.title}"
-          onerror="this.src='https://placehold.co/600x400/121218/f43f5e?text=18%2B+Video'"
-          class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-        >
-        <span class="absolute bottom-1.5 right-1.5 bg-black/85 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+        ${getVideoThumbnailHtml(item)}
+        <span class="absolute bottom-1.5 right-1.5 bg-black/85 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded pointer-events-none">
           ${item.duration}
         </span>
-        ${isCurrent ? '<span class="absolute top-1.5 left-1.5 bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow">NOW PLAYING</span>' : '<span class="absolute top-1.5 left-1.5 bg-black/80 text-rose-400 text-[9px] font-black px-1.5 py-0.5 rounded border border-rose-500/40">18+</span>'}
+        ${isCurrent ? '<span class="absolute top-1.5 left-1.5 bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow pointer-events-none">NOW PLAYING</span>' : '<span class="absolute top-1.5 left-1.5 bg-black/80 text-rose-400 text-[9px] font-black px-1.5 py-0.5 rounded border border-rose-500/40 pointer-events-none">18+</span>'}
       </div>
       <span class="text-[10px] font-black uppercase tracking-wide text-rose-400 px-1">${item.tag}</span>
       <h4 class="text-xs sm:text-sm font-bold text-white group-hover:text-rose-400 line-clamp-2 mt-0.5 px-1">
@@ -1110,7 +1206,30 @@ function launchFeaturedFromHome(index) {
   updateWatchPlayerDetails(selected);
 
   const posterImg = document.getElementById('playerPosterImg');
-  if (posterImg) posterImg.src = selected.thumbImg;
+  if (posterImg) {
+    if (isRealCustomThumbnail(selected.thumbImg)) {
+      posterImg.src = selected.thumbImg;
+      posterImg.style.display = '';
+      const existingVideoPoster = document.getElementById('playerPosterVideo');
+      if (existingVideoPoster) existingVideoPoster.remove();
+    } else if (selected.src) {
+      posterImg.style.display = 'none';
+      let posterVid = document.getElementById('playerPosterVideo');
+      if (!posterVid) {
+        posterVid = document.createElement('video');
+        posterVid.id = 'playerPosterVideo';
+        posterVid.className = 'absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-105 transition duration-700 pointer-events-none';
+        posterVid.muted = true;
+        posterVid.playsInline = true;
+        posterVid.preload = 'metadata';
+        posterImg.parentElement.insertBefore(posterVid, posterImg);
+      }
+      posterVid.src = formatMediaFragmentUrl(selected.src, 2.0);
+    } else {
+      posterImg.src = '/public/darkpaki-logo.png';
+      posterImg.style.display = '';
+    }
+  }
   const posterDur = document.getElementById('posterTotalDuration');
   if (posterDur) posterDur.textContent = selected.duration;
 
@@ -2238,6 +2357,39 @@ function copyReferralLink() {
   showToast("Referral link copied! Share to earn +1,100 Coins per 18+ verified friend.");
 }
 
+function openReferralModal() {
+  if (!CURRENT_USER) {
+    showToast("Please log in or register to get your personal referral link and earn +1,100 Coins!");
+    generateHumanChallenge();
+    switchView('login');
+    return;
+  }
+  const modal = document.getElementById('referralShareModal');
+  if (modal) {
+    const input = document.getElementById('modalReferralLinkInput');
+    const refCode = CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786';
+    if (input) input.value = `${window.location.origin}/?ref=${refCode}`;
+    const countEl = document.getElementById('modalReferralCount');
+    if (countEl) countEl.textContent = (CURRENT_USER.referrals || 0);
+    const coinsEl = document.getElementById('modalReferralCoinsEarned');
+    if (coinsEl) coinsEl.textContent = ((CURRENT_USER.referrals || 0) * 1100).toLocaleString();
+    modal.classList.remove('hidden');
+  }
+}
+
+function closeReferralModal() {
+  const modal = document.getElementById('referralShareModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function copyModalReferralLink() {
+  const input = document.getElementById('modalReferralLinkInput');
+  if (!input) return;
+  input.select();
+  navigator.clipboard.writeText(input.value).catch(() => document.execCommand('copy'));
+  showToast("Referral link copied! Share to earn +1,100 Coins per friend.");
+}
+
 function shareReferralWhatsApp() {
   const refCode = CURRENT_USER ? (CURRENT_USER.refCode || CURRENT_USER.ref_code || 'DPK786') : 'DPK786';
   const url = `${window.location.origin}/?ref=${refCode}`;
@@ -2709,20 +2861,15 @@ function renderTrendingGrid() {
 
     const tile = document.createElement('div');
     tile.className = `trending-tile ${isPortrait ? 'trending-tile-portrait' : 'trending-tile-landscape'} relative group cursor-pointer overflow-hidden rounded-[6px] bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/70 transition-all duration-300 shadow-md select-none`;
+    tile.onmouseenter = () => previewCardVideo(tile, true);
+    tile.onmouseleave = () => previewCardVideo(tile, false);
     tile.onclick = () => playTrendingVideoById(video.id);
 
-    const thumbUrl = video.thumb_img || video.thumbnail_url || video.thumbImg || '/public/darkpaki-logo.png';
     const durDisplay = formatDurationDisplay(video.duration);
     const viewsDisplay = formatViewCount(video.views || video.views_count || 0);
 
     tile.innerHTML = `
-      <img 
-        src="${escapeHtml(thumbUrl)}" 
-        alt="${escapeHtml(video.title || 'Video')}"
-        loading="lazy"
-        onerror="this.src='/public/darkpaki-logo.png'"
-        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-      />
+      ${getVideoThumbnailHtml(video)}
 
       <!-- Top Right Badge: Inline SVG Format Icon + Duration -->
       <div class="absolute top-1.5 right-1.5 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-white/95 text-[10px] font-mono font-medium shadow-md border border-white/10 pointer-events-none">
@@ -4110,7 +4257,7 @@ async function loadProfileGridPosts(tab) {
           <div onclick="openProfileMediaViewer(${post.id})" class="bg-[#131822] border border-white/[0.08] hover:border-[#7C3AED]/50 rounded-2xl overflow-hidden group cursor-pointer transition duration-300 shadow-lg flex flex-col">
             <!-- 16:9 Thumbnail Container -->
             <div class="relative aspect-video w-full bg-[#0B0E14] overflow-hidden">
-              <img src="${thumb}" alt="${escapeHtml(post.title || 'Video')}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ease-out">
+              ${getVideoThumbnailHtml(post)}
               ${pinnedBadge}
               
               <!-- Duration Badge -->

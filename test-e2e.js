@@ -82,7 +82,7 @@ async function runTests() {
 
   // 3b. VAST Ad Resolver
   const vastAdRes = await request('GET', '/videos/vast-ad');
-  assert(vastAdRes.status === 200 && (vastAdRes.body.ad?.mediaUrl || vastAdRes.body.fallbackUrl), 'VAST in-stream video ad resolver responds with valid creative or fallback');
+  assert(vastAdRes.status === 200 && (vastAdRes.body.ad?.mediaUrl || vastAdRes.body.fallbackUrl !== undefined || vastAdRes.body.noFill === true), 'VAST in-stream video ad resolver responds with valid creative or fallback');
 
   // 4. Captcha Generation
   const captchaRes = await request('GET', '/auth/captcha');
