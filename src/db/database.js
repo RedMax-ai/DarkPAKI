@@ -437,11 +437,11 @@ function initializeSchema() {
   runMigration("CREATE INDEX IF NOT EXISTS idx_users_last_active ON users(last_active_at);");
 
   // Google AdSense & Publisher Compliance Settings
-  runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('adsense_pub_id', '');");
-  runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('adsense_head_code', '');");
+  runMigration("INSERT OR REPLACE INTO settings (key, value) VALUES ('adsense_pub_id', 'ca-pub-8945324715858333');");
+  runMigration("INSERT OR REPLACE INTO settings (key, value) VALUES ('adsense_head_code', '<meta name=\"google-adsense-account\" content=\"ca-pub-8945324715858333\">\n<script async src=\"https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8945324715858333\" crossorigin=\"anonymous\"></script>');");
   runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('adsense_slot_id', '');");
-  runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('adsense_enabled', 'false');");
-  runMigration("INSERT OR IGNORE INTO settings (key, value) VALUES ('ads_txt_content', 'google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0');");
+  runMigration("INSERT OR REPLACE INTO settings (key, value) VALUES ('adsense_enabled', 'true');");
+  runMigration("INSERT OR REPLACE INTO settings (key, value) VALUES ('ads_txt_content', 'google.com, pub-8945324715858333, DIRECT, f08c47fec0942fa0');");
 
   // Video Views Log Table Migration
   runMigration(`

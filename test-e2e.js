@@ -701,11 +701,11 @@ async function runTests() {
 
     // 16g. Update AdSense Settings via Admin Console
     const updateAdSenseRes = await request('PUT', '/admin/settings', {
-      adsensePubId: 'ca-pub-9998887776665554',
+      adsensePubId: 'ca-pub-8945324715858333',
       adsenseSlotId: '1234567890',
-      adsenseHeadCode: '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9998887776665554" crossorigin="anonymous"></script>',
+      adsenseHeadCode: '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8945324715858333" crossorigin="anonymous"></script>',
       adsenseEnabled: true,
-      adsTxtContent: 'google.com, pub-9998887776665554, DIRECT, f08c47fec0942fa0'
+      adsTxtContent: 'google.com, pub-8945324715858333, DIRECT, f08c47fec0942fa0'
     }, { Authorization: `Bearer ${adminToken}` });
     assert(updateAdSenseRes.status === 200 && updateAdSenseRes.body.success === true, 'PUT /admin/settings saves AdSense credentials and ads.txt specification');
 

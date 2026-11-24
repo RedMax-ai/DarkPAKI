@@ -124,11 +124,11 @@ app.get(['/ads.txt', '/api/ads.txt'], (req, res) => {
       content = `google.com, ${pubId}, DIRECT, f08c47fec0942fa0`;
     }
     if (!content) {
-      content = 'google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0';
+      content = 'google.com, pub-8945324715858333, DIRECT, f08c47fec0942fa0';
     }
     res.send(content + '\n');
   } catch (_) {
-    res.send('google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0\n');
+    res.send('google.com, pub-8945324715858333, DIRECT, f08c47fec0942fa0\n');
   }
 });
 
